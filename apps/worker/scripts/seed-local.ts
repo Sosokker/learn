@@ -88,7 +88,7 @@ try {
   const slugs = readdirSync(join(root, "content/concepts"))
   const specs = slugs.flatMap((s) =>
     ["en", "th"].map(
-      (l) => read(`content/concepts/${s}/${l}.json`) as { slug: string; needs: Array<string> },
+      (l) => read(`content/concepts/${s}/${l}.json`) as { slug: string; lang: string; needs: Array<string> },
     ),
   )
   const done = new Set<string>()
@@ -106,7 +106,7 @@ try {
         const same = await Promise.all((current?.langs ?? []).map((l) => sha256Hex(JSON.stringify(l.spec))))
         if (same.includes(await sha256Hex(JSON.stringify(decodeConcept(spec))))) continue
         await api("POST", "/api/concepts", spec)
-        console.log(`concept ${slug} (${(spec as { lang: string }).lang}) published`)
+        console.log(`concept ${slug} (${spec.lang}) published`)
       }
       done.add(slug)
     }

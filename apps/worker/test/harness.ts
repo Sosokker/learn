@@ -57,7 +57,7 @@ export async function makeUser(env: Env, handle: string) {
   return { id, handle, token }
 }
 
-const ctx = {
+export const ctx = {
   waitUntil: () => {},
   passThroughOnException: () => {},
   props: {},

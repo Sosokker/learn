@@ -2,7 +2,8 @@ import { readdirSync } from "node:fs"
 import { join } from "node:path"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import type { Env } from "../src/env.ts"
-import { client, makeEnv, makeUser, readJson } from "./harness.ts"
+import worker from "../src/worker.ts"
+import { client, ctx, makeEnv, makeUser, readJson } from "./harness.ts"
 
 // One database for the whole file: the steps build on each other like a real session.
 let env: Env
@@ -201,6 +202,24 @@ describe("api", () => {
     const lib = await as(bob).get("/api/library")
     expect(lib.json.items).toHaveLength(20)
     expect((await as(bob).get(`/api/library?cursor=${lib.json.next}`)).json.items).toHaveLength(1)
+  })
+
+  it("recomputes hot scores on the cron", async () => {
+    await env.DB.prepare("update lesson set hot_score = 0").run()
+    await worker.scheduled({} as never, env, ctx)
+    await new Promise((r) => setTimeout(r, 200))
+    const row = await env.DB.prepare(
+      "select min(hot_score) as lo from lesson where visibility = 'public'",
+    ).first<{
+      lo: number
+    }>()
+    expect(row?.lo).toBeGreaterThan(0)
+    const tagRow = await env.DB.prepare(
+      "select min(hot_score) as lo from lesson_tag where is_public = 1",
+    ).first<{
+      lo: number
+    }>()
+    expect(tagRow?.lo).toBeGreaterThan(0)
   })
 
   it("manages API tokens", async () => {

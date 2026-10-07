@@ -100,6 +100,8 @@ export default {
 
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     const a = getApp(env)
-    ctx.waitUntil(Effect.runPromise(recomputeHotScores().pipe(Effect.provide(a.services), Effect.asVoid)))
+    const run = Effect.runPromise(recomputeHotScores().pipe(Effect.provide(a.services), Effect.asVoid))
+    ctx.waitUntil(run)
+    await run
   },
 }
