@@ -10,3 +10,5 @@ dist/
 TASKS.md
 test-results/
 playwright-report/
+e2e/artifacts/
+.vite/

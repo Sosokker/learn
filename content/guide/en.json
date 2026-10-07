@@ -1,0 +1,665 @@
+{
+  "schema": 1,
+  "kind": "guide",
+  "lang": "en",
+  "title": "Start here: how Learn works",
+  "summary": "A five-minute tour. One small problem shows every tool: colored parts, cards you can drill into, steps with reasons, live graphs, proofs, @ references and sharing.",
+  "parts": {
+    "d": {
+      "label": "$d$",
+      "role": "given",
+      "color": "orange",
+      "meaning": "distance of the trip: 120 km",
+      "body": "Written in the problem as a number. Units: km.",
+      "example": "Bangkok to Ayutthaya by road is about 80 km.",
+      "analogy": "The length of the rope you have to walk along."
+    },
+    "t1": {
+      "label": "$t_1$",
+      "role": "given",
+      "color": "yellow",
+      "meaning": "time spent moving: 1.5 h",
+      "body": "Only the time the train is rolling. It does **not** include the stop."
+    },
+    "t2": {
+      "label": "$t_2$",
+      "role": "hidden_given",
+      "color": "teal",
+      "meaning": "time stopped: 30 min = 0.5 h",
+      "body": "Easy to forget. The words *for the whole trip* say it must be counted. This is a {hidden_given|hidden given}.",
+      "analogy": "Time on the clock keeps running while you wait at the station."
+    },
+    "tt": {
+      "label": "$T$",
+      "role": "derived",
+      "color": "purple",
+      "meaning": "total time of the trip: 2 h",
+      "body": "Not asked for, but it is the bridge to the answer: $\\p{tt}{T} = \\p{t1}{t_1} + \\p{t2}{t_2}$."
+    },
+    "v": {
+      "label": "$\\bar v$",
+      "role": "goal",
+      "color": "blue",
+      "meaning": "average speed for the whole trip",
+      "body": "What the question asks. Units: km/h. Defined by the {avg_speed|average speed formula}."
+    },
+    "whole": {
+      "label": "whole trip",
+      "role": "condition",
+      "color": "pink",
+      "meaning": "the time to use is all of it, stops included",
+      "body": "Two small words that change the answer from 80 km/h to 60 km/h."
+    }
+  },
+  "cards": {
+    "avg_speed": {
+      "concept": "physics.average-speed"
+    },
+    "total_time": {
+      "concept": "physics.total-time"
+    },
+    "hidden_given": {
+      "kind": "term",
+      "title": "Hidden given",
+      "kicker": "how to read problems",
+      "body": "Information the problem gives you in **words**, not as a number. Spotting it is a core skill. Here it is [t2:the stop] together with [whole:whole trip]. In physics, *starts from rest* is a classic one: it means $v_0 = 0$.",
+      "analogy": "A shop sign that says *open daily* also tells you it is open on Sunday."
+    },
+    "mean_trap": {
+      "kind": "lemma",
+      "title": "Averaging speeds is a trap",
+      "kicker": "common mistake",
+      "body": "The plain mean of two speeds is **not** the average speed, unless you spend the same **time** at each speed. The proof section shows a counterexample line by line.",
+      "useWhen": "you are tempted to add speeds and divide by 2."
+    },
+    "merton": {
+      "kind": "story",
+      "title": "The Merton scholars",
+      "kicker": "story",
+      "body": "In the 1330s a group at Merton College, Oxford studied *uniformly changing* motion and proved the {mean_speed|mean speed theorem}. They worked in words and proportions, long before algebra notation existed."
+    },
+    "mean_speed": {
+      "concept": "physics.mean-speed-theorem"
+    },
+    "f_part": {
+      "kind": "feature",
+      "title": "Parts (colored pieces)",
+      "kicker": "feature",
+      "body": "A part is one thing in the lesson: a quantity, an actor, a condition. It has **one color for the whole lesson**. Hover it anywhere (text, formula, graph, slider) and it lights up everywhere, while the rest dims. The badge says its role: given, {hidden_given|hidden given}, derived, goal…",
+      "example": "Hover [v:$\\bar v$] now, then look at the plot further down.",
+      "analogy": "Highlighter pens: one color per character in a novel."
+    },
+    "f_card": {
+      "kind": "feature",
+      "title": "Cards and drill-down",
+      "kicker": "feature",
+      "body": "Dashed words open a card in the side panel. Hover to preview, **click to pin**. Inside a pinned card, dashed words open the next level. A breadcrumb and a *where this sits* tree show the path you took, so you can climb back up. Try {avg_speed|average speed} → {total_time|total time}.",
+      "analogy": "Wikipedia links, but the trail is always visible and you never lose your place."
+    },
+    "f_concept": {
+      "kind": "feature",
+      "title": "Shared concepts",
+      "kicker": "feature",
+      "body": "Some cards are **shared concepts**: written once and reused by every lesson that needs them, such as {avg_speed|average speed} here or Newton's laws in physics. They carry a *shared concept* badge and show how many lessons use them. Their prerequisites appear in the drill-down tree, so you can always go one level deeper.",
+      "analogy": "A shared dictionary: every book links to the same entry instead of writing its own."
+    },
+    "f_chain": {
+      "kind": "feature",
+      "title": "Chain of steps",
+      "kicker": "feature",
+      "body": "Solutions and explanations come as numbered steps. Each step has a **move** (what we do), a **why** (which rule allows it) and often a **why not** (why the other option fails). Hover a step and only the parts it uses stay lit."
+    },
+    "f_try": {
+      "kind": "feature",
+      "title": "Show me / Let me try",
+      "kicker": "feature",
+      "body": "The switch at the top. In *let me try* mode, formulas, answers and reasons are blurred until you click them. Say your answer first, then reveal. Answering before reading is what makes it stick."
+    },
+    "f_widget": {
+      "kind": "feature",
+      "title": "Live visuals",
+      "kicker": "feature",
+      "body": "Graphs, diagrams and flows are drawn from the lesson's data, not pasted as images. Sliders change the numbers and every linked part updates. Lessons can only use the built-in widgets, so a shared lesson can never run its own code.",
+      "example": "Drag the stop-time slider in the plot and watch [v:$\\bar v$] fall."
+    },
+    "f_graph": {
+      "kind": "feature",
+      "title": "Concept graph",
+      "kicker": "feature",
+      "body": "Shows what each idea is built from. Arrows point from what is needed to what uses it. Hover a node to light up everything it depends on: that is your list of prerequisites."
+    },
+    "f_proof": {
+      "kind": "feature",
+      "title": "Line-by-line proofs",
+      "kicker": "feature",
+      "body": "Each proof line has a claim, the reason it holds, and sometimes the intuition. Hover a line to see which earlier lines it uses. For maths, this is where most of the learning happens."
+    },
+    "f_ref": {
+      "kind": "feature",
+      "title": "@ references",
+      "kicker": "feature",
+      "body": "Every piece of a lesson has an address, like `@guide/chain.s2`. **Alt-click** anything, press **@** while hovering, or use *@ add* on a pinned card. It becomes a chip in the ask bar. Your question plus the exact pieces you pointed at go to pi together, so you never have to explain which step you mean.",
+      "example": "`@guide/chain.s2` = step 2 of the chain in this guide."
+    },
+    "f_recall": {
+      "kind": "feature",
+      "title": "Recall",
+      "kicker": "feature",
+      "body": "A few questions at the end, answered from memory. All options have similar length and form, so the shape of an answer never gives it away."
+    },
+    "f_lang": {
+      "kind": "feature",
+      "title": "English and Thai",
+      "kicker": "feature",
+      "body": "Switch the language at the top. A lesson and its translation share the same parts, cards and step addresses, so a `@` reference or a comment points at the same thing in both languages."
+    },
+    "f_community": {
+      "kind": "feature",
+      "title": "Share with the community",
+      "kicker": "feature",
+      "body": "Lessons start **private** in your library. You can make one *unlisted* (anyone with the link) or *public* (listed in Explore). A public lesson needs one {category|category} and 1–5 {tag|tags}. Others can like, comment on any step, and {fork|fork} it."
+    },
+    "category": {
+      "kind": "term",
+      "title": "Category",
+      "kicker": "community",
+      "body": "Where a lesson lives, from a fixed tree, e.g. *math › analysis › real analysis*. Exactly one per lesson. Browse Explore by category to find a subject."
+    },
+    "tag": {
+      "kind": "term",
+      "title": "Tag",
+      "kicker": "community",
+      "body": "A free label such as `friction`, `epsilon-delta` or `unit-economics`. One to five per lesson. Tags cut across categories: `proof-by-contradiction` can appear in algebra and in analysis."
+    },
+    "fork": {
+      "kind": "term",
+      "title": "Fork",
+      "kicker": "community",
+      "body": "Copy someone's lesson into your library to study or change it. The original author stays credited. Forking is free and instant, so search before you create."
+    },
+    "f_pi": {
+      "kind": "feature",
+      "title": "pi, your tutor",
+      "kicker": "feature",
+      "body": "Lessons are written by **pi**, an AI tutor that runs on your computer. Ask it a question, a problem, or a topic to learn. It writes the lesson in this format and publishes it here with `/publish`. Creating lessons from the website is coming next."
+    }
+  },
+  "sections": [
+    {
+      "id": "welcome",
+      "type": "text",
+      "title": "Welcome",
+      "body": "Learn turns a question into a lesson you can **explore**, not just read. Every lesson is split into small pieces you can hover, click and point at.\n\nThis guide is itself a lesson. It walks through one small problem and stops at each tool on the way. Look for the dashed words and colored pieces, and keep the side panel open: that is where cards appear.\n\nTwo things to try right now: hover [d:$d$], then click {f_part|parts} to pin its card."
+    },
+    {
+      "id": "tour",
+      "type": "visual",
+      "title": "The tools at a glance",
+      "note": "click any name to open its card",
+      "widget": {
+        "kind": "table",
+        "head": [
+          "Tool",
+          "What to do",
+          "Where in this guide"
+        ],
+        "rows": [
+          [
+            "{f_part|Parts}",
+            "Hover a colored piece",
+            "Problem"
+          ],
+          [
+            "{f_card|Cards}",
+            "Click a dashed word, then click inside the card",
+            "Anywhere"
+          ],
+          [
+            "{f_concept|Shared concepts}",
+            "Open a card with the *shared* badge",
+            "Concept, chain"
+          ],
+          [
+            "{f_chain|Chain}",
+            "Hover a step; read why and why not",
+            "Chain"
+          ],
+          [
+            "{f_try|Let me try}",
+            "Switch at the top, answer, then reveal",
+            "Chain, proof"
+          ],
+          [
+            "{f_widget|Live visuals}",
+            "Drag a slider",
+            "Plot"
+          ],
+          [
+            "{f_graph|Concept graph}",
+            "Hover a node",
+            "What it is built from"
+          ],
+          [
+            "{f_proof|Proofs}",
+            "Hover a line",
+            "The trap, proved"
+          ],
+          [
+            "{f_ref|@ references}",
+            "Alt-click, or press @ while hovering",
+            "Anywhere"
+          ],
+          [
+            "{f_recall|Recall}",
+            "Answer from memory",
+            "End"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "problem",
+      "type": "problem",
+      "title": "The problem",
+      "body": "A train covers [d:a distance of 120 km] in [t1:1.5 hours of travel]. On the way it [t2:stops at a station for 30 minutes]. What is its [v:average speed] for the [whole:whole trip]?"
+    },
+    {
+      "id": "chunks",
+      "type": "chunks",
+      "title": "Chunks",
+      "note": "the problem, split into pieces with a role",
+      "rows": [
+        {
+          "id": "c_d",
+          "text": "[d:$d$ = 120 km]",
+          "role": "given",
+          "note": "distance"
+        },
+        {
+          "id": "c_t1",
+          "text": "[t1:$t_1$ = 1.5 h]",
+          "role": "given",
+          "note": "moving time only"
+        },
+        {
+          "id": "c_t2",
+          "text": "[t2:stops 30 min]",
+          "role": "hidden_given",
+          "note": "$t_2 = 0.5$ h. Easy to skip: see {hidden_given|hidden given}"
+        },
+        {
+          "id": "c_whole",
+          "text": "[whole:whole trip]",
+          "role": "condition",
+          "note": "use [tt:total time], stops included"
+        },
+        {
+          "id": "c_v",
+          "text": "[v:average speed]",
+          "role": "goal",
+          "note": "find $\\bar v$"
+        }
+      ]
+    },
+    {
+      "id": "concept",
+      "type": "concept",
+      "title": "Concept → Field",
+      "concept": "Average speed compares **distance** with **time** over a whole interval. The only subtle point is which time to use.",
+      "field": "Kinematics, the description of motion. Needed first: {avg_speed|average speed} and {total_time|total time}.",
+      "prerequisites": [
+        "avg_speed",
+        "total_time"
+      ]
+    },
+    {
+      "id": "plan",
+      "type": "plan",
+      "title": "Plan",
+      "note": "two routes people take; one is wrong",
+      "routes": [
+        {
+          "id": "r_total",
+          "title": "Route A",
+          "path": "[tt:total time] → {avg_speed|average speed} → [v:$\\bar v$]",
+          "why": "the question says [whole:whole trip], and the definition of average speed uses total time.",
+          "whyNot": "nothing; this is the definition.",
+          "picked": true
+        },
+        {
+          "id": "r_moving",
+          "title": "Route B",
+          "path": "divide [d:$d$] by [t1:$t_1$] only",
+          "why": "it gives the speed **while moving** (80 km/h), which is a real number about the trip.",
+          "whyNot": "it ignores [t2:the stop], so it answers a different question. See {mean_trap|the trap}.",
+          "picked": false
+        }
+      ],
+      "notUsed": "Not used: acceleration formulas. Nothing in the problem says how the speed changes, and we don't need to know."
+    },
+    {
+      "id": "chain",
+      "type": "chain",
+      "title": "Chain",
+      "note": "hover a step to see which parts it uses",
+      "steps": [
+        {
+          "id": "s1",
+          "move": "Find the [tt:total time]",
+          "formula": "\\p{tt}{T} = \\p{t1}{t_1} + \\p{t2}{t_2} = 1.5 + 0.5 = 2\\ \\text{h}",
+          "why": "the [whole:whole trip] includes the stop, so both times count. See {total_time|total time}.",
+          "whyNot": "using only [t1:$t_1$] would leave out half an hour the clock really ran.",
+          "uses": [
+            "tt",
+            "t1",
+            "t2",
+            "whole"
+          ]
+        },
+        {
+          "id": "s2",
+          "move": "Apply {avg_speed|average speed}",
+          "formula": "\\p{v}{\\bar v} = \\dfrac{\\p{d}{d}}{\\p{tt}{T}} = \\dfrac{120}{2} = 60\\ \\text{km/h}",
+          "why": "definition of average speed: total distance over total time.",
+          "uses": [
+            "v",
+            "d",
+            "tt"
+          ]
+        },
+        {
+          "id": "s3",
+          "move": "Compare with the trap",
+          "formula": "\\dfrac{\\p{d}{d}}{\\p{t1}{t_1}} = \\dfrac{120}{1.5} = 80\\ \\text{km/h} \\neq 60",
+          "why": "80 km/h is the moving speed. The stop pulls the average down, so 60 < 80 makes sense.",
+          "uses": [
+            "d",
+            "t1",
+            "v"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plot",
+      "type": "visual",
+      "title": "See it",
+      "note": "drag the sliders; the average speed is the slope of the straight line",
+      "widget": {
+        "kind": "plot",
+        "x": {
+          "min": 0,
+          "max": 3.5,
+          "label": "time (h)"
+        },
+        "y": {
+          "min": 0,
+          "max": 220,
+          "label": "distance (km)"
+        },
+        "params": [
+          {
+            "id": "d",
+            "label": "[d:$d$] (km)",
+            "min": 40,
+            "max": 200,
+            "step": 10,
+            "value": 120,
+            "part": "d"
+          },
+          {
+            "id": "t1",
+            "label": "[t1:$t_1$] (h)",
+            "min": 0.5,
+            "max": 2.5,
+            "step": 0.1,
+            "value": 1.5,
+            "part": "t1"
+          },
+          {
+            "id": "t2",
+            "label": "[t2:$t_2$] (h)",
+            "min": 0,
+            "max": 1,
+            "step": 0.05,
+            "value": 0.5,
+            "part": "t2"
+          }
+        ],
+        "curves": [
+          {
+            "expr": "d * min(x, t1) / t1",
+            "part": "d",
+            "label": "train (simplified: moves first, then stops)"
+          },
+          {
+            "expr": "d / (t1 + t2) * x",
+            "part": "v",
+            "label": "average-speed line"
+          }
+        ],
+        "points": [
+          {
+            "x": "t1 + t2",
+            "y": "d",
+            "part": "tt",
+            "label": "end of trip"
+          }
+        ],
+        "readouts": [
+          {
+            "label": "[tt:$T$]",
+            "expr": "t1 + t2",
+            "unit": "h",
+            "part": "tt"
+          },
+          {
+            "label": "[v:$\\bar v$]",
+            "expr": "d / (t1 + t2)",
+            "unit": "km/h",
+            "part": "v"
+          },
+          {
+            "label": "moving speed",
+            "expr": "d / t1",
+            "unit": "km/h",
+            "part": "t1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "check",
+      "type": "check",
+      "title": "Check",
+      "items": [
+        "**Units**: km ÷ h = km/h ✓",
+        "**No stop**: with [t2:$t_2$] = 0 the average equals the moving speed, 80 km/h ✓ (set the slider to 0)",
+        "**Size**: 60 km/h is below the moving speed 80 km/h, as it must be when the train waits ✓"
+      ]
+    },
+    {
+      "id": "graph",
+      "type": "graph",
+      "title": "What it is built from",
+      "note": "arrows point from what is needed to what uses it; hover a node",
+      "nodes": [
+        {
+          "id": "n_v",
+          "label": "average speed",
+          "kind": "goal",
+          "needs": [
+            "n_law",
+            "n_d",
+            "n_T"
+          ],
+          "part": "v"
+        },
+        {
+          "id": "n_law",
+          "label": "v̄ = d / T",
+          "kind": "law",
+          "needs": [],
+          "card": "avg_speed"
+        },
+        {
+          "id": "n_T",
+          "label": "total time",
+          "kind": "part",
+          "needs": [
+            "n_t1",
+            "n_t2",
+            "n_whole"
+          ],
+          "part": "tt"
+        },
+        {
+          "id": "n_whole",
+          "label": "“whole trip”",
+          "kind": "def",
+          "needs": [],
+          "part": "whole"
+        },
+        {
+          "id": "n_d",
+          "label": "distance",
+          "kind": "part",
+          "needs": [],
+          "part": "d"
+        },
+        {
+          "id": "n_t1",
+          "label": "moving time",
+          "kind": "part",
+          "needs": [],
+          "part": "t1"
+        },
+        {
+          "id": "n_t2",
+          "label": "stop time",
+          "kind": "part",
+          "needs": [],
+          "part": "t2"
+        }
+      ]
+    },
+    {
+      "id": "trap",
+      "type": "proof",
+      "title": "The trap, proved",
+      "note": "hover a line to see which lines it uses",
+      "goal": "The mean of two speeds is not, in general, the {avg_speed|average speed}.",
+      "lines": [
+        {
+          "id": "l1",
+          "claim": "Take a trip of 60 km at 30 km/h, then 60 km at 90 km/h.",
+          "why": "one example where the claim fails is enough to show it is not always true.",
+          "intuition": "pick two very different speeds so the effect is big.",
+          "deps": []
+        },
+        {
+          "id": "l2",
+          "claim": "Times: $60/30 = 2$ h and $60/90 = \\tfrac23$ h.",
+          "why": "time = distance ÷ speed for each part.",
+          "deps": [
+            "l1"
+          ]
+        },
+        {
+          "id": "l3",
+          "claim": "Average speed $= \\dfrac{120}{2 + \\tfrac23} = \\dfrac{120}{8/3} = 45$ km/h.",
+          "why": "{avg_speed|average speed}: total distance over total time.",
+          "deps": [
+            "l2"
+          ]
+        },
+        {
+          "id": "l4",
+          "claim": "Mean of the speeds $= \\dfrac{30 + 90}{2} = 60$ km/h $\\neq 45$.",
+          "why": "plain arithmetic.",
+          "intuition": "the slow part takes **longer**, so it counts more in the true average.",
+          "whyNot": "the two agree only if equal **times** are spent at each speed.",
+          "deps": [
+            "l1",
+            "l3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "story",
+      "type": "story",
+      "title": "Story",
+      "events": [
+        {
+          "id": "e1",
+          "year": "c. 1335",
+          "text": "{merton|The Merton scholars} in Oxford state the {mean_speed|mean speed theorem} for steadily changing motion."
+        },
+        {
+          "id": "e2",
+          "year": "c. 1350",
+          "text": "Nicole Oresme draws speed against time and reads distance as an **area**, an early graph like the plot above."
+        },
+        {
+          "id": "e3",
+          "year": "1638",
+          "text": "Galileo uses the same result in *Two New Sciences* to describe falling bodies."
+        }
+      ]
+    },
+    {
+      "id": "share",
+      "type": "text",
+      "title": "Sharing and the community",
+      "body": "Everything you make starts in your library. When a lesson is ready, {f_community|share it}: pick a {category|category}, add a few {tag|tags}, and choose *public* or *unlisted*.\n\nIn Explore you can browse by category, filter by tag and lesson type, and search. If a lesson already covers your question, {fork|fork} it instead of starting over. Comments attach to a specific step or proof line, using the same addresses as {f_ref|@ references}."
+    },
+    {
+      "id": "make",
+      "type": "text",
+      "title": "Making lessons",
+      "body": "Lessons are written by {f_pi|pi}, an AI tutor on your computer. Give it a problem to solve, a topic to learn (it makes a study plan first), a business situation, or a programming idea. It writes the lesson in this format, and `/publish` puts it in your library here.\n\nCreating lessons directly on the website is **in progress**. This guide will tell you when it arrives.\n\nThe guide works the same in {f_lang|English and Thai}."
+    },
+    {
+      "id": "recall",
+      "type": "recall",
+      "title": "Recall",
+      "note": "answer from memory before you click",
+      "questions": [
+        {
+          "id": "q1",
+          "q": "The train stops for 1 hour instead of 30 minutes. What is $\\bar v$?",
+          "options": [
+            "48 km/h",
+            "60 km/h",
+            "80 km/h"
+          ],
+          "answer": 0,
+          "why": "$T = 1.5 + 1 = 2.5$ h, so $\\bar v = 120 / 2.5 = 48$ km/h."
+        },
+        {
+          "id": "q2",
+          "q": "How do you put one exact step into your question for pi?",
+          "options": [
+            "Alt-click the step",
+            "Copy its text",
+            "Take a screenshot"
+          ],
+          "answer": 0,
+          "why": "Alt-click (or @ while hovering) adds an @ reference, so pi gets the exact step and its formulas."
+        },
+        {
+          "id": "q3",
+          "q": "Which words in the problem hide a given?",
+          "options": [
+            "“covers a distance”",
+            "“the whole trip”",
+            "“average speed”"
+          ],
+          "answer": 1,
+          "why": "*whole trip* means the stop time counts. That is a hidden given."
+        }
+      ]
+    }
+  ]
+}

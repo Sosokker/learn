@@ -1,0 +1,15 @@
+{
+  "name": "@app/api",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@app/domain": "workspace:*",
+    "effect": "4.0.1"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

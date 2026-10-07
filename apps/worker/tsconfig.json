@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src"],
+  // Worker code gets Workers types only, so a stray Node API fails the typecheck.
+  "compilerOptions": { "types": ["@cloudflare/workers-types"] }
+}

@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "slug": "physics.total-time",
+  "lang": "en",
+  "card": {
+    "kind": "term",
+    "title": "Total time",
+    "kicker": "term",
+    "body": "Clock time from the start to the end, including stops and waiting. Compare with *moving time*, which leaves stops out.",
+    "example": "1.5 h moving + 0.5 h stopped = 2 h total.",
+    "analogy": "A football match lasts 90 minutes on the clock even if the ball is in play for far less."
+  },
+  "needs": [],
+  "aliases": [
+    "elapsed time",
+    "clock time"
+  ]
+}

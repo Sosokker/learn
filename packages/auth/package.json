@@ -1,0 +1,22 @@
+{
+  "name": "@app/auth",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./secret": "./src/secret.ts"
+  },
+  "dependencies": {
+    "@app/db": "workspace:*",
+    "@app/domain": "workspace:*",
+    "better-auth": "1.7.7",
+    "drizzle-orm": "1.0.0-rc.4",
+    "effect": "4.0.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261006.1"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "slug": "physics.average-speed",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Average speed",
+    "kicker": "formula",
+    "body": "$\\bar v = \\dfrac{\\text{total distance}}{\\text{total time}}$",
+    "says": "how far you went, divided by how long it took **in total**.",
+    "from": "the definition of speed, applied to a whole interval instead of one instant.",
+    "useWhen": "the question is about a whole trip and you know, or can find, the total distance and the total time.",
+    "units": "km/h, m/s",
+    "example": "120 km in 2 h → $\\bar v = 60$ km/h.",
+    "analogy": "Your average pocket money per day over a week: total money ÷ 7, even on days you got nothing."
+  },
+  "needs": [
+    "physics.total-time"
+  ],
+  "aliases": [
+    "mean speed over a trip",
+    "v = d/t",
+    "average velocity (magnitude)"
+  ]
+}

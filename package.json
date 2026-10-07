@@ -1,0 +1,27 @@
+{
+  "name": "learn",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.0",
+  "engines": {
+    "bun": ">=1.4.0"
+  },
+  "workspaces": ["apps/*", "packages/*", "e2e"],
+  "scripts": {
+    "dev": "bun run --cwd apps/web dev",
+    "build": "bun run --cwd apps/web build && bun run --cwd apps/worker build",
+    "typecheck": "bun run --filter '*' typecheck",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "bun run --filter '*' test",
+    "test:e2e": "bun run --cwd e2e test",
+    "db:generate": "bun run --cwd packages/db generate",
+    "db:migrate:local": "bun run --cwd apps/worker wrangler d1 migrations apply learn --local",
+    "seed:local": "bun scripts/seed-local.ts",
+    "deploy": "bun run build && bun run --cwd apps/worker wrangler d1 migrations apply learn --remote && bun run --cwd apps/worker wrangler deploy"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "typescript": "7.0.2"
+  }
+}

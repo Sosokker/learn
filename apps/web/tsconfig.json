@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src"],
+  // Browser code only; vite.config.ts runs in Node and is checked by tsconfig.node.json.
+  "compilerOptions": {
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
+  }
+}

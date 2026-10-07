@@ -1,0 +1,13 @@
+{
+  "name": "@app/e2e",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "26.6.4"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit"
+  }
+}
