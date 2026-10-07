@@ -3,8 +3,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./secret": "./src/secret.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "@app/db": "workspace:*",

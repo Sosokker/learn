@@ -8,14 +8,13 @@
     "@app/db": "workspace:*",
     "@app/domain": "workspace:*",
     "@app/services": "workspace:*",
-    "@effect/sql-d1": "4.0.1",
-    "effect": "4.0.1"
+    "effect": "4.0.1",
+    "drizzle-orm": "1.0.0-rc.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261006.1",
     "@effect/vitest": "4.0.1",
     "@types/node": "26.6.4",
-    "miniflare": "5.20261001.0-alpha",
     "vitest": "5.0.3",
     "wrangler": "4.147.0"
   },
@@ -23,6 +22,7 @@
     "wrangler": "wrangler",
     "build": "wrangler deploy --dry-run --outdir dist",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+    "seed:local": "bun scripts/seed-local.ts"
   }
 }

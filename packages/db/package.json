@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@app/domain": "workspace:*",
-    "@effect/sql-d1": "4.0.1",
     "drizzle-orm": "1.0.0-rc.4",
     "effect": "4.0.1"
   },

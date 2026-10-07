@@ -1,6 +1,6 @@
 # Learn — design
 
-Status: draft for review, 2026-10-07.
+Status: draft, 2026-10-07. Sections 4–7 and 10 updated after the scaffold was built.
 Live at: https://learn.sirin.dev (Cloudflare, deployed with wrangler).
 
 Inputs:
@@ -28,7 +28,7 @@ the OpenRouter models API.
 | Hosting | One **Worker** serves `/api/*` and the SPA assets | Same as the template |
 | Deploy | **wrangler** + `@cloudflare/vite-plugin` (no Alchemy) | Your choice. One `wrangler.jsonc`, one dev command. |
 | Domain | `learn.sirin.dev` as a Worker custom domain | sirin.dev is already on Cloudflare DNS. A custom domain also turns on the edge Cache API. |
-| Auth | Better Auth, **Google + GitHub sign-in only**, no passwords | No email service to pay for, and no password hashing on Worker CPU |
+| Auth | Better Auth, **Google sign-in only** (GitHub later), no passwords | No email service to pay for, and no password hashing on Worker CPU |
 | Lesson format | A typed **LessonSpec** JSON (Effect Schema). No user HTML or JS. | Safe to share in public. Every lesson gets the same hover, link and card behavior. pi can't break it. |
 | Visuals | A fixed **widget catalog** with parameters | A shared lesson can't run code |
 | Who pays for the LLM | **The learner, not the platform** (phase 1: local pi, phase 2: bring your own key) | The LLM is the only cost that grows quickly. Infra stays near $5/month. |
@@ -142,198 +142,145 @@ real cost question is **who runs the LLM**, not the hosting.
 
 ## 4. Lesson content model (LessonSpec)
 
-This is the prototype's ad-hoc JS (`part()`, `card()`, `more()`, `graph()`,
-`proofBlock()`) made into data.
+The source of truth is the Effect Schema in `packages/domain/src/lesson.ts`. It is
+the contract between pi, the server and the renderer. This section summarizes it.
 
 ```ts
 LessonSpec {
   schema: 1                          // the renderer upgrades old versions on read
-  kind: "solve" | "learn" | "situation" | "code" | "proof"
+  kind: "solve" | "learn" | "situation" | "code" | "proof" | "guide"
   lang: "en" | "th"
-  title: string
+  title: string                      // ≤ 160
   summary: string                    // ≤ 280 chars, shown in feeds
-  problem?: Rich                     // the original question
-
   parts:  Record<PartId, Part>       // colored things, linked everywhere
-  cards:  Record<CardId, Card>       // terms, laws, formulas, definitions, stories
-  sections: Section[]                // ordered page content
+  cards:  Record<CardId, CardEntry>  // a card, or a pointer to a shared concept
+  sections: Section[]                // ordered page content, each with an `id`
 }
 
-Part  { label: Rich, role: Role, color: RoleColor, meaning: string,
-        body?: Rich, example?: Rich, analogy?: Rich }
-Role  = given | hidden_given | goal | derived | constant | condition
-      | actor | metric | variable | ...            // closed list, grows by schema version
-Card  { kind: term | law | formula | def | lemma | thm | metric | story,
-        title: Rich, kicker?: string, body: Rich,
-        says?, from?, useWhen?, units?: Rich,        // the formula card fields
-        example?: Rich, analogy?: Rich }
+Part      { label: Rich, role: Role, color: RoleColor, meaning: string,
+            body?: Rich, example?: Rich, analogy?: Rich }
+Role      = given | hidden_given | goal | derived | constant | condition
+          | actor | metric | variable | concept
+RoleColor = red | orange | peach | yellow | mustard | olive | green | teal | cyan
+          | blue | purple | pink | rose | grey          // tokens, not hex
+CardEntry = Card | { concept: "physics.average-speed" | "physics.average-speed@2" }
+Card      { kind: term | law | formula | def | lemma | thm | metric | story | feature,
+            title: Rich, kicker?: string, body: Rich,
+            says?, from?, useWhen?, units?, example?, analogy?: Rich }
 
-Section =
-  | { type: "chunks",  rows: { text: Rich, role: Role, note: Rich }[] }
+Section = { id, title?, note? } & (
+  | { type: "text" | "problem", body: Rich }
+  | { type: "chunks",  rows: { id, text: Rich, role: Role, note: Rich }[] }
   | { type: "concept", concept: Rich, field: Rich, prerequisites: CardId[] }
-  | { type: "plan",    routes: { id, title, path: Rich, why: Rich, whyNot: Rich, picked: boolean }[],
-                       notUsed?: Rich }
-  | { type: "chain",   route: string, steps: Step[] }
-  | { type: "proof",   id, title, lines: ProofLine[] }
-  | { type: "graph",   nodes: { id, label, kind, needs: string[], card?: CardId }[] }
+  | { type: "plan",    routes: { id, title, path, why, whyNot: Rich, picked: boolean }[], notUsed?: Rich }
+  | { type: "chain",   steps: Step[] }
+  | { type: "proof",   goal: Rich, lines: ProofLine[] }
+  | { type: "graph",   nodes: { id, label, kind, needs: Id[], card?: CardId, part?: PartId }[] }
   | { type: "visual",  widget: Widget }
   | { type: "check",   items: Rich[] }
-  | { type: "story",   events: { year?, text: Rich }[] }
-  | { type: "units",   units: { id, title, milestone: Rich, lessonId?: LessonId }[] }  // study plan
-  | { type: "recall",  questions: { q: Rich, options: Rich[], answer: number, why: Rich }[] }
+  | { type: "story",   events: { id, year?, text: Rich }[] }
+  | { type: "units",   units: { id, title, milestone: Rich, lessonSlug? }[] }   // study plan
+  | { type: "recall",  questions: { id, q: Rich, options: Rich[], answer: number, why: Rich }[] })
 
 Step      { id, move: Rich, formula?: Tex, why: Rich, whyNot?: Rich, uses: PartId[] }
 ProofLine { id, claim: Rich, why: Rich, intuition?: Rich, whyNot?: Rich, deps: LineId[] }
 ```
 
-**Rich text** is a small markup, the same as the prototype: `[part:label]`
-links a part, `{card|label}` links a card, `$tex$` and `$$tex$$` are math, and
-`**bold**` works. Inside TeX, `\p{part}{…}` marks a hoverable symbol. There is
-no raw HTML. The renderer parses it with a fixed grammar. KaTeX runs with
-`trust` limited to `\htmlData`.
+Ids match `^[a-z][a-z0-9_]{0,31}$`. A lesson and its translation share every id.
+
+**Rich text** is a small markup: `[part:label]` links a part, `{card|label}`
+links a card, `$tex$` and `$$tex$$` are math (`\$` is a dollar), and `**bold**`,
+`*italic*` and `` `code` `` work. Inside TeX, `\p{part}{…}` marks a hoverable
+symbol. There is no raw HTML. `packages/domain/src/rich.ts` parses it with a
+fixed grammar into a tree, and anything that doesn't match a rule is plain
+text. KaTeX runs with `trust` limited to `\htmlData`, which is what `\p{}{}`
+becomes.
+
+**One validator** (`packages/domain/src/validate.ts`) checks what the schema
+can't: every `[part:]`, `{card|}`, `\p{}{}`, step `uses`, proof `deps` (earlier
+lines only), graph `needs` (no cycles), widget `part`, expression variable and
+shared concept resolves; ids are unique; a translation has the same id
+skeleton as the original. The server runs it on publish, pi can run it before
+`/publish`, and a test runs it over `content/**`.
 
 **Drill-down and hierarchy come for free.** The child cards of a card are the
-`{card}` links inside it. That is how the prototype's "where this sits" tree
-works, so pi only writes links.
+`{card}` links inside it, and for a shared concept, its `needs`. That is how
+the "where this sits" tree works, so pi only writes links.
 
-**Widgets** are a closed catalog, and each one has a schema:
+**Shared concepts.** A concept such as Newton's second law is written once
+(`ConceptSpec`: slug, lang, one card, `needs`, `aliases`) and reused. A lesson
+keeps its own card id, so `{newton2|…}` links work, and points it at the
+concept: `"newton2": { "concept": "physics.newton-second-law" }`. At publish,
+the server pins the concept's current version in the lesson's language, plus
+its prerequisites (transitively), in `lesson_version_concept`, so an edit to
+the concept never changes an old lesson. The lesson-writing agent searches
+`GET /api/concepts?q=` first and reuses a concept instead of writing a card.
+That saves tokens, and readers get one consistent explanation.
+
+**Widgets** are a closed catalog. Expressions use a small safe parser
+(`packages/domain/src/expr.ts`: numbers, `+ - * / ^`, a fixed list of
+functions, `pi`, `e`, params). It builds closures and never calls `eval`.
 
 | Widget | Covers |
 |---|---|
-| `plot` | functions with sliders. Expressions use a small safe parser, never `eval`. |
-| `incline` / `freebody` | physics scenes: bodies, forces bound to parts, angle sliders |
-| `flow` | business or data flows with animated edges |
-| `dag` | concept graph, using the prototype's layered layout |
-| `trace` | code + step slider + variable and memory state |
-| `table` | group tables and truth tables, with hover links |
-| `timeline`, `lattice`, `popcorn` | from the prototype |
-| `scene` | generic SVG shapes, arrows and labels bound to params, for whatever has no widget yet |
+| `plot` | functions of `x` with sliders, points and live readouts |
+| `table` | Rich cells: group tables, truth tables, comparisons |
+| `flow` | business or data flows (React Flow + dagre) |
+| `incline` | physics scene: angle param, force arrows bound to parts |
+| `trace` | code + step slider + variable state |
 
-The prototype's `audit.js` overlap checker runs in CI with Playwright on
-every widget across its slider ranges.
+More (`freebody`, `timeline`, `lattice`, `scene`) come as lessons need them.
+Each new widget is a schema change plus a renderer component.
 
-**Stable reference IDs.** Every addressable item has an ID that is unique
-within its version. A reference is `@<lessonSlug>/<sectionId>.<itemId>`, for
-example `@thomae/c2.l5`. The `@ref` chips and anchored comments both use this.
+**Stable reference IDs.** A reference is `@<lessonSlug>/<sectionId>.<itemId>`,
+for example `@guide/chain.s2`. The `@ref` chips and anchored comments both use
+this, and the ids are the same in every language.
 
-**Size limit:** 512 KB per spec, uncompressed. The server checks the schema on
-publish.
+**Size limit:** 512 KB per spec (32 KB per concept), uncompressed. The server
+checks it on publish.
 
 ---
 
 ## 5. Database model (D1)
 
-IDs are UUIDv7 text (sortable by time). Times are integer milliseconds. Status
-fields are checked text, as in the template.
+The source of truth is `packages/db/src/schema.ts` (Drizzle sqlite-core). IDs are
+UUIDv7 text (sortable by time). Times are integer milliseconds. Status fields
+are checked text.
 
 ```sql
--- Better Auth tables: user, session, account, verification (drizzle sqlite schema)
+-- Better Auth: user, session, account, verification (packages/db/src/auth-schema.ts;
+-- only packages/auth may import it, enforced by biome)
 
-profile (
-  user_id     text primary key references user(id),
-  handle      text not null unique,          -- learn.sirin.dev/@handle
-  bio         text,
-  lesson_count integer not null default 0
-)
-
-category (                                    -- curated, seeded, rarely changes
-  id text primary key, parent_id text references category(id),
-  slug text not null unique, name_en text not null, name_th text not null,
-  sort integer not null
-)
--- e.g. math › analysis › real-analysis, physics › mechanics, business › finance,
---      programming › data-structures
-
+profile (user_id pk → user, handle unique, bio, lesson_count)
+category (id pk, parent_id, slug unique, name_en, name_th, sort)      -- seeded in a migration;
+                                                                      -- ids are dotted paths, e.g. math.analysis
 lesson (
-  id            text primary key,
-  owner_id      text not null references user(id),
-  slug          text not null,                 -- unique per owner
-  kind          text not null check (kind in ('solve','learn','situation','code','proof')),
-  lang          text not null default 'en',
-  title         text not null,
-  summary       text not null,
-  category_id   text references category(id),
-  visibility    text not null default 'private'
-                check (visibility in ('private','unlisted','public')),
-  draft_key     text,                          -- R2 key of the editable draft, if any
-  current_version_id text references lesson_version(id),
-  forked_from_version_id text references lesson_version(id),
-  problem_hash  text,                          -- sha256 of normalized problem text, for reuse
-  like_count    integer not null default 0,
-  fork_count    integer not null default 0,
-  comment_count integer not null default 0,
-  hot_score     real not null default 0,
-  published_at  integer,                       -- first public publish
-  created_at    integer not null,
-  updated_at    integer not null,
-  deleted_at    integer,
-  unique (owner_id, slug)
+  id, owner_id → user, slug,                   -- unique (owner_id, slug)
+  kind check (... 'guide'),
+  lang,                                        -- the first language; title/summary copied from it
+  title, summary, category_id → category,
+  visibility check ('private','unlisted','public') default 'private',
+  forked_from_version_id, problem_hash,
+  like_count, fork_count, comment_count, hot_score,
+  published_at, created_at, updated_at, deleted_at
 )
-
-lesson_version (                               -- immutable
-  id          text primary key,
-  lesson_id   text not null references lesson(id),
-  n           integer not null,                -- 1, 2, 3 …
-  body_hash   text not null,                   -- R2 key c/<hash>.json
-  body_bytes  integer not null,
-  schema      integer not null,
-  note        text,
-  created_at  integer not null,
-  unique (lesson_id, n)
+lesson_version (                               -- immutable, one row per version of one language
+  id, lesson_id → lesson, lang, n,             -- unique (lesson_id, lang, n)
+  body_hash,                                   -- R2 key c/<hash>.json; indexed for /c/ checks
+  body_bytes, schema, title, summary, note, created_at
 )
+lesson_lang (lesson_id, lang, version_id)      -- pk (lesson_id, lang): the current version per language
+tag, lesson_tag, lesson_like, bookmark, comment, progress, api_token, report   -- as before
 
-tag (
-  id text primary key,
-  slug text not null unique,                   -- normalized: lowercase, NFC, dashes
-  name text not null,
-  lesson_count integer not null default 0      -- public lessons only
-)
+concept (id, slug unique, kind, created_by → user, use_count, created_at, updated_at)
+concept_version (id, concept_id, lang, n, body_hash, body_bytes, created_at)   -- unique (concept_id, lang, n)
+concept_lang (concept_id, lang, version_id, title, aliases)                    -- current per language
+concept_need (concept_id, need_id)                                             -- the prerequisite graph
+lesson_version_concept (lesson_version_id, concept_version_id, card_id)        -- pins; card_id null = prerequisite
 
-lesson_tag (                                   -- at most 5 tags per lesson
-  lesson_id    text not null references lesson(id),
-  tag_id       text not null references tag(id),
-  -- copies from lesson, so a tag feed is index only (kept in sync in the same batch)
-  is_public    integer not null,
-  published_at integer,
-  hot_score    real not null default 0,
-  primary key (lesson_id, tag_id)
-)
-
-lesson_like  (user_id text, lesson_id text, created_at integer, primary key (user_id, lesson_id))
-bookmark     (user_id text, lesson_id text, created_at integer, primary key (user_id, lesson_id))
-
-comment (
-  id text primary key, lesson_id text not null, user_id text not null,
-  version_id text not null,                    -- anchors belong to one version
-  anchor text,                                 -- '@incline/s3' or null for the whole lesson
-  parent_id text references comment(id),
-  body text not null,                          -- plain text + the same Rich markup, ≤ 4 KB
-  created_at integer not null, deleted_at integer
-)
-
-progress (                                     -- private learning state
-  user_id text not null, lesson_id text not null, version_id text not null,
-  state text not null,                         -- JSON ≤ 4 KB: step, revealed, quiz answers
-  updated_at integer not null,
-  primary key (user_id, lesson_id)
-)
-
-api_token (                                    -- for pi /publish
-  id text primary key, user_id text not null,
-  hash text not null unique,                   -- sha256 of the token, never the token
-  name text not null, last_used_at integer, created_at integer not null, revoked_at integer
-)
-
-report (
-  id text primary key, target_type text not null, target_id text not null,
-  reporter_id text not null, reason text not null,
-  status text not null default 'open', created_at integer not null
-)
-
--- Search: FTS5, contentless, rebuilt from lesson + tags
-create virtual table lesson_fts using fts5(
-  title, summary, tags, problem, content='', tokenize='unicode61 remove_diacritics 2'
-);
+-- Search: plain FTS5 tables (not contentless), so a match returns the row's id.
+create virtual table lesson_fts  using fts5(lesson_id UNINDEXED, title, summary, tags, problem, tokenize='unicode61 remove_diacritics 2');
+create virtual table concept_fts using fts5(concept_id UNINDEXED, lang UNINDEXED, slug, title, aliases, body, ...);
 ```
 
 **Indexes, one for each feed.** SQLite supports partial indexes, so each feed
@@ -342,139 +289,136 @@ index holds only public rows:
 ```sql
 create index lesson_new_idx  on lesson (published_at desc, id desc) where visibility = 'public' and deleted_at is null;
 create index lesson_hot_idx  on lesson (hot_score desc, id desc)    where visibility = 'public' and deleted_at is null;
-create index lesson_cat_idx  on lesson (category_id, published_at desc, id desc) where visibility = 'public' and deleted_at is null;
-create index lesson_kind_idx on lesson (kind, published_at desc, id desc)        where visibility = 'public' and deleted_at is null;
+create index lesson_cat_idx  on lesson (category_id, published_at desc, id desc) where ...;
+create index lesson_kind_idx on lesson (kind, published_at desc, id desc)        where ...;
 create index lesson_owner_idx on lesson (owner_id, updated_at desc, id desc);
-create index lesson_problem_idx on lesson (problem_hash) where problem_hash is not null;
 create index lesson_tag_feed_idx on lesson_tag (tag_id, published_at desc, lesson_id) where is_public = 1;
 create index lesson_tag_hot_idx  on lesson_tag (tag_id, hot_score desc, lesson_id)    where is_public = 1;
-create index comment_lesson_idx on comment (lesson_id, created_at, id);
+create index lesson_version_hash_idx on lesson_version (body_hash);
+create index concept_version_hash_idx on concept_version (body_hash);
 ```
 
-A feed page of 20 reads about 20 index rows plus 20 lesson rows.
+A feed page of 20 reads about 21 index rows plus 20 lesson rows, then owners,
+languages and tags in one batched round trip.
 
 **Categories vs tags vs kind**
 
 | Field | What it is | Who sets it | Count |
 |---|---|---|---|
 | category | where the lesson lives, a curated tree | the author picks one, required for public | 1 |
-| tags | free labels, such as `galois`, `epsilon-delta`, `friction` | the author, with autocomplete from existing tags | 1–5 |
-| kind | the shape of the lesson (solve, learn, …) | pi | 1 |
-| lang | en / th | pi | 1 |
+| tags | free labels, such as `galois`, `epsilon-delta`, `friction` | the author; normalized (`Epsilon Delta` → `epsilon-delta`) | 1–5 for public |
+| kind | the shape of the lesson (solve, learn, …, guide) | pi | 1 |
+| lang | en / th, one or both | pi | 1–2 |
 
-Explore filters combine them: category (with sub-categories) × kind × lang ×
-one tag. Category pages use `lesson_cat_idx`. Tag pages use `lesson_tag_*`.
-To filter by a category *and* its children, the client sends the list of
-category IDs (the tree ships as static JSON), and the query uses `category_id in (...)`.
+Explore filters combine them: categories (the client sends a category and its
+descendants) × kind × lang × one tag × a search query.
 
-**Counters** change in the same `db.batch()` as the row they count (a D1 batch
-is one transaction). For example, a like inserts `lesson_like` and runs
-`update lesson set like_count = like_count + 1`, and also updates `lesson_tag`
-for hot score later.
+**Counters and atomic writes.** D1 has no interactive transactions, so every
+write that must happen together is one `db.batch([...])`, which D1 runs as a
+single transaction: a new version, its `lesson_lang` pointer, its concept pins,
+the FTS row and the recounted `concept.use_count` go in one batch.
 
 **Hot score:** a cron every 30 minutes recomputes
 `(likes + 2·forks + comments + 1) / (age_hours + 2)^1.5` for lessons published
-in the last 14 days. Older scores stay frozen. It writes only the rows that changed.
+in the last 14 days, in the Worker (SQLite's `pow()` is optional), and writes
+only rows that changed, also onto `lesson_tag`.
 
-**Thai search:** FTS5 `unicode61` doesn't split Thai words. On write, split
-Thai text with `Intl.Segmenter('th', {granularity:'word'})` and store it with
-spaces in the FTS columns. Do the same to the query. (Check at build time that
-workerd ships Thai ICU data.)
+**Thai search:** FTS5 `unicode61` doesn't split Thai words. On write and on
+query, the Worker splits text with `Intl.Segmenter('th', {granularity:'word'})`
+and stores the words with spaces. workerd ships the Thai ICU data (checked
+2026-10-07: `ทฤษฎีบทอัตราเร็วกึ่งกลาง` → `ทฤษฎีบท / อัตราเร็ว / กึ่งกลาง`).
+
+**Migrations:** `drizzle-kit generate` writes `packages/db/drizzle/<ts>_<name>/`;
+`scripts/flatten-migrations.ts` copies each to `packages/db/migrations/NNNN_<name>.sql`,
+which `wrangler d1 migrations apply` reads. Custom SQL (FTS, the category seed)
+goes in a `drizzle-kit generate --custom` migration.
 
 **Backups:** D1 Time Travel (point-in-time restore) is the main backup. D1
-can't export a database that has virtual tables. So the offsite weekly export
-drops and rebuilds `lesson_fts` around the export, or the FTS table moves to a
-second D1 database (decide at build time). Lesson bodies in R2 are immutable,
-so they are their own backup.
+can't export a database that has virtual tables, so an offsite export drops and
+rebuilds the two FTS tables around the export (they are rebuilt from rows and
+R2 bodies). Lesson and concept bodies in R2 are immutable, so they are their own backup.
 
 ---
 
 ## 6. Main flows
 
 **Publish from pi**
-1. pi's `learn` skill writes `lesson.json` in the topic folder and validates it against the JSON Schema.
-2. `/publish` sends `POST /api/lessons/:slug/versions` with a bearer API token.
-3. The Worker checks the schema and the size, hashes the body, and runs `PUT c/<hash>.json` on R2 (skipped if it exists).
-4. A D1 batch inserts `lesson_version`, updates `lesson.current_version_id`, updates tags and counters, and upserts `lesson_fts`.
-5. New lessons start **private**. Making one public needs a category and at least 1 tag.
+1. pi's `learn` skill writes `lesson.json`, searches `GET /api/concepts?q=` to reuse
+   shared concepts, and validates the lesson.
+2. `/publish` sends `POST /api/lessons` (new) or `POST /api/lessons/:id/versions`
+   (a new version, or a translation) with `Authorization: Bearer lrn_…`.
+3. The Worker decodes the schema, checks the size, resolves shared concepts in
+   the lesson's language, runs the validator, hashes the body and runs
+   `PUT c/<hash>.json` on R2 (skipped if it exists).
+4. One D1 batch inserts `lesson_version`, points `lesson_lang` at it, pins the
+   concepts, rewrites the FTS row and recounts `concept.use_count`.
+5. A new language must share every id with the original (otherwise 422 with the
+   differences). Later versions of one language may move ahead of the other.
+6. New lessons start **private**. Making one public needs a category and 1–5 tags.
 
-**Read a public lesson**
-`GET /api/lessons/@handle/slug` returns metadata (cached 60 s at the edge for
-anonymous readers). Then `GET /c/<hash>.json` returns the body (immutable,
-edge cached). The client renders it. Progress loads only if the reader is signed in.
+**Read a lesson**
+`GET /api/lessons/@handle/slug` returns metadata and the current version per
+language (edge-cached for 60 s for anonymous readers). For a public or unlisted
+lesson the client then fetches `GET /c/<hash>.json` (immutable, edge-cached; the
+Worker serves a hash only if a public or unlisted lesson, or a concept, has it).
+A private lesson is visible only to its owner (everyone else gets 404, so its
+existence doesn't leak), and its body comes through `GET /api/lessons/:id/body/:lang`.
+Then `GET /api/versions/:versionId/concepts` returns the pinned concepts
+(immutable per version, so cached for a year).
 
 **Fork:** this copies one row. The new lesson points at the same `body_hash`,
-so R2 stores nothing new until the forker edits it.
+so R2 stores nothing new until the forker edits it. (Not built yet.)
 
 **Ask about a chunk (`@ref`):** in phase 1 the web app copies a ready prompt
 (question + referenced chunks as clean TeX) to paste into pi. Phase 2 sends it
 to the learner's own key in the browser, and the answer can be saved as a new
 card in their fork.
 
-**Comments** can attach to any `@ref`. The reader shows a small count next to
-that step or proof line.
+**Comments** can attach to any `@ref`. (Not built yet; the table exists.)
 
-**Moderation:** report button, author can hide comments, admin list of open
-reports. Rate limits on publish, comment and like use the Workers Rate
-Limiting binding, keyed by user.
+**Moderation and limits:** writes are rate-limited by the Workers Rate Limiting
+binding (30 a minute, keyed by credential). Reports and comment hiding come with comments.
 
 ---
 
 ## 7. Stack: template vs this project
 
 Keep: Bun workspaces, TypeScript strict, Effect 4.0.x, `HttpApi` +
-`HttpApiClient`, Effect Schema, React + Vite, TanStack Router / Query /
-Virtual, Base UI + Tailwind v4, i18n (EN + TH), Better Auth, Biome, Vitest +
-`@effect/vitest`, Playwright, the Storage seam (R2), keyset pagination, OTLP
-tracing (optional).
+`HttpApiClient`, Effect Schema, React + Vite, TanStack Router / Query, Base UI +
+Tailwind v4, i18n (EN + TH), Better Auth, Biome, Vitest, Playwright, the Storage
+seam (R2), keyset pagination.
 
-Change (each one gets an ADR):
+Change (each one has an ADR in `docs/adr/`):
 
 | Template | Here | Note |
 |---|---|---|
-| Postgres + Hyperdrive + `@effect/sql-pg` | **D1** + `@effect/sql-d1` 4.0.1 (peers `effect ^4.0.1`) | Drizzle `sqlite-core` defines tables and builds typed SQL. Effect runs it, the same pattern as the template. |
-| RLS + org tenancy | **No orgs.** Rules live in `packages/services` (owner checks, visibility). | A repository function for private data requires `CurrentUser` in its type. |
-| Alchemy | **wrangler** (`wrangler.jsonc`) + `@cloudflare/vite-plugin` | `bun run dev` runs the Worker inside Vite. `wrangler d1 migrations apply` runs as its own step before `wrangler deploy`. |
+| Postgres + Hyperdrive + `@effect/sql-pg` | **D1** + Drizzle's D1 driver, wrapped in an Effect `Db` service | Drizzle's Effect driver (rc.4) targets an Effect beta and crashes on 4.0.1, so queries are Promises run with `Effect.tryPromise` ([ADR 0007](adr/0007-drizzle-d1-driver.md)). |
+| RLS + org tenancy | **No orgs.** Rules live in `packages/services`. | A service function for private data requires `CurrentUser` in its type. |
+| Alchemy | **wrangler** (`apps/worker/wrangler.jsonc`) + `@cloudflare/vite-plugin` | `bun run dev` runs the Worker inside Vite. `wrangler d1 migrations apply` runs as its own step before deploy. |
 | Queue + Postgres job table | none in v1 | add Queues or Workflows with hosted generation |
 | Docker / Bun / on-prem entry | dropped | Cloudflare only |
-| Better Auth org + SSO plugins, email + password | dropped. Google + GitHub social, API-key tokens of our own. | `drizzleAdapter(db, { provider: "sqlite" })` |
+| Better Auth org + SSO plugins, email + password | dropped. **Google sign-in only**, plus API tokens of our own for pi. | `drizzleAdapter(db, { provider: "sqlite" })`, `cookieCache` 5 min |
 | Resend | none | no emails in v1 |
+| Test DB in Docker | `wrangler`'s `getPlatformProxy()` | real local D1 + R2 (workerd) in Node; tests call the Worker's `fetch` |
 
 **Repository layout**
 
 ```
-apps/web            React SPA (reader, library, explore, profile)
-apps/worker         Worker entry: HttpApi, auth, cache, cron; wrangler.jsonc
-packages/domain     Ids, errors, LessonSpec schema (the pi contract), Rich parser
-packages/api        HttpApi definitions
-packages/db         Drizzle sqlite schema, migrations, D1 Layer
-packages/auth       Better Auth config
-packages/services   lessons, feeds, tags, likes, comments, progress, publish
+apps/web            React SPA (home, guide, explore, library, reader, settings)
+apps/worker         Worker entry: HttpApi handlers, session middleware, /c/ bodies,
+                    edge cache, cron; wrangler.jsonc; integration tests; seed:local
+packages/domain     LessonSpec + ConceptSpec schema (the pi contract), API models and
+                    errors, Rich parser, expression parser, validator
+packages/api        HttpApi definitions + Session middleware tag (shared by worker and web)
+packages/db         Drizzle schema, migrations, the Db service, crypto helpers
+packages/auth       Better Auth config (Google only), profile on first sign-in
+packages/services   Lessons, Concepts, Profiles, Tokens, hot score
 packages/ui         Linear tokens, Base UI wrappers, i18n
-packages/lesson     renderer + widget catalog + Rich/TeX + audit (used by web; can run offline for pi)
-tools/pi            learn skill + /publish extension + JSON Schema export
+packages/lesson     renderer + widget catalog + Rich/TeX (+ a playground)
+content/            platform content: the guide (en, th) and shared concepts
+e2e/                Playwright smoke + widget overlap audit
 ```
 
-**wrangler.jsonc (sketch)**
-
-```jsonc
-{
-  "name": "learn",
-  "main": "src/worker.ts",
-  "compatibility_date": "2026-09-01",
-  "compatibility_flags": ["nodejs_compat"],
-  "routes": [{ "pattern": "learn.sirin.dev", "custom_domain": true }],
-  "assets": { "directory": "../web/dist", "not_found_handling": "single-page-application",
-              "run_worker_first": ["/api/*", "/c/*"] },
-  "d1_databases": [{ "binding": "DB", "database_name": "learn",
-                     "database_id": "<from wrangler d1 create>", "migrations_dir": "../../packages/db/migrations" }],
-  "r2_buckets": [{ "binding": "CONTENT", "bucket_name": "learn-content" }],
-  "ratelimits": [{ "name": "WRITE_LIMIT", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } }],
-  "triggers": { "crons": ["*/30 * * * *"] },
-  "observability": { "enabled": true }
-}
-// secrets: wrangler secret put BETTER_AUTH_SECRET / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_SECRET
-```
 
 ---
 
@@ -509,7 +453,11 @@ Source: `docs/linear-DESIGN.md`. Tokens go into `packages/ui` as Tailwind v4
 ## 9. Build order
 
 1. **Scaffold** from the template with the changes in section 7. Deploy
-   "hello" to learn.sirin.dev with D1 + R2 bound. Sign in with GitHub.
+   to learn.sirin.dev with D1 + R2 bound. Sign in with Google.
+
+Status (2026-10-07): steps 1–3 and most of 4 are built (no likes, bookmarks,
+forks or profile pages yet). Deploy is waiting on the one-time Cloudflare setup
+in the README.
 2. **LessonSpec + renderer:** port the 5 prototype tabs into `packages/lesson`
    as specs + widgets. Keep `audit.js` green in CI.
 3. **Library:** private lessons, publish API + API tokens, pi `/publish`.
@@ -524,11 +472,20 @@ Source: `docs/linear-DESIGN.md`. Tokens go into `packages/ui` as Tailwind v4
 
 ## 10. Open questions
 
-- drizzle-kit migration file layout vs what `wrangler d1 migrations apply`
-  expects. If they don't match, write SQL migrations by hand and use Drizzle only for types.
-- Better Auth on D1: drizzle sqlite adapter (planned) vs passing the D1
-  binding directly. Check on 1.7.x.
-- Does `Intl.Segmenter` with Thai work in workerd?
-- Should FTS live in a second D1 database to keep exports simple?
+Answered while building the scaffold (2026-10-07):
+
+- drizzle-kit migration layout vs `wrangler d1 migrations apply`: they don't match
+  (folders vs flat files), so `packages/db/scripts/flatten-migrations.ts` copies them.
+  Checked: both migrations apply locally.
+- Better Auth on D1: the drizzle sqlite adapter over Drizzle's D1 driver, shared
+  with the services.
+- `Intl.Segmenter` with Thai in workerd: works (see §5).
+
+Still open:
+
+- Should FTS live in a second D1 database to keep exports simple? For now the
+  export drops and rebuilds the FTS tables.
 - Are unlisted lessons enough for "share with a friend", or do we need invite links?
 - License for shared lessons (suggest CC BY-SA, with forks credited).
+- Who may edit a shared concept? In v1 only its author; later perhaps
+  suggestions, or a small group of maintainers per category.

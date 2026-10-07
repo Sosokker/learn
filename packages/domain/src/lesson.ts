@@ -115,7 +115,9 @@ export const ConceptSlug = Schema.String.check(Schema.isPattern(/^[a-z0-9-]+(\.[
 )
 export type ConceptSlug = typeof ConceptSlug.Type
 // A slug with an optional version pin: `physics.newton-second-law` or `physics.newton-second-law@2`.
-export const ConceptRef = Schema.String.check(Schema.isPattern(/^[a-z0-9-]+(\.[a-z0-9-]+){1,4}(@[1-9][0-9]*)?$/))
+export const ConceptRef = Schema.String.check(
+  Schema.isPattern(/^[a-z0-9-]+(\.[a-z0-9-]+){1,4}(@[1-9][0-9]*)?$/),
+)
 export type ConceptRef = typeof ConceptRef.Type
 
 export const ConceptCardRef = Schema.Struct({ concept: ConceptRef })
@@ -160,12 +162,19 @@ export const PlotWidget = Schema.Struct({
     Schema.Struct({ expr: Expr, part: Schema.optionalKey(PartId), label: Schema.optionalKey(Rich) }),
   ),
   points: Schema.optionalKey(
-    Schema.Array(Schema.Struct({ x: Expr, y: Expr, part: Schema.optionalKey(PartId), label: Schema.optionalKey(Rich) })),
+    Schema.Array(
+      Schema.Struct({ x: Expr, y: Expr, part: Schema.optionalKey(PartId), label: Schema.optionalKey(Rich) }),
+    ),
   ),
   // Live readouts under the plot: label = expr, e.g. "speed" = d / t.
   readouts: Schema.optionalKey(
     Schema.Array(
-      Schema.Struct({ label: Rich, expr: Expr, unit: Schema.optionalKey(Schema.String), part: Schema.optionalKey(PartId) }),
+      Schema.Struct({
+        label: Rich,
+        expr: Expr,
+        unit: Schema.optionalKey(Schema.String),
+        part: Schema.optionalKey(PartId),
+      }),
     ),
   ),
 })
@@ -179,7 +188,12 @@ export const TableWidget = Schema.Struct({
 export const FlowWidget = Schema.Struct({
   kind: Schema.Literal("flow"),
   nodes: Schema.Array(
-    Schema.Struct({ id: Id, label: Rich, part: Schema.optionalKey(PartId), card: Schema.optionalKey(CardId) }),
+    Schema.Struct({
+      id: Id,
+      label: Rich,
+      part: Schema.optionalKey(PartId),
+      card: Schema.optionalKey(CardId),
+    }),
   ),
   edges: Schema.Array(
     Schema.Struct({ from: Id, to: Id, label: Schema.optionalKey(Rich), part: Schema.optionalKey(PartId) }),
@@ -257,7 +271,11 @@ export const PlanSection = Schema.Struct({
   ),
   notUsed: Schema.optionalKey(Rich),
 })
-export const ChainSection = Schema.Struct({ ...sectionBase, type: Schema.Literal("chain"), steps: Schema.Array(Step) })
+export const ChainSection = Schema.Struct({
+  ...sectionBase,
+  type: Schema.Literal("chain"),
+  steps: Schema.Array(Step),
+})
 export const ProofSection = Schema.Struct({
   ...sectionBase,
   type: Schema.Literal("proof"),
@@ -279,7 +297,11 @@ export const GraphSection = Schema.Struct({
   ),
 })
 export const VisualSection = Schema.Struct({ ...sectionBase, type: Schema.Literal("visual"), widget: Widget })
-export const CheckSection = Schema.Struct({ ...sectionBase, type: Schema.Literal("check"), items: Schema.Array(Rich) })
+export const CheckSection = Schema.Struct({
+  ...sectionBase,
+  type: Schema.Literal("check"),
+  items: Schema.Array(Rich),
+})
 export const StorySection = Schema.Struct({
   ...sectionBase,
   type: Schema.Literal("story"),
