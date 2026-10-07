@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#010102" />
+    <meta name="description" content="Interactive lessons you can hover, drill into and share." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Learn</title>
+    <!-- Painted before the CSS bundle loads, so there is no white flash. -->
+    <style>
+      html,
+      body {
+        background: #010102;
+        color: #f7f8f8;
+        margin: 0;
+      }
+    </style>
+    <!-- Set <html lang> before first paint so Thai picks its font and line height at once. -->
+    <script>
+      try {
+        const stored = localStorage.getItem("learn.lang")
+        document.documentElement.lang =
+          stored === "en" || stored === "th" ? stored : /^th/i.test(navigator.language) ? "th" : "en"
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

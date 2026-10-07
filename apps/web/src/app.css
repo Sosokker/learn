@@ -1,0 +1,20 @@
+@import "@app/ui/styles.css";
+@import "@app/lesson/styles.css";
+
+/* Tailwind scans this app by default; the shared packages live outside it. */
+@source "../../../packages/ui/src";
+@source "../../../packages/lesson/src";
+
+@layer base {
+  body {
+    min-height: 100dvh;
+    background: var(--color-canvas);
+  }
+  /* Keep the scrollbar slot so pages don't jump sideways when content grows. Phones use overlay
+     scrollbars, so the reserved slot would only be a blank strip there. */
+  @media (min-width: 768px) {
+    html {
+      scrollbar-gutter: stable;
+    }
+  }
+}

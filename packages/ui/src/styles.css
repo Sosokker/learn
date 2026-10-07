@@ -1,0 +1,89 @@
+/* Linear tokens (docs/linear-DESIGN.md) as Tailwind v4 theme variables. The app UI uses one
+   accent, lavender. Lesson role colors live in @app/lesson/styles.css and appear only inside
+   lesson content. Dark first; light mode comes later as inverse tokens. */
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource/ibm-plex-sans-thai/400.css";
+@import "@fontsource/ibm-plex-sans-thai/500.css";
+@import "@fontsource/ibm-plex-sans-thai/600.css";
+
+@theme {
+  --color-*: initial;
+  --color-canvas: #010102;
+  --color-surface-1: #0f1011;
+  --color-surface-2: #141516;
+  --color-surface-3: #18191a;
+  --color-surface-4: #191a1b;
+  --color-hairline: #23252a;
+  --color-hairline-strong: #34343a;
+  --color-hairline-tertiary: #3e3e44;
+  --color-ink: #f7f8f8;
+  --color-ink-muted: #d0d6e0;
+  --color-ink-subtle: #8a8f98;
+  --color-ink-tertiary: #62666d;
+  --color-primary: #5e6ad2;
+  --color-primary-hover: #828fff;
+  --color-primary-focus: #5e69d1;
+  --color-on-primary: #ffffff;
+  --color-success: #27a644;
+  --color-danger: #eb5757;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-black: #000000;
+  --color-white: #ffffff;
+
+  /* Inter for Latin, IBM Plex Sans Thai for Thai (the browser picks per glyph). */
+  --font-sans: "Inter Variable", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  --text-caption: 12px;
+  --text-caption--line-height: 1.4;
+  --text-dense: 13px;
+  --text-dense--line-height: 1.45;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.5;
+  --text-body: 16px;
+  --text-body--line-height: 1.5;
+  --text-subhead: 20px;
+  --text-subhead--line-height: 1.4;
+  --text-card-title: 22px;
+  --text-card-title--line-height: 1.25;
+  --text-card-title--letter-spacing: -0.4px;
+  --text-headline: 28px;
+  --text-headline--line-height: 1.2;
+  --text-headline--letter-spacing: -0.6px;
+  --text-display: 40px;
+  --text-display--line-height: 1.15;
+  --text-display--letter-spacing: -1px;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-*: initial;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv01", "ss03";
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Thai needs taller lines for stacked vowels and tone marks. */
+  :lang(th) {
+    line-height: 1.7;
+  }
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-primary-focus) 50%, transparent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 40%, transparent);
+  }
+}
