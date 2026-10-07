@@ -1,0 +1,11 @@
+# Copy to .dev.vars for `wrangler dev` / `bun run dev`. Never commit .dev.vars.
+APP_ENV=dev
+# devAuthSecret from packages/auth/src/secret.ts: public, refused when APP_ENV is deployed.
+# For a deployed Worker: openssl rand -base64 32 | wrangler secret put BETTER_AUTH_SECRET
+BETTER_AUTH_SECRET=SfSS8JhyInf80P43/hKbOuRuL993j5yn4TDlVFK9aYE=
+BETTER_AUTH_URL=http://localhost:5187
+# Google Cloud console > APIs & Services > Credentials > OAuth client (Web application).
+# Authorized redirect URIs: http://localhost:5187/api/auth/callback/google (local) and
+# https://learn.sirin.dev/api/auth/callback/google (deployed).
+GOOGLE_CLIENT_ID=replace-with-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=replace-with-google-client-secret

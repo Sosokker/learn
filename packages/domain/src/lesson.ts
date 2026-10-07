@@ -15,7 +15,9 @@ import { Schema } from "effect"
 
 export const lessonSchemaVersion = 1
 
-const Id = Schema.String.check(Schema.isPattern(/^[a-z][a-z0-9_]{0,31}$/))
+// The `u` flag lets the pattern reach the exported JSON Schema (Effect drops non-unicode patterns).
+export const idPattern = /^[a-z][a-z0-9_]{0,31}$/u
+export const Id = Schema.String.check(Schema.isPattern(idPattern))
 export const PartId = Id.pipe(Schema.brand("PartId"))
 export type PartId = typeof PartId.Type
 export const CardId = Id.pipe(Schema.brand("CardId"))
@@ -110,17 +112,24 @@ export type Card = typeof Card.Type
 // lessons, so the lesson-writing agent searches /api/concepts before writing a card, and readers
 // get one consistent explanation. A lesson keeps its own local card id (so `{newton2|…}` links
 // work) and points it at the concept; the server pins the concept version at publish time.
-export const ConceptSlug = Schema.String.check(Schema.isPattern(/^[a-z0-9-]+(\.[a-z0-9-]+){1,4}$/)).pipe(
+export const ConceptSlug = Schema.String.check(Schema.isPattern(/^[a-z0-9-]+(\.[a-z0-9-]+){1,4}$/u)).pipe(
   Schema.brand("ConceptSlug"),
 )
 export type ConceptSlug = typeof ConceptSlug.Type
 // A slug with an optional version pin: `physics.newton-second-law` or `physics.newton-second-law@2`.
-export const ConceptRef = Schema.String.check(Schema.isPattern(/^[a-z0-9-]+(\.[a-z0-9-]+){1,4}(@[1-9][0-9]*)?$/))
+export const ConceptRef = Schema.String.check(
+  Schema.isPattern(/^[a-z0-9-]+(\.[a-z0-9-]+){1,4}(@[1-9][0-9]*)?$/u),
+)
 export type ConceptRef = typeof ConceptRef.Type
 
 export const ConceptCardRef = Schema.Struct({ concept: ConceptRef })
 export const CardEntry = Schema.Union([Card, ConceptCardRef])
 export type CardEntry = typeof CardEntry.Type
+
+// Caps that keep the server's `in (…)` lookups under D1's 100 bound parameters per statement:
+// a lesson's cards (so its concept refs) and a concept's prerequisites. Over the cap is a 422.
+export const maxCards = 64
+export const maxConceptNeeds = 32
 
 export const ConceptSpec = Schema.Struct({
   schema: Schema.Literal(1),
@@ -128,7 +137,7 @@ export const ConceptSpec = Schema.Struct({
   lang: Schema.Literals(["en", "th"]),
   card: Card,
   // Prerequisite concepts: the global concept graph, and drill-down children in every lesson.
-  needs: Schema.Array(ConceptSlug),
+  needs: Schema.Array(ConceptSlug).check(Schema.isMaxLength(maxConceptNeeds)),
   // Other names people search for ("F = ma", "กฎข้อที่สองของนิวตัน").
   aliases: Schema.Array(Schema.String.check(Schema.isMaxLength(80))),
 })
@@ -160,12 +169,19 @@ export const PlotWidget = Schema.Struct({
     Schema.Struct({ expr: Expr, part: Schema.optionalKey(PartId), label: Schema.optionalKey(Rich) }),
   ),
   points: Schema.optionalKey(
-    Schema.Array(Schema.Struct({ x: Expr, y: Expr, part: Schema.optionalKey(PartId), label: Schema.optionalKey(Rich) })),
+    Schema.Array(
+      Schema.Struct({ x: Expr, y: Expr, part: Schema.optionalKey(PartId), label: Schema.optionalKey(Rich) }),
+    ),
   ),
   // Live readouts under the plot: label = expr, e.g. "speed" = d / t.
   readouts: Schema.optionalKey(
     Schema.Array(
-      Schema.Struct({ label: Rich, expr: Expr, unit: Schema.optionalKey(Schema.String), part: Schema.optionalKey(PartId) }),
+      Schema.Struct({
+        label: Rich,
+        expr: Expr,
+        unit: Schema.optionalKey(Schema.String),
+        part: Schema.optionalKey(PartId),
+      }),
     ),
   ),
 })
@@ -179,7 +195,12 @@ export const TableWidget = Schema.Struct({
 export const FlowWidget = Schema.Struct({
   kind: Schema.Literal("flow"),
   nodes: Schema.Array(
-    Schema.Struct({ id: Id, label: Rich, part: Schema.optionalKey(PartId), card: Schema.optionalKey(CardId) }),
+    Schema.Struct({
+      id: Id,
+      label: Rich,
+      part: Schema.optionalKey(PartId),
+      card: Schema.optionalKey(CardId),
+    }),
   ),
   edges: Schema.Array(
     Schema.Struct({ from: Id, to: Id, label: Schema.optionalKey(Rich), part: Schema.optionalKey(PartId) }),
@@ -257,7 +278,11 @@ export const PlanSection = Schema.Struct({
   ),
   notUsed: Schema.optionalKey(Rich),
 })
-export const ChainSection = Schema.Struct({ ...sectionBase, type: Schema.Literal("chain"), steps: Schema.Array(Step) })
+export const ChainSection = Schema.Struct({
+  ...sectionBase,
+  type: Schema.Literal("chain"),
+  steps: Schema.Array(Step),
+})
 export const ProofSection = Schema.Struct({
   ...sectionBase,
   type: Schema.Literal("proof"),
@@ -279,7 +304,11 @@ export const GraphSection = Schema.Struct({
   ),
 })
 export const VisualSection = Schema.Struct({ ...sectionBase, type: Schema.Literal("visual"), widget: Widget })
-export const CheckSection = Schema.Struct({ ...sectionBase, type: Schema.Literal("check"), items: Schema.Array(Rich) })
+export const CheckSection = Schema.Struct({
+  ...sectionBase,
+  type: Schema.Literal("check"),
+  items: Schema.Array(Rich),
+})
 export const StorySection = Schema.Struct({
   ...sectionBase,
   type: Schema.Literal("story"),
@@ -324,10 +353,32 @@ export const LessonSpec = Schema.Struct({
   title: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(160)),
   summary: Schema.String.check(Schema.isMaxLength(280)),
   parts: Schema.Record(Schema.String, Part),
-  cards: Schema.Record(Schema.String, CardEntry),
+  cards: Schema.Record(Schema.String, CardEntry).check(Schema.isMaxProperties(maxCards)),
   sections: Schema.Array(Section),
 })
 export type LessonSpec = typeof LessonSpec.Type
 
 // Serialized size cap, checked by the server before it stores a version.
 export const maxLessonBytes = 512 * 1024
+
+// Variant types, for renderers that switch on `kind` / `type`.
+export type PlotWidget = typeof PlotWidget.Type
+export type TableWidget = typeof TableWidget.Type
+export type FlowWidget = typeof FlowWidget.Type
+export type InclineWidget = typeof InclineWidget.Type
+export type TraceWidget = typeof TraceWidget.Type
+export type TextSection = typeof TextSection.Type
+export type ProblemSection = typeof ProblemSection.Type
+export type ChunksSection = typeof ChunksSection.Type
+export type ConceptSection = typeof ConceptSection.Type
+export type PlanSection = typeof PlanSection.Type
+export type ChainSection = typeof ChainSection.Type
+export type ProofSection = typeof ProofSection.Type
+export type GraphSection = typeof GraphSection.Type
+export type VisualSection = typeof VisualSection.Type
+export type CheckSection = typeof CheckSection.Type
+export type StorySection = typeof StorySection.Type
+export type UnitsSection = typeof UnitsSection.Type
+export type RecallSection = typeof RecallSection.Type
+export type ConceptCardRef = typeof ConceptCardRef.Type
+export type GraphNodeKind = typeof GraphNodeKind.Type

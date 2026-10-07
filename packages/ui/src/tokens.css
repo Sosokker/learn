@@ -1,0 +1,61 @@
+/* Linear tokens (docs/linear-DESIGN.md). Dark only for now. Depth comes from the surface steps
+   and 1px hairlines: no shadows, no gradients. One accent (lavender), only for the primary
+   button, focus ring, links and selected state. Components use only these semantic colors.
+   The default Tailwind palette and shadows are cleared so nothing else creeps in. */
+@theme static {
+  --color-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --color-canvas: #010102;
+  --color-surface-1: #0f1011;
+  --color-surface-2: #141516;
+  --color-surface-3: #18191a;
+  --color-surface-4: #191a1b;
+  --color-hairline: #23252a;
+  --color-hairline-strong: #34343a;
+
+  --color-ink: #f7f8f8;
+  --color-ink-muted: #d0d6e0;
+  --color-ink-subtle: #8a8f98;
+  --color-ink-tertiary: #62666d;
+
+  --color-accent: #5e6ad2;
+  --color-accent-hover: #828fff;
+  --color-accent-pressed: #5e69d1;
+  --color-on-accent: #ffffff;
+
+  /* Status, for form errors and success notices only (not decoration). */
+  --color-danger: #eb5757;
+  --color-success: #27a644;
+  --color-overlay: #000000;
+
+  --font-sans: "Inter Variable", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace, "IBM Plex Sans Thai";
+
+  /* 4px grid: Tailwind's default --spacing (0.25rem) already is one step = 4px. */
+  --spacing: 0.25rem;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px; /* buttons, inputs */
+  --radius-lg: 12px; /* cards */
+  --radius-xl: 16px;
+
+  --text-caption: 12px;
+  --text-caption--line-height: 1.4;
+  --text-dense: 13px;
+  --text-dense--line-height: 1.4;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.5;
+  --text-body: 16px;
+  --text-body--line-height: 1.5;
+
+  --animate-spin: spin 0.8s linear infinite;
+}

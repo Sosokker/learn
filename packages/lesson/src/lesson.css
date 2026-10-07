@@ -1,0 +1,1340 @@
+/* Lesson renderer styles. Import once in the app, after @app/ui/styles.css:
+     @import "@app/lesson/styles.css";
+   Plain CSS on the app's tokens (--color-*, --font-*, --radius-*). Role colors (--color-role-*)
+   appear only inside lesson content; the chrome (mode switch, buttons) stays on the app accent.
+   Each lesson root gets a scoped <style> that sets `--c` per part id and, on hover, the
+   highlight rules (see highlight.ts). */
+@import "katex/dist/katex.min.css";
+
+.lsn {
+  --lsn-row-on: color-mix(in oklab, var(--color-ink) 5%, transparent);
+  --lsn-row-dep: color-mix(in oklab, var(--color-role-cyan) 12%, transparent);
+  --lsn-edge-on: var(--color-role-yellow);
+  --lsn-side-width: 360px;
+  --lsn-gap: 24px;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  position: relative;
+  min-width: 0;
+}
+.lsn:lang(th) {
+  line-height: 1.75;
+}
+.lsn *,
+.lsn *::before,
+.lsn *::after {
+  box-sizing: border-box;
+}
+.lsn p {
+  margin: 0.4em 0;
+}
+.lsn code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-xs);
+  padding: 0 4px;
+}
+.lsn-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.lsn-muted {
+  color: var(--color-ink-subtle);
+}
+.lsn-warn {
+  color: var(--color-role-yellow);
+}
+.lsn-good {
+  color: var(--color-role-green);
+  font-weight: 600;
+}
+.lsn-bad {
+  color: var(--color-role-red);
+  font-weight: 600;
+}
+.lsn-label {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-inline-end: 6px;
+}
+.lsn-link {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── Header, toolbar, layout */
+.lsn-header {
+  margin-bottom: 12px;
+}
+.lsn-title {
+  font-size: 26px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+}
+.lsn-summary {
+  color: var(--color-ink-muted);
+  margin: 0;
+  max-width: 70ch;
+}
+.lsn-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 8px 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 6px 0;
+  background: var(--color-canvas);
+}
+.lsn-mode {
+  display: inline-flex;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  margin: 0;
+  gap: 2px;
+}
+.lsn-mode-btn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink-subtle);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.lsn-mode-btn:hover {
+  color: var(--color-ink);
+}
+.lsn-mode-btn[aria-pressed="true"] {
+  background: var(--color-surface-4);
+  color: var(--color-ink);
+}
+.lsn-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--lsn-side-width);
+  gap: var(--lsn-gap);
+  align-items: start;
+}
+.lsn-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+.lsn-side {
+  position: sticky;
+  top: 56px;
+  max-height: calc(100vh - 72px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overscroll-behavior: contain;
+}
+
+/* ── Buttons (chrome) */
+.lsn-btn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-ink);
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+.lsn-btn:hover {
+  border-color: var(--color-hairline-strong);
+  background: var(--color-surface-3);
+}
+.lsn-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.lsn-btn-ghost {
+  background: none;
+  border-color: transparent;
+  color: var(--color-ink-muted);
+}
+.lsn-btn-ghost:hover {
+  color: var(--color-ink);
+}
+.lsn-btn-primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+.lsn-btn-primary:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+.lsn-icon-btn {
+  padding: 2px 6px;
+}
+
+/* ── Sections */
+.lsn-section {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-1);
+  padding: 14px 18px 16px;
+  min-width: 0;
+}
+.lsn-section-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-bottom: 8px;
+}
+.lsn-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+.lsn-section-note {
+  color: var(--color-ink-subtle);
+  font-size: 13px;
+}
+.lsn-section-tools {
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* @ref chips: quiet until the row is hovered or focused; always visible on touch screens. */
+.lsn-ref {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-ink-tertiary);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  padding: 0 5px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+  flex: none;
+}
+.lsn-step-head .lsn-ref,
+.lsn-question-head .lsn-ref {
+  margin-inline-start: auto;
+}
+.lsn-ref:focus-visible,
+.lsn-section-head:hover .lsn-ref,
+.lsn-item:hover .lsn-ref,
+.lsn-item:focus-within .lsn-ref {
+  opacity: 1;
+}
+.lsn-ref:hover {
+  color: var(--color-ink);
+  border-color: var(--color-hairline-strong);
+}
+@media (hover: none) {
+  .lsn-ref {
+    opacity: 1;
+  }
+}
+
+/* Rows that can be hovered / referenced. The highlight CSS sets --lsn-row. */
+.lsn-item {
+  background: var(--lsn-row, transparent);
+  border-radius: var(--radius-sm);
+  transition: background 0.12s;
+}
+
+/* ── Rich text, parts, cards, math */
+.lsn-rich > p:first-child {
+  margin-top: 0;
+}
+.lsn-rich > p:last-child {
+  margin-bottom: 0;
+}
+.lsn [data-p] {
+  color: var(--c, inherit);
+  transition:
+    opacity 0.12s,
+    background 0.12s,
+    filter 0.12s;
+}
+.lsn-part,
+.lsn-term {
+  font: inherit;
+  line-height: inherit;
+  background: none;
+  border: 0;
+  padding: 0 1px;
+  margin: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: inherit;
+  display: inline;
+}
+.lsn-part {
+  color: var(--c, inherit);
+}
+.lsn-term {
+  color: inherit;
+  border-bottom: 1px dashed var(--color-ink-subtle);
+  border-radius: 0;
+}
+.lsn-term:hover {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-ink);
+}
+.lsn-part:focus-visible,
+.lsn-term:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+.lsn-problem {
+  font-size: 17px;
+  line-height: 2.1;
+}
+.lsn-problem .lsn-part {
+  border-bottom: 2px solid var(--c);
+  border-radius: 0;
+  padding: 1px 2px;
+}
+.lsn-problem .lsn-part[data-role="hidden_given"] {
+  border-bottom-style: dashed;
+}
+.lsn-math .katex {
+  font-size: 1.08em;
+}
+.lsn-math-display {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
+.lsn-math-display .katex-display {
+  margin: 0.4em 0;
+}
+.lsn-tex-error {
+  color: var(--color-danger);
+  font-family: var(--font-mono);
+}
+.lsn-fx {
+  margin: 4px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* ── Badges */
+.lsn-badge {
+  display: inline-block;
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 0 7px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  white-space: nowrap;
+  color: var(--c, var(--color-ink-subtle));
+}
+.lsn-badge:not([data-p]) {
+  color: var(--color-ink-subtle);
+}
+
+/* ── Chunks */
+.lsn-chunks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lsn-chunk {
+  display: grid;
+  grid-template-columns: minmax(8em, max-content) max-content minmax(0, 1fr) auto;
+  gap: 4px 14px;
+  align-items: baseline;
+  padding: 5px 6px;
+  border-top: 1px solid var(--color-hairline);
+  border-radius: 0;
+}
+.lsn-chunk:first-child {
+  border-top: 0;
+}
+.lsn-chunk-note {
+  color: var(--color-ink-subtle);
+  font-size: 13px;
+}
+
+/* ── Concept */
+.lsn-dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 16px;
+  margin: 0;
+}
+.lsn-dl dt {
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-top: 3px;
+}
+.lsn-dl dd {
+  margin: 0;
+}
+.lsn-inline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+/* ── Plan */
+.lsn-routes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.lsn-route {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+.lsn-route.is-picked {
+  border-color: color-mix(in oklab, var(--color-role-green) 60%, transparent);
+}
+.lsn-route-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.lsn-route-tag {
+  font-size: 11px;
+  color: var(--color-ink-subtle);
+  margin-inline-start: auto;
+}
+.lsn-route.is-picked .lsn-route-tag {
+  color: var(--color-role-green);
+}
+.lsn-route-path {
+  margin-bottom: 4px;
+}
+.lsn-section-plan > .lsn-rich {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+/* why / why not */
+.lsn-why-label,
+.lsn-whynot-label {
+  font-size: 12px;
+  margin-inline-end: 4px;
+}
+.lsn-why-label {
+  color: var(--color-role-green);
+}
+.lsn-whynot-label {
+  color: var(--color-role-red);
+}
+.lsn-whynot {
+  color: var(--color-ink-subtle);
+}
+
+/* ── Chain */
+.lsn-chain,
+.lsn-proof,
+.lsn-quiz,
+.lsn-story,
+.lsn-units,
+.lsn-check {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lsn-step {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px 6px;
+  border-top: 1px solid var(--color-hairline);
+  border-radius: 0;
+}
+.lsn-step:first-child {
+  border-top: 0;
+}
+.lsn-step-n {
+  color: var(--color-ink-subtle);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.lsn-step-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.lsn-step-move {
+  font-weight: 600;
+}
+
+/* ── Reveal (let me try) */
+.lsn-reveal {
+  position: relative;
+}
+.lsn-reveal.is-hidden > .lsn-reveal-body {
+  filter: blur(7px);
+  user-select: none;
+  pointer-events: none;
+  min-height: 2.2em;
+}
+.lsn-reveal-btn {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: max-content;
+  max-width: 90%;
+  height: max-content;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-ink);
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.lsn-reveal-btn:hover {
+  border-color: var(--color-accent);
+}
+.lsn-reveal-controls {
+  display: inline-flex;
+  gap: 4px;
+}
+
+/* ── Proof */
+.lsn-proof-goal {
+  margin: 0 0 8px;
+}
+.lsn-line {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1.1fr) minmax(0, 1fr) auto;
+  gap: 4px 14px;
+  padding: 8px 6px;
+  border-top: 1px solid var(--color-hairline);
+  border-radius: 0;
+  align-items: start;
+}
+.lsn-line-n {
+  color: var(--color-ink-subtle);
+  font-variant-numeric: tabular-nums;
+}
+.lsn-line-why p {
+  margin-top: 0;
+}
+.lsn-intuition .lsn-label {
+  color: var(--color-role-purple);
+}
+
+/* ── Recall */
+.lsn-question {
+  padding: 8px 6px;
+  border-top: 1px solid var(--color-hairline);
+  border-radius: 0;
+}
+.lsn-question:first-child {
+  border-top: 0;
+}
+.lsn-question-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.lsn-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.lsn-option {
+  font: inherit;
+  font-size: 14px;
+  color: var(--color-ink);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 4px 12px;
+  min-width: 140px;
+  text-align: start;
+  cursor: pointer;
+}
+.lsn-option:hover {
+  border-color: var(--color-hairline-strong);
+}
+.lsn-option.is-right {
+  border-color: var(--color-role-green);
+  color: var(--color-role-green);
+}
+.lsn-option.is-wrong {
+  border-color: var(--color-role-red);
+  color: var(--color-role-red);
+}
+.lsn-feedback {
+  min-height: 1.6em;
+  margin: 6px 0 0;
+}
+
+/* ── Check, story, units */
+.lsn-check li {
+  padding: 3px 0;
+}
+.lsn-event {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 6px;
+  border-inline-start: 2px solid var(--color-hairline-strong);
+  border-radius: 0;
+}
+.lsn-event-year {
+  color: var(--color-ink-subtle);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.lsn-unit {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 8px 6px;
+  border-top: 1px solid var(--color-hairline);
+  border-radius: 0;
+}
+.lsn-unit:first-child {
+  border-top: 0;
+}
+.lsn-unit-n {
+  color: var(--color-ink-subtle);
+  font-weight: 600;
+}
+.lsn-unit-title {
+  font-weight: 600;
+}
+
+/* ── Widgets: tables */
+.lsn-table-wrap {
+  overflow-x: auto;
+}
+.lsn-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+.lsn-table th,
+.lsn-table td {
+  text-align: start;
+  vertical-align: top;
+  padding: 6px 12px 6px 0;
+  border-top: 1px solid var(--color-hairline);
+}
+.lsn-table thead th {
+  color: var(--color-ink-subtle);
+  font-weight: 500;
+  font-size: 12px;
+  border-top: 0;
+}
+
+/* ── Plot */
+.lsn-plot,
+.lsn-incline,
+.lsn-trace {
+  margin: 0;
+}
+.lsn-plot-svg,
+.lsn-incline-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 640px;
+  overflow: visible;
+}
+.lsn-plot-svg text,
+.lsn-incline-svg text {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  fill: var(--color-ink-subtle);
+}
+.lsn-plot-grid line {
+  stroke: var(--color-hairline);
+  stroke-width: 1;
+}
+.lsn-plot-axes line {
+  stroke: var(--color-hairline-strong);
+  stroke-width: 1.2;
+}
+.lsn-plot-curve {
+  color: var(--c, var(--color-ink-muted));
+}
+.lsn-plot-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+}
+.lsn-plot-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+}
+.lsn-plot-point {
+  color: var(--c, var(--color-ink));
+  fill: currentColor;
+}
+circle.lsn-plot-hit {
+  fill: transparent;
+  pointer-events: all;
+}
+.lsn-axis-label {
+  font-size: 12px;
+  color: var(--color-ink-subtle);
+}
+.lsn-axis-x {
+  text-align: center;
+  max-width: 640px;
+}
+.lsn-plot-legend {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 13px;
+}
+.lsn-plot-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--c, var(--color-ink-muted));
+}
+.lsn-legend-line {
+  width: 18px;
+  height: 2px;
+  background: currentColor;
+  display: inline-block;
+}
+.lsn-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+.lsn-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 10px;
+}
+.lsn-slider {
+  display: grid;
+  grid-template-columns: minmax(70px, max-content) minmax(0, 1fr) 70px;
+  gap: 10px;
+  align-items: center;
+  color: inherit;
+}
+.lsn-slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--c, var(--color-ink-muted));
+}
+.lsn-slider-label {
+  color: var(--color-ink-muted);
+}
+.lsn-slider-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  text-align: end;
+  color: var(--color-ink-muted);
+}
+.lsn-readouts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 10px 0 0;
+  font-size: 14px;
+}
+.lsn-readout {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  color: inherit;
+}
+.lsn-readout dt {
+  color: var(--color-ink-subtle);
+}
+.lsn-readout dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--c, var(--color-ink));
+}
+.lsn-errors {
+  color: var(--color-danger);
+  font-size: 12px;
+  margin: 4px 0;
+  padding-inline-start: 18px;
+}
+
+/* ── Incline */
+.lsn-incline-ramp {
+  fill: var(--color-ink);
+  stroke: var(--color-ink-tertiary);
+}
+.lsn-incline-mark,
+.lsn-incline-arrow {
+  color: var(--c, var(--color-ink-muted));
+}
+.lsn-incline-mark line,
+.lsn-incline-mark polyline,
+.lsn-incline-arrow line {
+  stroke: currentColor;
+}
+.lsn-incline-arrow polygon {
+  fill: currentColor;
+}
+.lsn-incline-svg .lsn-incline-mark text,
+.lsn-incline-svg .lsn-incline-arrow text {
+  fill: currentColor;
+  font-size: 13px;
+  font-style: italic;
+}
+.lsn-incline-block {
+  fill: var(--c, var(--color-ink-muted));
+}
+.lsn-incline-svg .lsn-incline-note {
+  font-size: 12px;
+  fill: var(--color-ink-muted);
+}
+
+/* ── Trace */
+.lsn-code {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 8px 0;
+  overflow-x: auto;
+}
+.lsn-code code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+}
+.lsn-code-line {
+  display: block;
+  padding: 0 10px 0 6px;
+  border-inline-start: 3px solid transparent;
+  white-space: pre;
+}
+.lsn-code-line.is-run {
+  background: color-mix(in oklab, var(--color-role-yellow) 12%, transparent);
+  border-inline-start-color: var(--color-role-yellow);
+}
+.lsn-code-n {
+  display: inline-block;
+  width: 2.5em;
+  color: var(--color-ink-tertiary);
+  user-select: none;
+}
+.lsn-trace-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 4px;
+  flex-wrap: wrap;
+}
+.lsn-trace-bar input[type="range"] {
+  flex: 1;
+  min-width: 120px;
+  accent-color: var(--color-ink-muted);
+}
+.lsn-trace-state {
+  width: auto;
+  font-size: 13px;
+}
+.lsn-trace-state caption {
+  text-align: start;
+}
+
+/* ── Diagrams (React Flow) */
+.lsn-diagram {
+  margin: 0;
+  width: 100%;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  overflow: hidden;
+}
+.lsn-diagram .react-flow {
+  --xy-background-color: transparent;
+  --xy-attribution-background-color: transparent;
+  background: transparent;
+}
+.lsn-diagram-loading {
+  display: grid;
+  place-items: center;
+  color: var(--color-ink-subtle);
+  font-size: 13px;
+}
+/* React Flow turns pointer events off for nodes that are not draggable or selectable; ours are
+   buttons that hover, focus and pin (React Flow sets it inline, hence !important). */
+.lsn-diagram .react-flow__node {
+  /* biome-ignore lint/complexity/noImportantStyles: overrides React Flow's inline pointer-events */
+  pointer-events: all !important;
+  padding: 0;
+  border: 0;
+  background: none;
+  width: auto;
+}
+.lsn-diagram .react-flow__handle {
+  opacity: 0;
+  pointer-events: none;
+  min-width: 1px;
+  min-height: 1px;
+  width: 1px;
+  height: 1px;
+  border: 0;
+}
+.lsn-node {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+  white-space: pre-line;
+  color: var(--c, var(--color-ink));
+  background: var(--color-surface-1);
+  box-shadow: inset 0 0 0 999px var(--lsn-row, transparent);
+  border: 1.2px solid currentColor;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.lsn-node-goal {
+  border-width: 2px;
+  background: color-mix(in oklab, var(--c, var(--color-role-blue)) 16%, var(--color-surface-1));
+}
+.lsn-node-dashed {
+  border-style: dashed;
+}
+.lsn-node:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.lsn-legend-row {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 12px;
+  color: var(--color-ink-subtle);
+}
+.lsn-legend-row li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.lsn-legend-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+/* ── Inspector */
+.lsn-inspector,
+.lsn-legend {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-1);
+  padding: 12px 14px;
+  font-size: 14px;
+}
+.lsn-inspector-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+}
+.lsn-inspector-title {
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-subtle);
+  margin: 0;
+}
+.lsn-inspector-tools {
+  margin-inline-start: auto;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.lsn-card-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 12px;
+  color: var(--color-ink-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.lsn-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 4px 0 8px;
+}
+.lsn-meaning {
+  font-size: 14px;
+  font-weight: 400;
+}
+.lsn-card-body .lsn-rich + .lsn-rich {
+  margin-top: 0.4em;
+}
+.lsn-field {
+  margin-top: 8px;
+}
+.lsn-field .lsn-label {
+  display: block;
+  margin-bottom: 2px;
+}
+.lsn-ex,
+.lsn-an {
+  margin: 10px 0 4px;
+  padding: 6px 10px;
+  border-inline-start: 3px solid;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.lsn-ex {
+  border-color: var(--color-role-cyan);
+  background: color-mix(in oklab, var(--color-role-cyan) 7%, transparent);
+}
+.lsn-an {
+  border-color: var(--color-role-purple);
+  background: color-mix(in oklab, var(--color-role-purple) 7%, transparent);
+}
+.lsn-ex .lsn-label,
+.lsn-an .lsn-label {
+  display: block;
+  font-size: 11px;
+}
+.lsn-hint {
+  color: var(--color-ink-tertiary);
+  font-size: 12px;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-hairline);
+}
+.lsn-shared {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.lsn-shared-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-ink-muted);
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-surface-3);
+  border-radius: 999px;
+  padding: 0 7px;
+}
+.lsn-part-list,
+.lsn-option-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lsn-dot-label {
+  font-weight: 600;
+}
+.lsn-tree {
+  font-size: 12px;
+  border-bottom: 1px solid var(--color-hairline);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+.lsn-tree ul {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+}
+.lsn-tree-row {
+  display: block;
+  width: 100%;
+  font: inherit;
+  text-align: start;
+  background: none;
+  border: 0;
+  padding: 1px 0;
+  color: var(--color-ink-subtle);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.75;
+}
+.lsn-tree-row.is-path {
+  color: var(--color-ink-muted);
+}
+.lsn-tree-row.is-cur {
+  color: var(--color-ink);
+  font-weight: 600;
+  cursor: default;
+}
+button.lsn-tree-row:hover {
+  color: var(--color-ink);
+}
+.lsn-legend ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lsn-legend li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 13px;
+}
+
+/* ── Ask bar */
+.lsn-ask {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 8px 12px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+}
+.lsn-ask-prompt {
+  color: var(--color-ink-subtle);
+}
+.lsn-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.lsn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-ink-muted);
+  background: var(--color-surface-4);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
+  padding: 0 2px 0 6px;
+  white-space: nowrap;
+}
+.lsn-chip-x {
+  font: inherit;
+  color: var(--color-ink-subtle);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.lsn-chip-x:hover {
+  color: var(--color-ink);
+}
+.lsn-ask-field {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+}
+.lsn-ask-input {
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+  color: var(--color-ink);
+  background: transparent;
+  border: 0;
+  outline: none;
+  padding: 4px 0;
+}
+.lsn-ask-input::placeholder {
+  color: var(--color-ink-tertiary);
+}
+.lsn-suggest {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  inset-inline-start: 0;
+  width: min(440px, 80vw);
+  max-height: 300px;
+  overflow: auto;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-md);
+  padding: 4px 0;
+}
+.lsn-suggest > div {
+  display: flex;
+  gap: 10px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lsn-suggest > .is-selected {
+  background: var(--color-surface-4);
+}
+.lsn-suggest-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lsn-suggest-name {
+  font-family: var(--font-mono);
+  color: var(--color-ink);
+}
+
+/* ── Narrow screens: one column, the inspector becomes a bottom sheet that opens on pin. */
+@media (max-width: 1023px) {
+  .lsn-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lsn-side {
+    position: fixed;
+    inset: auto 0 0 0;
+    top: auto;
+    z-index: 40;
+    max-height: 60vh;
+    padding: 0 8px 8px;
+    display: none;
+  }
+  .lsn-side[data-open] {
+    display: flex;
+  }
+  .lsn-side .lsn-inspector {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    background: var(--color-surface-2);
+    border-color: var(--color-hairline-strong);
+    overflow: auto;
+  }
+  .lsn-side .lsn-legend {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .lsn {
+    font-size: 15px;
+  }
+  .lsn-title {
+    font-size: 22px;
+  }
+  .lsn-section {
+    padding: 12px 12px 14px;
+    border-radius: var(--radius-md);
+  }
+  .lsn-chunk {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .lsn-chunk-note {
+    grid-column: 1 / -1;
+  }
+  .lsn-chunk .lsn-ref {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  .lsn-chunk .lsn-badge {
+    justify-self: start;
+  }
+  .lsn-line {
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+  }
+  .lsn-line-why {
+    grid-column: 2 / 3;
+  }
+  .lsn-line .lsn-ref {
+    grid-row: 1;
+    grid-column: 3;
+  }
+  .lsn-event {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .lsn-event-year {
+    grid-column: 1 / -1;
+  }
+  .lsn-dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lsn-slider {
+    grid-template-columns: minmax(56px, max-content) minmax(0, 1fr) 56px;
+    gap: 8px;
+  }
+  .lsn-option {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+  .lsn-ask-field {
+    flex-basis: 100%;
+  }
+  .lsn-ask-prompt {
+    display: none;
+  }
+  .lsn-ask .lsn-btn-primary {
+    width: 100%;
+  }
+}

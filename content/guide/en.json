@@ -491,7 +491,7 @@
           "needs": [
             "n_law",
             "n_d",
-            "n_T"
+            "n_tt"
           ],
           "part": "v"
         },
@@ -503,7 +503,7 @@
           "card": "avg_speed"
         },
         {
-          "id": "n_T",
+          "id": "n_tt",
           "label": "total time",
           "kind": "part",
           "needs": [

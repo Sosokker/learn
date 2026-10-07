@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@import "./fonts.css";
+/* tokens.css clears Tailwind's default palette, so it must come before roles.css. */
+@import "./tokens.css";
+@import "./roles.css";
+
+/* Scan this package's components for class names when an app imports these styles. */
+@source "./";
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    font-feature-settings: "cv01", "ss03";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* Thai stacks tone marks above and vowels below the line: give it more room. */
+  :lang(th) {
+    line-height: 1.7;
+  }
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--color-accent) 40%, transparent);
+  }
+  /* One focus ring everywhere: lavender, outside the element, keyboard only. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  a {
+    color: inherit;
+  }
+}

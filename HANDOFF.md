@@ -1,5 +1,11 @@
 # Handoff — 2026-10-07
 
+> **Status update (2026-10-07, later):** the scaffold below is built, reviewed and deployed to
+> https://learn.sirin.dev (D1 + R2 created, migrations applied, guide seeded with `bun run seed:remote`).
+> The current docs are README.md, AGENTS.md, docs/design.md and docs/adr/. Still not built: pi `/publish`
+> API tokens, likes/bookmarks/comments/progress, lesson search, hot feed endpoint, and the cost items from
+> the review (category feed temp b-tree, hot cron scan, tag count(*), FTS delete scan, CSP headers).
+
 ## Goal
 
 Build **Learn** (https://learn.sirin.dev): interactive lessons (parts you can hover, cards
