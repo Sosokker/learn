@@ -1,0 +1,1724 @@
+/* Lesson content styles. Role colors are defined here and used only inside lessons.
+   Plain CSS over the @app/ui tokens, so the renderer doesn't depend on Tailwind scanning this
+   package. Hover lighting works through custom properties: each [data-part] gets --pc (its role
+   color, from the per-lesson <style>), and while the article has data-hl the lit parts get
+   --pc-now/--bg-now/--op-now and everything else dims. */
+@import "katex/dist/katex.min.css";
+
+:root {
+  /* Linear label hues at one OKLCH lightness, so no color shouts on the #010102 canvas. */
+  --role-red: oklch(0.72 0.15 25);
+  --role-orange: oklch(0.75 0.14 55);
+  --role-peach: oklch(0.8 0.09 45);
+  --role-yellow: oklch(0.84 0.13 95);
+  --role-mustard: oklch(0.76 0.12 80);
+  --role-olive: oklch(0.75 0.1 120);
+  --role-green: oklch(0.75 0.14 150);
+  --role-teal: oklch(0.76 0.11 185);
+  --role-cyan: oklch(0.77 0.11 220);
+  --role-blue: oklch(0.72 0.13 255);
+  --role-purple: oklch(0.72 0.14 295);
+  --role-pink: oklch(0.74 0.14 340);
+  --role-rose: oklch(0.73 0.12 10);
+  --role-grey: oklch(0.72 0.01 260);
+}
+
+.lx {
+  --t-strong: var(--color-ink);
+  --t-body: var(--color-ink-muted);
+  --t-subtle: var(--color-ink-subtle);
+  --t-faint: var(--color-ink-tertiary);
+  --dim: #3b3e45;
+  --lx-gap: 40px;
+  display: block;
+  color: var(--t-body);
+  background: var(--color-canvas);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.lx:lang(th) {
+  line-height: 1.75;
+}
+.lx *,
+.lx *::before,
+.lx *::after {
+  box-sizing: border-box;
+}
+/* Zero specificity, so component classes style their own buttons without. */
+:where(.lx) button {
+  font: inherit;
+  color: inherit;
+}
+
+/* ── Hover: dim everything, keep the hovered source and its lit parts bright */
+.lx-main,
+.lx-inspector {
+  transition: color 0.12s;
+}
+.lx [data-part] {
+  --pc: var(--role-grey);
+}
+.lx[data-hl] [data-part] {
+  --pc-now: color-mix(in oklab, var(--pc) 30%, var(--dim));
+  --bg-now: transparent;
+  --op-now: 0.22;
+  --ring-now: transparent;
+}
+
+/* ── Layout */
+.lx-layout {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 720px) minmax(300px, 340px);
+  gap: var(--lx-gap);
+  justify-content: center;
+  padding: 32px 24px 0;
+}
+.lx-layout.no-toc {
+  grid-template-columns: minmax(0, 720px) minmax(300px, 340px);
+}
+.lx-main {
+  min-width: 0;
+}
+.lx-toc,
+.lx-inspector {
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+@media (max-width: 1279px) {
+  .lx-layout,
+  .lx-layout.no-toc {
+    grid-template-columns: minmax(0, 720px) minmax(280px, 320px);
+    gap: 32px;
+  }
+  .lx-toc {
+    display: none;
+  }
+}
+
+/* ── TOC */
+.lx-toc {
+  font-size: 13px;
+}
+.lx-toc-head,
+.lx-tree-head {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t-subtle);
+  letter-spacing: 0.2px;
+  margin-bottom: 8px;
+}
+.lx-toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--color-hairline);
+}
+.lx-toc a {
+  display: block;
+  padding: 4px 0 4px 12px;
+  margin-left: -1px;
+  border-left: 1px solid transparent;
+  color: var(--color-ink-subtle);
+  text-decoration: none;
+  line-height: 1.4;
+}
+.lx-toc a:hover {
+  color: var(--color-ink);
+  border-left-color: var(--color-hairline-tertiary);
+}
+
+/* ── Header */
+.lx-header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-hairline);
+  margin-bottom: 8px;
+}
+.lx-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.lx-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.6px;
+  font-weight: 600;
+  color: var(--t-strong);
+}
+.lx-title:lang(th) {
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+.lx-summary {
+  margin: 0;
+  color: var(--t-subtle);
+  font-size: 15px;
+}
+.lx-mode {
+  margin: 0;
+  min-width: 0;
+  display: inline-flex;
+  padding: 2px;
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-hairline);
+  border-radius: 8px;
+}
+.lx-mode button {
+  border: 0;
+  background: transparent;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink-subtle);
+  cursor: pointer;
+}
+.lx-mode button.is-on {
+  background: var(--color-surface-4);
+  color: var(--color-ink);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+}
+
+/* ── Sections */
+.lx-section {
+  padding: 28px 0 8px;
+  scroll-margin-top: 16px;
+}
+.lx-section-head {
+  margin-bottom: 14px;
+}
+.lx-eyebrow {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--t-faint);
+  margin-bottom: 2px;
+}
+.lx-eyebrow:lang(th) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.lx-section-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.35;
+  letter-spacing: -0.2px;
+  font-weight: 600;
+  color: var(--t-strong);
+}
+.lx-section-note {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--t-subtle);
+}
+.lx-prose p {
+  margin: 0 0 12px;
+}
+.lx-prose p:last-child {
+  margin-bottom: 0;
+}
+.lx strong {
+  color: var(--t-strong);
+  font-weight: 600;
+}
+.lx-code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-hairline);
+  color: var(--t-strong);
+}
+.lx-muted {
+  color: var(--t-subtle);
+  font-size: 13px;
+}
+.lx-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* ── Math */
+.lx .katex {
+  font-size: 1.08em;
+  color: inherit;
+}
+.lx-math-display {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+.lx-math-display .katex-display {
+  margin: 0.4em 0;
+}
+.lx .katex [data-part] {
+  color: var(--pc-now, var(--pc));
+  background: var(--bg-now, transparent);
+  border-radius: 3px;
+  transition:
+    color 0.12s,
+    background-color 0.12s;
+}
+
+/* ── Part and card links */
+.lx-part {
+  display: inline;
+  border: 0;
+  margin: 0;
+  padding: 0 3px;
+  border-radius: 4px;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  color: var(--pc-now, var(--pc));
+  background: var(--bg-now, color-mix(in oklab, var(--pc) 13%, transparent));
+  box-shadow: inset 0 0 0 1px var(--ring-now, transparent);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    background-color 0.12s,
+    box-shadow 0.12s;
+}
+.lx-part .katex {
+  color: inherit;
+}
+.lx-part-static {
+  cursor: default;
+}
+.lx-card {
+  display: inline;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  background: transparent;
+  color: var(--t-strong);
+  border-bottom: 1px dashed color-mix(in oklab, var(--color-primary-hover) 70%, transparent);
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
+}
+.lx-card:hover,
+.lx-card:focus-visible {
+  color: var(--color-primary-hover);
+  border-bottom-style: solid;
+  border-bottom-color: var(--color-primary-hover);
+}
+
+/* ── Shared bits */
+.lx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--color-ink-subtle);
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-hairline);
+}
+.lx-badge-primary {
+  color: #c5cbff;
+  background: color-mix(in oklab, var(--color-primary) 22%, transparent);
+  border-color: color-mix(in oklab, var(--color-primary) 55%, transparent);
+}
+.lx-badge-ok {
+  color: #8fe0a2;
+  background: color-mix(in oklab, var(--color-success) 16%, transparent);
+  border-color: color-mix(in oklab, var(--color-success) 45%, transparent);
+}
+.lx-badge-bad {
+  color: #f3a3a3;
+  background: color-mix(in oklab, var(--color-danger) 14%, transparent);
+  border-color: color-mix(in oklab, var(--color-danger) 40%, transparent);
+}
+.lx-badge-shared {
+  color: #c5cbff;
+  border-color: color-mix(in oklab, var(--color-primary) 45%, transparent);
+}
+.lx-shared-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary-hover);
+  flex: none;
+}
+.lx-kicker,
+.lx-meta {
+  font-size: 12px;
+  color: var(--color-ink-subtle);
+}
+.lx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-surface-1);
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.lx-btn:hover:not(:disabled) {
+  background: var(--color-surface-3);
+}
+.lx-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.lx-btn-primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.lx-btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+.lx-btn-ghost {
+  height: 26px;
+  padding: 0 8px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-ink-subtle);
+}
+.lx-btn-ghost:hover:not(:disabled) {
+  color: var(--color-ink);
+  background: var(--color-surface-3);
+}
+.lx-btn-icon {
+  width: 26px;
+  padding: 0;
+}
+.lx-kv-key,
+.lx-why dt {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t-subtle);
+}
+.lx-error {
+  color: var(--color-danger);
+  font-size: 12px;
+}
+
+/* ── Reveal (let me try) */
+.lx-reveal {
+  position: relative;
+  border-radius: 8px;
+}
+.lx-reveal-body {
+  filter: blur(7px);
+  opacity: 0.55;
+  user-select: none;
+  pointer-events: none;
+}
+.lx-reveal-btn {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: 1px dashed var(--color-hairline-tertiary);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--color-canvas) 30%, transparent);
+  color: var(--color-ink-subtle);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.lx-reveal-btn:hover {
+  color: var(--color-ink);
+  border-color: var(--color-primary-hover);
+}
+
+/* ── Problem */
+.lx-problem {
+  padding: 16px 18px;
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  font-size: 16px;
+  color: var(--t-strong);
+}
+
+/* ── Chunks */
+.lx-chunks {
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.lx-chunk {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.1fr) auto minmax(0, 1.6fr);
+  gap: 14px;
+  align-items: center;
+  padding: 9px 14px;
+  font-size: 14px;
+  background: var(--color-surface-1);
+}
+.lx-chunk + .lx-chunk {
+  border-top: 1px solid var(--color-hairline);
+}
+.lx-chunk-note {
+  color: var(--t-subtle);
+  font-size: 13px;
+}
+.lx-role {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--color-ink-subtle);
+  border: 1px solid var(--color-hairline-strong);
+  justify-self: start;
+}
+.lx-role-goal {
+  color: var(--color-ink);
+  border-color: var(--color-hairline-tertiary);
+  background: var(--color-surface-4);
+}
+.lx-role-hidden_given {
+  border-style: dashed;
+}
+.lx-role-part {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pc);
+  background: color-mix(in oklab, var(--pc) 14%, transparent);
+}
+.lx-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--pc);
+}
+
+/* ── Concept */
+.lx-concept {
+  display: grid;
+  gap: 14px;
+}
+.lx-kv {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px 16px;
+  align-items: baseline;
+}
+.lx-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.lx-chips-label {
+  font-size: 12px;
+  color: var(--t-subtle);
+  margin-right: 4px;
+}
+.lx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 2px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-surface-1);
+  color: var(--t-strong);
+  font-size: 13px;
+  cursor: pointer;
+}
+.lx-chip:hover {
+  border-color: var(--color-primary-hover);
+}
+
+/* ── Plan */
+.lx-routes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+.lx-route {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+}
+.lx-route.is-picked {
+  border-color: color-mix(in oklab, var(--color-primary) 70%, transparent);
+  background: color-mix(in oklab, var(--color-primary) 6%, var(--color-surface-1));
+}
+.lx-route-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.lx-route-title {
+  font-weight: 600;
+  color: var(--t-strong);
+}
+.lx-route-path {
+  font-size: 14px;
+  color: var(--t-strong);
+}
+.lx-route.is-rejected .lx-route-path {
+  color: var(--t-subtle);
+}
+.lx-why {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 14px;
+}
+.lx-why dt {
+  padding-top: 2px;
+  white-space: nowrap;
+}
+.lx-why dd {
+  margin: 0;
+}
+.lx-notused .lx-kv-key {
+  white-space: nowrap;
+}
+.lx-notused {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--t-subtle);
+  border: 1px dashed var(--color-hairline-strong);
+  border-radius: 8px;
+}
+
+/* ── Chain */
+.lx-chain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.lx-step {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px 16px 14px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+  transition: border-color 0.12s;
+}
+.lx-step[data-hot] {
+  border-color: var(--color-hairline-tertiary);
+}
+.lx-step-num,
+.lx-unit-num,
+.lx-recall-n {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t-subtle);
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-hairline);
+  font-variant-numeric: tabular-nums;
+}
+.lx-step-main {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.lx-step-move {
+  font-weight: 500;
+  color: var(--t-strong);
+}
+.lx-step-formula {
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  color: var(--t-strong);
+}
+.lx-uses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  font-size: 12px;
+}
+.lx-uses-label {
+  color: var(--t-faint);
+  margin-right: 2px;
+}
+.lx-use {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  color: var(--pc-now, var(--pc));
+  border: 1px solid color-mix(in oklab, var(--pc-now, var(--pc)) 35%, transparent);
+  font-size: 12px;
+}
+
+/* ── Proof */
+.lx-proof-goal {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-hairline);
+  color: var(--t-strong);
+}
+.lx-proof-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.lx-pline {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--color-surface-1);
+  transition:
+    background-color 0.12s,
+    opacity 0.12s;
+}
+.lx-pline + .lx-pline {
+  border-top: 1px solid var(--color-hairline);
+}
+.lx-pline-num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--t-subtle);
+  padding-top: 3px;
+}
+.lx-pline-main {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.lx-pline-claim {
+  color: var(--t-strong);
+}
+.lx-pline-deps {
+  font-size: 12px;
+  color: var(--t-faint);
+  white-space: nowrap;
+  padding-top: 3px;
+}
+.lx-proof-lines.has-hot .lx-pline {
+  opacity: 0.45;
+}
+.lx-proof-lines.has-hot .lx-pline.is-src {
+  opacity: 1;
+  background: var(--color-surface-3);
+}
+.lx-proof-lines.has-hot .lx-pline.is-dep {
+  opacity: 1;
+  background: color-mix(in oklab, var(--color-primary) 10%, var(--color-surface-1));
+  box-shadow: inset 2px 0 0 var(--color-primary-hover);
+}
+.lx-proof-lines.has-hot .lx-pline.is-dep .lx-pline-num {
+  color: var(--color-primary-hover);
+}
+
+/* ── Diagrams (React Flow) */
+.lx-diagram {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+  overflow: hidden;
+}
+.lx-diagram-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 280px;
+  color: var(--color-ink-tertiary);
+  font-size: 13px;
+}
+.lx .react-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke: var(--color-hairline-tertiary);
+  --xy-edge-stroke-width: 1.5;
+}
+.lx .react-flow__node {
+  cursor: default;
+}
+.lx .react-flow__attribution {
+  background: transparent;
+  font-size: 9px;
+  opacity: 0.5;
+}
+.lx .react-flow__attribution a {
+  color: var(--color-ink-tertiary);
+}
+.lx .react-flow__edge.is-dim path {
+  opacity: 0.25;
+}
+.lx .react-flow__edge.is-dep path {
+  stroke: var(--color-primary-hover);
+}
+.lx .react-flow__edge-text {
+  fill: var(--color-ink-subtle);
+  font-size: 11px;
+}
+.lx .react-flow__edge-textbg {
+  fill: var(--color-surface-1);
+}
+.lx-handle {
+  opacity: 0;
+  pointer-events: none;
+}
+.lx-gnode,
+.lx-fnode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 44px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-hairline-strong);
+  color: var(--color-ink);
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: center;
+  transition:
+    opacity 0.12s,
+    border-color 0.12s,
+    background-color 0.12s;
+}
+.lx-gnode[data-part],
+.lx-fnode[data-part] {
+  border-color: color-mix(in oklab, var(--pc-now, var(--pc)) 70%, transparent);
+  background: color-mix(in oklab, var(--pc-now, var(--pc)) 12%, var(--color-surface-2));
+}
+.lx-gnode[data-part] .lx-gnode-label {
+  color: var(--pc-now, var(--pc));
+}
+.lx-gnode-kind {
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  color: var(--color-ink-subtle);
+  text-transform: uppercase;
+}
+.lx-gnode-kind:lang(th) {
+  text-transform: none;
+}
+.lx-gnode.has-card,
+.lx-fnode.has-card,
+.lx-gnode[data-part] {
+  cursor: pointer;
+}
+.lx-gnode.has-card .lx-gnode-label {
+  border-bottom: 1px dashed color-mix(in oklab, var(--color-primary-hover) 70%, transparent);
+}
+.lx[data-hl] .lx-gnode:not([data-part]) {
+  opacity: 0.4;
+}
+.lx .lx-gnode.is-dim {
+  opacity: 0.3;
+}
+.lx .lx-gnode.is-dep,
+.lx .lx-gnode.is-src {
+  opacity: 1;
+  --pc-now: var(--pc);
+}
+.lx .lx-gnode.is-src {
+  box-shadow: 0 0 0 1px var(--color-ink-muted);
+}
+
+/* ── Plot */
+.lx-plot,
+.lx-incline,
+.lx-trace {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+}
+.lx-sliders {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 6px 16px;
+  margin-bottom: 12px;
+}
+.lx-slider {
+  display: grid;
+  grid-template-columns: auto minmax(60px, 1fr) 44px;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+.lx-slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--pc-now, var(--pc, var(--color-primary)));
+  margin: 0;
+}
+.lx-slider-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: right;
+  color: var(--t-strong);
+  font-variant-numeric: tabular-nums;
+}
+.lx-plot-box {
+  width: 100%;
+  overflow: hidden;
+}
+.lx-plot-box svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.lx-axis-label {
+  font-size: 12px;
+  color: var(--t-subtle);
+}
+.lx-axis-x {
+  text-align: center;
+  margin-top: 2px;
+}
+.lx-axis-y {
+  margin-bottom: 4px;
+}
+.lx-grid line {
+  stroke: var(--color-hairline);
+  stroke-width: 1;
+}
+.lx-axis line {
+  stroke: var(--color-hairline-tertiary);
+}
+.lx-axis text,
+.lx-point text,
+.lx-force text,
+.lx-angle-label {
+  fill: var(--color-ink-subtle);
+  font-size: 11px;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.lx-curve {
+  --pc: var(--color-ink-muted);
+}
+.lx-curve-line {
+  fill: none;
+  stroke: var(--pc-now, var(--pc));
+  stroke-width: 2.25;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: var(--op-now, 1);
+  transition: opacity 0.12s;
+}
+.lx-curve-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+}
+.lx[data-hl] .lx-curve:not([data-part]) .lx-curve-line {
+  opacity: 0.22;
+}
+.lx-point circle {
+  fill: var(--pc-now, var(--pc, var(--color-ink)));
+  stroke: var(--color-surface-1);
+  stroke-width: 2;
+  opacity: var(--op-now, 1);
+}
+.lx-point text {
+  fill: var(--t-body);
+  paint-order: stroke;
+  stroke: var(--color-surface-1);
+  stroke-width: 3px;
+}
+.lx-legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 10px 0 0;
+  padding: 0;
+  font-size: 12px;
+  color: var(--t-subtle);
+}
+.lx-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.lx-legend-swatch {
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--pc-now, var(--pc, var(--color-ink-muted)));
+}
+.lx-readouts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.lx-readout {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-hairline);
+  font-size: 13px;
+}
+.lx-readout-eq {
+  color: var(--t-faint);
+}
+.lx-readout-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--pc-now, var(--pc, var(--t-strong)));
+  font-variant-numeric: tabular-nums;
+}
+.lx-readout-unit {
+  color: var(--t-subtle);
+  font-size: 12px;
+}
+
+/* ── Incline */
+.lx-incline-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 340px;
+}
+.lx-ramp {
+  fill: var(--color-surface-3);
+  stroke: var(--color-hairline-tertiary);
+}
+.lx-ground {
+  stroke: var(--color-hairline-strong);
+}
+.lx-angle {
+  fill: none;
+  stroke: var(--color-ink-tertiary);
+}
+.lx-block {
+  fill: var(--color-surface-4);
+  stroke: var(--color-ink-subtle);
+}
+.lx-force {
+  --pc: var(--color-ink-muted);
+}
+.lx-force line {
+  stroke: var(--pc-now, var(--pc));
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.lx-force polygon {
+  fill: var(--pc-now, var(--pc));
+}
+.lx-force text {
+  fill: var(--pc-now, var(--pc));
+}
+
+/* ── Trace */
+.lx-trace-code {
+  margin: 0 0 12px;
+  padding: 8px 0;
+  border-radius: 8px;
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: var(--t-body);
+}
+.lx-trace-line {
+  display: flex;
+  gap: 14px;
+  padding: 0 12px;
+  white-space: pre;
+}
+.lx-trace-line.is-current {
+  background: color-mix(in oklab, var(--color-primary) 18%, transparent);
+  box-shadow: inset 2px 0 0 var(--color-primary-hover);
+  color: var(--color-ink);
+}
+.lx-trace-ln {
+  width: 2ch;
+  text-align: right;
+  color: var(--color-ink-tertiary);
+  user-select: none;
+}
+.lx-trace-ctl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.lx-trace-ctl input {
+  flex: 1;
+  accent-color: var(--color-primary);
+}
+.lx-trace-count {
+  font-size: 12px;
+  color: var(--t-subtle);
+  white-space: nowrap;
+}
+.lx-trace-state {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+}
+
+/* ── Table */
+.lx-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+}
+.lx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.lx-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t-subtle);
+  background: var(--color-surface-2);
+  padding: var(--cell-pad, 8px 12px);
+  border-bottom: 1px solid var(--color-hairline);
+  white-space: nowrap;
+}
+.lx-table td {
+  padding: var(--cell-pad, 8px 12px);
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+}
+.lx-table tr:last-child td {
+  border-bottom: 0;
+}
+.lx-table td:first-child {
+  color: var(--t-strong);
+  white-space: nowrap;
+}
+.lx-table-dense {
+  --cell-pad: 4px 10px;
+  width: auto;
+  font-size: 13px;
+  border: 1px solid var(--color-hairline);
+}
+
+/* ── Check */
+.lx-check {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.lx-check li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+.lx-check-mark {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in oklab, var(--color-success) 60%, transparent);
+  background: color-mix(in oklab, var(--color-success) 18%, transparent);
+  transform: translateY(2px);
+}
+
+/* ── Story */
+.lx-story {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.lx-story li {
+  display: grid;
+  grid-template-columns: 76px 12px minmax(0, 1fr);
+  gap: 12px;
+  position: relative;
+  padding-bottom: 14px;
+}
+.lx-story li::before {
+  content: "";
+  position: absolute;
+  left: 93px;
+  top: 14px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--color-hairline-strong);
+}
+.lx-story li:last-child::before {
+  display: none;
+}
+.lx-story-year {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--t-subtle);
+  text-align: right;
+  padding-top: 3px;
+  white-space: nowrap;
+}
+.lx-story-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 8px;
+  margin-left: 1px;
+  border-radius: 50%;
+  background: var(--color-surface-4);
+  border: 1px solid var(--color-ink-tertiary);
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Units */
+.lx-units {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.lx-units li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  background: var(--color-surface-1);
+}
+.lx-unit-title {
+  font-weight: 600;
+  color: var(--t-strong);
+}
+.lx-unit-milestone,
+.lx-unit-lesson {
+  font-size: 13px;
+  color: var(--t-subtle);
+}
+
+/* ── Recall */
+.lx-recall {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.lx-recall-q {
+  padding: 14px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  background: var(--color-surface-1);
+}
+.lx-recall-prompt {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  color: var(--t-strong);
+  margin-bottom: 10px;
+}
+.lx-recall-n {
+  flex: none;
+  transform: translateY(-1px);
+}
+.lx-options {
+  display: grid;
+  gap: 6px;
+}
+.lx-option {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 12px;
+  text-align: left;
+  border-radius: 8px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-surface-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+.lx-option:hover {
+  border-color: var(--color-hairline-tertiary);
+  background: var(--color-surface-3);
+}
+.lx-option-letter {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-ink-subtle);
+  width: 14px;
+}
+.lx-option.is-correct {
+  border-color: color-mix(in oklab, var(--color-success) 65%, transparent);
+  background: color-mix(in oklab, var(--color-success) 12%, var(--color-surface-2));
+}
+.lx-option.is-wrong {
+  border-color: color-mix(in oklab, var(--color-danger) 60%, transparent);
+  background: color-mix(in oklab, var(--color-danger) 10%, var(--color-surface-2));
+}
+.lx-option.is-muted {
+  opacity: 0.55;
+}
+.lx-recall-result {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* ── Ask bar */
+.lx-ask {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin-top: 40px;
+  padding: 10px 0 14px;
+  background: var(--color-canvas);
+  border-top: 1px solid var(--color-hairline);
+}
+.lx-ask-hint {
+  font-size: 12px;
+  color: var(--color-ink-tertiary);
+  margin-bottom: 8px;
+}
+.lx-ask-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.lx-ref-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in oklab, var(--color-primary) 55%, transparent);
+  background: color-mix(in oklab, var(--color-primary) 14%, transparent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #c5cbff;
+  overflow: hidden;
+}
+.lx-ref-chip button {
+  border: 0;
+  background: transparent;
+  height: 100%;
+  cursor: pointer;
+  color: inherit;
+}
+.lx-ref-chip-label {
+  padding: 0 4px 0 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.lx-ref-chip-x {
+  padding: 0 7px;
+  opacity: 0.7;
+  font-size: 10px;
+}
+.lx-ref-chip-x:hover {
+  opacity: 1;
+}
+.lx-ask-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.lx-ask-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 34px;
+  max-height: 160px;
+  padding: 7px 10px;
+  resize: vertical;
+  border-radius: 8px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-surface-1);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.lx-ask-input::placeholder {
+  color: var(--color-ink-tertiary);
+}
+.lx-ask-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+.lx-ask .lx-btn-primary {
+  height: 34px;
+}
+
+/* ── Inspector */
+.lx-inspector {
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  background: var(--color-surface-1);
+  font-size: 14px;
+}
+.lx-inspector.is-preview {
+  border-color: var(--color-hairline-strong);
+}
+.lx-inspector-empty {
+  padding: 16px;
+}
+.lx-inspector-title {
+  font-weight: 600;
+  color: var(--color-ink);
+  margin-bottom: 4px;
+}
+.lx-inspector-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  background: var(--color-surface-1);
+  border-bottom: 1px solid var(--color-hairline);
+}
+.lx-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding-top: 3px;
+  font-size: 12px;
+}
+.lx-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.lx-crumb-sep {
+  color: var(--color-ink-tertiary);
+  padding: 0 2px;
+}
+.lx-crumb-btn {
+  border: 0;
+  background: transparent;
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: var(--color-ink-subtle);
+  cursor: pointer;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lx-crumb-btn:hover {
+  background: var(--color-surface-3);
+  color: var(--color-ink);
+}
+.lx-crumb-btn.is-current {
+  color: var(--color-ink);
+}
+.lx-inspector-actions {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+.lx-inspector-body {
+  padding: 14px;
+}
+.lx-cardview {
+  display: grid;
+  gap: 10px;
+}
+.lx-cardview-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.lx-cardview-title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--t-strong);
+}
+.lx-cardview-title .lx-part {
+  font-size: 20px;
+}
+.lx-cardview-slug {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-ink-tertiary);
+  margin-top: -6px;
+}
+.lx-cardview-meaning {
+  margin: 0;
+  color: var(--t-strong);
+}
+.lx-fields {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0 0;
+}
+.lx-fields:empty {
+  display: none;
+}
+.lx-field dt {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t-subtle);
+  margin-bottom: 2px;
+}
+.lx-field dd {
+  margin: 0;
+}
+.lx-tree {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-hairline);
+}
+.lx-tree ul,
+.lx-legend-parts ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lx-tree-node {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--color-ink-subtle);
+  cursor: pointer;
+}
+.lx-tree-node:hover {
+  background: var(--color-surface-3);
+  color: var(--color-ink);
+}
+.lx-tree-node.is-current {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+.lx-tree-node.is-child {
+  color: var(--color-ink-muted);
+}
+.lx-tree-glyph {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-ink-tertiary);
+  flex: none;
+}
+.lx-legend-parts {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-hairline);
+}
+.lx-legend-parts ul {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 12px;
+  align-items: baseline;
+  font-size: 13px;
+}
+.lx-legend-parts li {
+  display: contents;
+}
+.lx-legend-parts .lx-part {
+  justify-self: start;
+}
+.lx-legend-meaning {
+  color: var(--color-ink-subtle);
+}
+
+/* ── Dimming while something is hovered; last so it wins over the text colors above */
+.lx[data-hl] .lx-main,
+.lx[data-hl] .lx-inspector-body {
+  --t-strong: #6b6f77;
+  --t-body: #565a62;
+  --t-subtle: #45484f;
+  --t-faint: #393c42;
+}
+.lx[data-hl] [data-hot] {
+  --t-strong: var(--color-ink);
+  --t-body: var(--color-ink-muted);
+  --t-subtle: var(--color-ink-subtle);
+}
+
+/* ── Phones: one column, the inspector becomes a bottom sheet once a card is pinned */
+@media (max-width: 768px) {
+  .lx {
+    font-size: 15px;
+  }
+  .lx-layout,
+  .lx-layout.no-toc {
+    display: block;
+    padding: 16px 16px 0;
+  }
+  .lx-title {
+    font-size: 24px;
+  }
+  .lx-header-row {
+    flex-wrap: wrap;
+  }
+  .lx-inspector {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    max-height: 62vh;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 0;
+    background: var(--color-surface-2);
+    transform: translateY(100%);
+    transition: transform 0.18s ease-out;
+  }
+  .lx-inspector.is-open {
+    transform: none;
+    border-color: var(--color-hairline-strong);
+  }
+  .lx-inspector-bar {
+    background: var(--color-surface-2);
+  }
+  .lx-chunk {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 10px;
+  }
+  .lx-chunk-note {
+    grid-column: 1 / -1;
+  }
+  .lx-kv {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .lx-kv > .lx-kv-key:not(:first-child) {
+    margin-top: 8px;
+  }
+  .lx-step {
+    padding: 12px;
+    gap: 10px;
+  }
+  .lx-pline {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+  .lx-pline-deps {
+    grid-column: 2;
+  }
+  .lx-why {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .lx-why dd + dt {
+    margin-top: 6px;
+  }
+  .lx-story li {
+    grid-template-columns: 60px 12px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .lx-story li::before {
+    left: 73px;
+  }
+  .lx-trace-state {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lx-ask {
+    margin-top: 24px;
+    padding: 8px 0 10px;
+  }
+  .lx-ask-hint {
+    display: none;
+  }
+  .lx-ask .lx-btn-primary {
+    padding: 0 10px;
+  }
+  .lx-table td:first-child {
+    white-space: normal;
+  }
+}

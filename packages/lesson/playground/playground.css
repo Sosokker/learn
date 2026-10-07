@@ -1,0 +1,45 @@
+/* Same imports as apps/web/src/app.css, so the playground looks like the app. */
+@import "@app/ui/styles.css";
+@import "@app/lesson/styles.css";
+
+@source "../src";
+
+@layer base {
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--color-canvas);
+  }
+}
+
+.pg-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--color-hairline);
+  font-size: 13px;
+  color: var(--color-ink-subtle);
+}
+.pg-bar button {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-surface-1);
+  color: var(--color-ink);
+  font: inherit;
+  cursor: pointer;
+}
+.pg-bar button[aria-pressed="true"] {
+  border-color: var(--color-primary);
+}
+.pg-bar .pg-last {
+  margin-left: auto;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
