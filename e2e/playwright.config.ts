@@ -10,7 +10,13 @@ export default defineConfig({
   timeout: 60_000,
   reporter: [["list"]],
   globalSetup: "./tests/global-setup.ts",
-  use: { baseURL: "http://localhost:5173", trace: "retain-on-failure" },
+  use: {
+    baseURL: "http://localhost:5173",
+    trace: "retain-on-failure",
+    // Set PW_CHROMIUM to use a preinstalled browser whose build differs from this Playwright's,
+    // e.g. /opt/pw-browsers/chromium in Claude Code cloud sessions.
+    ...(process.env.PW_CHROMIUM ? { launchOptions: { executablePath: process.env.PW_CHROMIUM } } : {}),
+  },
   webServer: {
     command: "bun run --cwd ../apps/web dev --port 5173 --strictPort",
     url: "http://localhost:5173/api/health",

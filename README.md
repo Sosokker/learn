@@ -31,8 +31,11 @@ Checks:
 bun run typecheck
 bun run lint                # biome; `bun run format` fixes
 bun run test                # unit tests + Worker integration tests (local D1/R2 via wrangler)
-bun run test:e2e            # Playwright against the dev server
+bun run test:e2e            # Playwright against the dev server (migrates, seeds, signs in a test user)
 ```
+
+If the installed Chromium doesn't match Playwright's build, point it at one:
+`PW_CHROMIUM=/opt/pw-browsers/chromium bun run test:e2e`.
 
 `bun run --cwd packages/lesson playground` opens the lesson renderer on the guide, without the API.
 
