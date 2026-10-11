@@ -1,0 +1,1 @@
+ALTER TABLE `byok_key` ADD `kek_version` integer DEFAULT 1 NOT NULL;

@@ -1,6 +1,6 @@
 # 0009. AI lesson creation: pi's agent loop in a Durable Object
 
-- Status: proposed (not built)
+- Status: accepted (built 2026-10-11; see "As built")
 - Date: 2026-10-11
 
 ## Context
@@ -63,3 +63,69 @@ shared across all platform-paid users.
   thin so it can be replaced by plain `fetch` calls.
 - BYOK users get no shared cache, and key storage is a security surface.
 - Validate-and-repair costs extra turns compared with constrained decoding.
+
+## As built (2026-10-11)
+
+What changed from the decision above, and the choices it left open:
+
+- **Packages.** The loop, tools, prompt and fake provider are `packages/agent`.
+  Job rows, quota and keys are services (`Generations`, `GenerationJobs`,
+  `ByokKeys`, `GenerationSettings`). The Durable Object is
+  `apps/worker/src/generation-agent.ts`; the Worker reaches it through the
+  `GenerationRunner` seam, and tests run the same job code in-process.
+- **pi 1.1.0** (pinned, latest on 2026-10-11). Streams come from
+  `@earendil-works/pi-ai/api/anthropic-messages` and `.../openai-completions`;
+  models are built by hand from config; `apiKey` and `cacheRetention` are
+  always passed, never read from the environment.
+- **Providers.** Anthropic (Messages) and OpenAI-compatible Chat Completions
+  (OpenAI, DeepSeek). Both bundle in workerd. The Anthropic module ran in
+  workerd against the fake provider; the Chat Completions module ran in Node
+  tests only. No real provider API was called.
+- **Fetch-based Durable Object**, not RPC: a plain class with `fetch` and
+  `alarm`, so the Worker module still imports in Node tests. The run happens in
+  the alarm handler (not tied to the request that started it), with a
+  10-minute wall-clock limit (past it the job fails as "timed out"). An alarm
+  that finds the job already "running" (eviction or deploy mid-run) fails it
+  instead of running it twice. Its tables are created on use, because the
+  transcript's expiry (`deleteAll`) drops them while the instance lives on.
+  `limits.cpu_ms` is 300000: pi-ai re-parses the whole tool-call JSON on every
+  streamed chunk, so CPU grows with the square of the lesson's size.
+- **Progress is SSE** through the Worker (`GET /api/generations/:id/events`):
+  cookie auth and `connect-src 'self'` work unchanged, and `Last-Event-ID`
+  resumes after a reconnect. The transcript stays in the object's SQLite for
+  24 hours; the D1 row keeps the result after that.
+- **save_draft without arguments** saves the spec `validate_lesson` last
+  accepted, so the model does not write the whole lesson a third time. Tool
+  parameters refuse unknown keys.
+- **Billing at launch: BYOK only.** No provider key secret is set, so no model
+  has platform billing; the API refuses it (`PlatformBillingUnavailable`) and
+  `/create` shows neither a quota nor a "who pays" choice, only the user's key
+  or a link to add one. Setting a provider's key secret turns the quota on for
+  that provider's models, with no code change.
+- **Quota** counts platform jobs per user per UTC day (`GENERATION_DAILY_JOBS`)
+  in a counter row. A job that fails or is canceled before the provider
+  charged anything gives its count back; once tokens were used it never does,
+  and the usage saved after each request is kept even when our side fails.
+  One active job per user. The day's spend is also added to the row; it is
+  not a limit yet.
+- **Starting and canceling a job need the session cookie**, like key
+  management: an API token (ADR 0008) can read jobs but cannot spend money.
+- **Broken AI settings** (a bad `BYOK_KEK`, `GENERATION_MODELS` or limit) turn
+  generation off with `GenerationUnavailable` (503), logged once, instead of
+  failing every route of the Worker.
+- **Cache retention:** `long` for platform jobs, `short` for BYOK. On
+  Anthropic the 1-hour mark stays on the prefix (tools, system) and the
+  conversation tail is rewritten to the 5-minute mark (`onPayload`), since the
+  tail is read back within seconds. Cost is ours, not pi's: `costOf` prices
+  the 1-hour writes Anthropic reports at the model's `cache_write_1h`.
+  OpenAI-compatible models get `supportsLongCacheRetention: false`: DeepSeek
+  gets no cache fields, OpenAI gets the shared `prompt_cache_key` but no 24h
+  retention (only some models accept it). `reasoning: false` does not stop an
+  OpenAI reasoning model from reasoning; those tokens are output.
+- **Errors shown to users** are the provider's HTTP status in plain words plus
+  its short message, or a generic "something went wrong on our side". Our own
+  failures (D1, R2, bugs) go to the log only.
+- **Stored keys carry `kek_version`** (migration 0012), so `BYOK_KEK` can be
+  rotated later without a big-bang re-encryption.
+- **Not built:** cheaper models per sub-task, Batch APIs, a daily cost cap per
+  user or for the whole platform, KEK rotation itself.

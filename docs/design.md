@@ -700,6 +700,15 @@ is at `/api/openapi.json`.
 | `GET /admin/reports` | admin | Open reports, newest first |
 | `POST /admin/reports/:id/resolve` | admin | Resolve or dismiss; closes every open report of the target |
 | `PUT`/`DELETE /admin/comments/:id/hidden` | admin | Hide / unhide any comment |
+| `GET /me/keys` | session only | The user's stored provider keys: provider and last 4 only |
+| `PUT /me/keys/:provider` | session only | Set or replace a key (422 `InvalidByokKey`, 503 `ByokUnavailable`) |
+| `DELETE /me/keys/:provider` | session only | Remove a key (404 `ByokKeyNotFound`) |
+| `GET /generations/options` | signed in | Models, today's platform quota, stored keys (503 `GenerationUnavailable` when the AI settings are broken) |
+| `POST /generations` | session only | Start an AI job (201; 429 `GenerationQuotaExceeded`, 409 `GenerationBusy`, 422 `ByokKeyMissing` / `PlatformBillingUnavailable` / `InvalidGeneration`, 503 `GenerationUnavailable`) |
+| `GET /generations?cursor=&limit=` | signed in | The user's jobs, newest first |
+| `GET /generations/:id` | owner | One job (404 `GenerationNotFound` for anyone else's) |
+| `GET /generations/:id/events` | owner | Progress as Server-Sent Events (6.12) |
+| `POST /generations/:id/cancel` | owner, session only | Stop a queued or running job |
 | `* /auth/*` | Better Auth | Google sign-in, callback, session, sign-out |
 
 "signed in" and "viewer" accept a session cookie or an API token; "session
@@ -715,8 +724,12 @@ paths are static assets, and unknown paths get the SPA's `index.html`.
 - Hot feeds by language or category, and filters on category and tag feeds
   (6.6 says why).
 - The 60-second edge cache for anonymous feeds.
-- Drafts in R2, and the "ask" answer saved as a card (phase 2). In phase 1,
-  the reader copies a prompt for pi (`buildPrompt` in `packages/lesson`).
+- The "ask" answer saved as a card. The reader copies a prompt for pi
+  (`buildPrompt` in `packages/lesson`). AI drafts are private lessons (6.12),
+  not a separate draft store.
+- For AI jobs (6.12): cheaper models per sub-task (translation, fixes), Batch
+  APIs, a daily cost cap (spend is recorded, not limited), editing a draft by
+  asking the agent again, and a real-provider smoke test.
 - Moderation beyond comments: hiding a lesson, banning a user, a report
   count on the target, notifications to moderators.
 
@@ -802,6 +815,70 @@ How pi publishes without a browser (ADR 0008).
   show the page; the server never trusts it back. A database role was not
   needed for one or two moderators, and a secret needs no migration.
 - **Writes** spend the user's write budget (30 per minute), like likes.
+
+### 6.12 AI lesson creation
+
+A signed-in user describes a topic or a problem on `/create`; an LLM agent
+writes a lesson and saves it as the user's private lesson (ADR 0009).
+
+1. **Start.** `POST /api/generations` with prompt, language, model and billing,
+   with the session cookie (an API token cannot start or cancel a job: a job
+   spends money). The model must be in `GENERATION_MODELS` (server config).
+   Platform billing needs a platform key for the model's provider
+   (`PlatformBillingUnavailable` otherwise); BYOK billing needs the user's
+   stored key. At launch no provider has a platform key, so every job is BYOK
+   and `/create` shows no quota; setting a provider's key secret turns the
+   quota on for its models. One D1 batch inserts the job only while the user has no
+   active job and, for platform billing, quota left today, and moves the
+   day's counter (`generation_usage`) only if the job went in. The Worker then
+   POSTs `/start` to the job's Durable Object (`GenerationAgent`, named by the
+   job id), which sets an alarm.
+2. **Run.** The alarm handler runs `runGeneration` (`packages/agent`): pi's
+   agent loop with four fixed tools. `search_concepts` and `get_concept` read
+   public concepts; `validate_lesson` runs `checkLesson` plus this job's rules
+   (language, no `guide` kind); `save_draft` calls `Lessons.publish` with the
+   job's user as `CurrentUser`, under a slug fixed per job, so a draft never
+   lands in another lesson. The model does not choose a user or a lesson:
+   tool parameters refuse unknown keys.
+3. **Limits.** `GENERATION_MAX_TURNS` model requests, `GENERATION_MAX_OUTPUT_TOKENS`
+   output tokens (each request's `max_tokens` is the budget left, at most
+   32k), 10 minutes of wall clock (past it the job fails as timed out), one
+   active job per user, and `GENERATION_DAILY_JOBS` platform jobs per user per
+   UTC day. A platform job that fails or is canceled before the provider
+   charged anything gives its count back; once any tokens were used it never
+   does, even when our side fails. Usage (input, output, cache read, cache
+   write, cost) is written to the job row after every request, and the day's
+   spend to the counter row when the job ends. A cancel is one conditional
+   UPDATE and signals the running object; a job that saved its draft ends as
+   done even if a cancel landed meanwhile.
+4. **Progress.** Each event (status, turn, tool step, short model text, usage,
+   done) goes to the object's SQLite and to open streams. The browser reads
+   `GET /api/generations/:id/events` (SSE through the Worker, cookie auth,
+   `connect-src 'self'`); a reconnect resumes after `Last-Event-ID`. The
+   transcript is deleted 24 hours after the job ends.
+5. **Eviction.** If the object dies mid-run (a deploy restarts Durable
+   Objects), the alarm runs again, sees "running", and fails the job with
+   what it recorded. A deploy during a job fails that job.
+6. **Cache.** Every job sends the same prefix: the four tools, then one
+   system prompt (rules, the LessonSpec JSON Schema, the English guide lesson
+   as the example). The topic and language go in the user message. Platform
+   jobs ask for the 1-hour cache on the prefix (Anthropic), so all users share
+   one warm prefix per provider account; the conversation tail always gets the
+   5-minute cache. The cost uses the model's own `cache_write_1h` price for
+   1-hour writes. A test asserts the prefix is byte-identical across users.
+   OpenAI gets one shared `prompt_cache_key`; DeepSeek caches on its own and
+   gets no cache fields.
+7. **BYOK.** `PUT /api/me/keys/:provider` stores the key AES-GCM encrypted with
+   `BYOK_KEK`, the additional data `<user_id>:<provider>`. Only the job runner
+   decrypts it (`openByokKey`, inside the Durable Object). No response
+   contains a key; lists show the provider and the last 4 characters.
+8. **Local dev.** A fake model (`"provider": "fake"`, or a real provider's
+   entry with `"fake": true` to try BYOK) answers from a script inside the
+   Worker, so the whole flow runs with no real key and no network. Both are
+   refused when `APP_ENV` is deployed.
+9. **Broken settings.** A bad `BYOK_KEK`, `GENERATION_MODELS` or limit turns
+   generation off (503 `GenerationUnavailable` on its routes, logged once);
+   every other route keeps working.
 
 ## 7. Stack: template vs this project
 

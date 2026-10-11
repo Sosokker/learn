@@ -7,18 +7,28 @@ import {
   ApiTokenNotFound,
   Authenticated,
   BodyLimit,
+  ByokKeyMissing,
+  ByokKeyNotFound,
+  ByokUnavailable,
   CategoryNotFound,
   CommentNotFound,
   ConceptForbidden,
   ConceptNotFound,
+  GenerationBusy,
+  GenerationNotFound,
+  GenerationQuotaExceeded,
+  GenerationUnavailable,
   HandleTaken,
+  InvalidByokKey,
   InvalidComment,
   InvalidConcept,
+  InvalidGeneration,
   InvalidHandle,
   InvalidLesson,
   InvalidSettings,
   LessonNotFound,
   PayloadTooLarge,
+  PlatformBillingUnavailable,
   ReportNotFound,
   SessionAuthenticated,
   UnsupportedFilter,
@@ -30,6 +40,9 @@ import {
   ApiTokenCreate,
   ApiTokenCreated,
   ApiTokenId,
+  ByokKey,
+  ByokKeySet,
+  ByokProvider,
   Category,
   CategoryId,
   Comment,
@@ -46,6 +59,11 @@ import {
   ConceptUnchanged,
   FeedCursor,
   FeedSort,
+  Generation,
+  GenerationCreate,
+  GenerationId,
+  GenerationOptions,
+  GenerationPage,
   Handle,
   HandleUpdate,
   Lesson,
@@ -389,6 +407,86 @@ export class AdminApi extends HttpApiGroup.make("admin")
   )
   .middleware(Admin) {}
 
+// The user's own provider keys for AI generation (BYOK). Session cookie only, like tokens: a leaked
+// API token cannot read which keys exist or replace them. No endpoint returns a key.
+export class KeysApi extends HttpApiGroup.make("keys")
+  .add(HttpApiEndpoint.get("list", "/me/keys", { success: Schema.Array(ByokKey) }))
+  // Sets or replaces the key of one provider.
+  .add(
+    HttpApiEndpoint.put("set", "/me/keys/:provider", {
+      params: { provider: ByokProvider },
+      payload: ByokKeySet,
+      success: ByokKey,
+      error: [InvalidByokKey, ByokUnavailable],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.delete("remove", "/me/keys/:provider", {
+      params: { provider: ByokProvider },
+      success: HttpApiSchema.NoContent,
+      error: ByokKeyNotFound,
+    }),
+  )
+  .middleware(SessionAuthenticated) {}
+
+// AI lesson generation (ADR 0009). A job runs in its own Durable Object and saves its result as a
+// private lesson of the user. Another user's job is the same 404 as a missing one. Starting and
+// canceling a job need the session cookie: a job spends money (the platform's or the user's own
+// key), so a leaked API token cannot start one. Reads also accept a token.
+export class GenerationsApi extends HttpApiGroup.make("generations")
+  // Models, today's platform quota, and the user's stored keys (provider + last4).
+  .add(
+    HttpApiEndpoint.get("options", "/generations/options", {
+      success: GenerationOptions,
+      error: GenerationUnavailable,
+    }).middleware(Authenticated),
+  )
+  // Checks the quota (platform) or the stored key (BYOK), then starts the job.
+  .add(
+    HttpApiEndpoint.post("create", "/generations", {
+      payload: GenerationCreate,
+      success: Generation.pipe(HttpApiSchema.status(201)),
+      error: [
+        InvalidGeneration,
+        PlatformBillingUnavailable,
+        GenerationQuotaExceeded,
+        GenerationBusy,
+        ByokKeyMissing,
+        GenerationUnavailable,
+      ],
+    }).middleware(SessionAuthenticated),
+  )
+  // The user's jobs, newest first.
+  .add(
+    HttpApiEndpoint.get("list", "/generations", { query: pageQuery, success: GenerationPage }).middleware(
+      Authenticated,
+    ),
+  )
+  .add(
+    HttpApiEndpoint.get("get", "/generations/:id", {
+      params: { id: GenerationId },
+      success: Generation,
+      error: GenerationNotFound,
+    }).middleware(Authenticated),
+  )
+  // Progress as Server-Sent Events (`text/event-stream`, each `data:` a GenerationEvent). Replays
+  // from the start, or after `Last-Event-ID` when the browser reconnects; ends after `done`.
+  .add(
+    HttpApiEndpoint.get("events", "/generations/:id/events", {
+      params: { id: GenerationId },
+      success: Schema.String.pipe(HttpApiSchema.asText({ contentType: "text/event-stream" })),
+      error: GenerationNotFound,
+    }).middleware(Authenticated),
+  )
+  // Stops a queued or running job. A finished job is returned as it is.
+  .add(
+    HttpApiEndpoint.post("cancel", "/generations/:id/cancel", {
+      params: { id: GenerationId },
+      success: Generation,
+      error: GenerationNotFound,
+    }).middleware(SessionAuthenticated),
+  ) {}
+
 export class Api extends HttpApi.make("learn")
   .add(SystemApi)
   .add(MeApi)
@@ -401,5 +499,7 @@ export class Api extends HttpApi.make("learn")
   .add(CommentsApi)
   .add(ReportsApi)
   .add(AdminApi)
+  .add(KeysApi)
+  .add(GenerationsApi)
   .prefix("/api")
   .annotateMerge(OpenApi.annotations({ title: "Learn API" })) {}

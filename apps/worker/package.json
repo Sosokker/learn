@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@app/agent": "workspace:*",
     "@app/api": "workspace:*",
     "@app/auth": "workspace:*",
     "@app/db": "workspace:*",

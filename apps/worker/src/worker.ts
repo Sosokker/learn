@@ -1,31 +1,18 @@
-import { D1, Database } from "@app/db"
+import { Database } from "@app/db"
 import { HotScore, LessonSearch, repairConceptFts } from "@app/services"
-import { ConfigProvider, Effect, Exit, Layer, ManagedRuntime } from "effect"
+import { Effect, Exit, Layer, ManagedRuntime } from "effect"
 import { HttpRouter, HttpServer } from "effect/http"
+import type { Env } from "./env.ts"
+import { GenerationRunnerDO } from "./generation-runner.ts"
 import { ApiLive, HandlersLive } from "./http.ts"
-import { WriteLimit } from "./rate-limit.ts"
-import { StorageR2 } from "./storage-r2.ts"
+import { storageLayer, writeLimitLayer } from "./platform.ts"
 
-// Bindings and vars from wrangler.jsonc; secrets from `wrangler secret put` (or .dev.vars locally).
+export type { Env } from "./env.ts"
+// The Durable Object class of AI generation jobs (wrangler.jsonc `durable_objects`).
+export { GenerationAgent } from "./generation-agent.ts"
+
 // Static assets (the web SPA) are served before the Worker runs; only /api/* and /c/* reach
 // `fetch` (assets.run_worker_first).
-export interface Env {
-  readonly DB: D1Database
-  readonly CONTENT: R2Bucket
-  // Per-user limit on state-changing API requests (wrangler.jsonc `ratelimits`). Optional: without
-  // it nothing is limited.
-  readonly WRITE_LIMIT?: RateLimit
-  // dev | test | deployed (the default). Unlocks the public dev auth secret locally.
-  readonly APP_ENV?: string
-  readonly BETTER_AUTH_SECRET?: string
-  readonly BETTER_AUTH_URL?: string
-  readonly BETTER_AUTH_TRUSTED_ORIGINS?: string
-  readonly GOOGLE_CLIENT_ID?: string
-  readonly GOOGLE_CLIENT_SECRET?: string
-  // Comma-separated user ids that may moderate (reports, hiding comments). A secret, so a deploy
-  // does not overwrite it. Unset: nobody.
-  readonly ADMIN_USER_IDS?: string
-}
 
 type App = ReturnType<typeof makeApp>
 
@@ -147,22 +134,10 @@ export function isShareable(response: Response) {
 }
 
 function makeApp(env: Env) {
-  const config = ConfigProvider.layer(
-    ConfigProvider.fromUnknown({
-      APP_ENV: env.APP_ENV,
-      BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
-      BETTER_AUTH_URL: env.BETTER_AUTH_URL,
-      BETTER_AUTH_TRUSTED_ORIGINS: env.BETTER_AUTH_TRUSTED_ORIGINS,
-      GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
-      ADMIN_USER_IDS: env.ADMIN_USER_IDS,
-    }),
-  )
   const platform = Layer.mergeAll(
-    Layer.succeed(D1, env.DB),
-    StorageR2(env.CONTENT),
-    WriteLimit.fromBinding(env.WRITE_LIMIT),
-    config,
+    storageLayer(env),
+    writeLimitLayer(env),
+    GenerationRunnerDO(env.GENERATION_AGENT),
   )
   // Every layer that reads Config (auth) is built here, on the first event, before anything is
   // served: a missing secret fails at once with one logged cause. The HTTP handler reuses these

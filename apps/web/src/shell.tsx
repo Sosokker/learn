@@ -13,6 +13,7 @@ import {
   MenuIcon,
   SettingsIcon,
   ShieldIcon,
+  SparkIcon,
 } from "./icons.tsx"
 import { categoriesQuery, meQuery } from "./queries.ts"
 import { useViewer } from "./session.ts"
@@ -94,6 +95,7 @@ export function Shell(props: { readonly children: ReactNode }) {
             <NavLink to="/" label={t("nav.home")} icon={<HomeIcon />} exact />
             <NavLink to="/guide" label={t("nav.guide")} icon={<FlagIcon />} />
             <NavLink to="/library" label={t("nav.library")} icon={<LibraryIcon />} />
+            <NavLink to="/create" label={t("nav.create")} icon={<SparkIcon />} />
             <NavLink to="/explore" label={t("nav.explore")} icon={<CompassIcon />} />
             <AdminLink />
           </ul>
@@ -144,7 +146,7 @@ function AdminLink() {
 }
 
 function NavLink(props: {
-  readonly to: "/" | "/guide" | "/library" | "/explore" | "/admin/reports"
+  readonly to: "/" | "/guide" | "/library" | "/create" | "/explore" | "/admin/reports"
   readonly label: string
   readonly icon: ReactNode
   readonly exact?: boolean

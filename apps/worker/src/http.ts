@@ -3,6 +3,7 @@ import { ApiTokens, Auth } from "@app/auth"
 import { Database } from "@app/db"
 import {
   Admins,
+  ByokKeys,
   Categories,
   type CommentReads,
   Comments,
@@ -10,6 +11,9 @@ import {
   ContentAccess,
   Engagement,
   Feeds,
+  GenerationJobs,
+  GenerationSettings,
+  Generations,
   HotScore,
   type LessonReads,
   LessonSearch,
@@ -72,6 +76,49 @@ const TokensHandlers = HttpApiBuilder.group(
           ).pipe(Effect.andThen(tokens.create(request.payload.name))),
         )
         .handle("revoke", (request) => tokens.revoke(request.params.id))
+    )
+  }),
+)
+
+const KeysHandlers = HttpApiBuilder.group(
+  Api,
+  "keys",
+  Effect.fn("KeysHandlers")(function* (handlers) {
+    const keys = yield* ByokKeys
+    return handlers
+      .handle("list", () => keys.list)
+      .handle("set", (request) => keys.set(request.params.provider, request.payload.key))
+      .handle("remove", (request) => keys.remove(request.params.provider))
+  }),
+)
+
+const GenerationsHandlers = HttpApiBuilder.group(
+  Api,
+  "generations",
+  Effect.fn("GenerationsHandlers")(function* (handlers) {
+    const generations = yield* Generations
+    return (
+      handlers
+        .handle("options", () => generations.options)
+        .handle("create", (request) => generations.create(request.payload))
+        .handle("list", (request) =>
+          generations.list({ cursor: request.query.cursor, limit: request.query.limit }),
+        )
+        .handle("get", (request) => generations.get(request.params.id))
+        .handle("cancel", (request) => generations.cancel(request.params.id))
+        // Raw: the job's Durable Object streams Server-Sent Events; they pass through as they come.
+        // EventSource sends Last-Event-ID when it reconnects, so the replay starts after it.
+        .handleRaw("events", (request) =>
+          Effect.gen(function* () {
+            const server = yield* HttpServerRequest.HttpServerRequest
+            const last = Number(server.headers["last-event-id"] ?? "0")
+            const stream = yield* generations.events(
+              request.params.id,
+              Number.isSafeInteger(last) && last > 0 ? last : 0,
+            )
+            return HttpServerResponse.raw(stream)
+          }),
+        )
     )
   }),
 )
@@ -300,8 +347,8 @@ const ContentRoutes = HttpRouter.use((router) =>
 
 const immutableCache = "public, max-age=31536000, immutable"
 
-// Handlers plus everything they need except the platform (D1, Storage) and config. Tests build
-// the same layer on Miniflare's D1 and R2.
+// Handlers plus everything they need except the platform (D1, Storage, the generation runner) and
+// config. Tests build the same layer on Miniflare's D1 and R2, with the job runner in-process.
 export const HandlersLive = Layer.mergeAll(
   SystemHandlers,
   MeHandlers,
@@ -314,6 +361,8 @@ export const HandlersLive = Layer.mergeAll(
   CommentsHandlers,
   ReportsHandlers,
   AdminHandlers,
+  KeysHandlers,
+  GenerationsHandlers,
 ).pipe(
   Layer.provide(
     Layer.mergeAll(
@@ -325,13 +374,23 @@ export const HandlersLive = Layer.mergeAll(
       Profiles.layer,
       Comments.layer,
       Reports.layer,
+      Generations.layer,
     ),
   ),
   Layer.provideMerge(
     Layer.mergeAll(AuthenticatedLive, SessionAuthenticatedLive, ViewerLive, AdminLive, BodyLimitLive),
   ),
-  Layer.provideMerge(Layer.mergeAll(ContentAccess.layer, HotScore.layer, LessonSearch.layer, Admins.layer)),
-  Layer.provideMerge(Layer.mergeAll(Auth.layer, ApiTokens.layer)),
+  Layer.provideMerge(
+    Layer.mergeAll(
+      ContentAccess.layer,
+      HotScore.layer,
+      LessonSearch.layer,
+      Admins.layer,
+      ByokKeys.layer,
+      GenerationJobs.layer,
+    ),
+  ),
+  Layer.provideMerge(Layer.mergeAll(Auth.layer, ApiTokens.layer, GenerationSettings.layer)),
   Layer.provideMerge(Database.layer),
 )
 

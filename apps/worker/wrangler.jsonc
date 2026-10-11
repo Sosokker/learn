@@ -5,6 +5,15 @@
   "compatibility_date": "2026-09-30",
   // Better Auth needs node:async_hooks (AsyncLocalStorage).
   "compatibility_flags": ["nodejs_compat"],
+  // Smaller upload and faster cold start. The source map goes up too, so stack traces in the logs
+  // still name our files and lines.
+  "minify": true,
+  "upload_source_maps": true,
+  // CPU time per invocation (Workers Paid: up to 5 minutes; the default is 30 s). A generation job
+  // runs in one Durable Object alarm, and pi-ai re-parses the whole tool-call JSON on every
+  // streamed chunk, so writing a large lesson costs CPU that grows with the square of its size.
+  // Waiting on the model is not CPU time. Requests that need less are not affected.
+  "limits": { "cpu_ms": 300000 },
   "routes": [{ "pattern": "learn.sirin.dev", "custom_domain": true }],
   // The web SPA (apps/web build). Only /api/* and /c/* run the Worker; every other path is an
   // asset, and unknown paths get index.html (client-side routes). Asset response headers (CSP)
@@ -29,11 +38,76 @@
   // keyed by user id in the Authenticated middleware (apps/worker/src/rate-limit.ts). The period
   // must match `periodSeconds` there. namespace_id is any account-unique integer.
   "ratelimits": [{ "name": "WRITE_LIMIT", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } }],
+  // AI lesson generation (ADR 0009): one Durable Object per job runs the agent loop and keeps its
+  // transcript in its own SQLite.
+  "durable_objects": { "bindings": [{ "name": "GENERATION_AGENT", "class_name": "GenerationAgent" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GenerationAgent"] }],
   // Hot score recompute.
   "triggers": { "crons": ["*/30 * * * *"] },
   "observability": { "enabled": true },
-  "vars": { "BETTER_AUTH_URL": "https://learn.sirin.dev" }
+  "vars": {
+    "BETTER_AUTH_URL": "https://learn.sirin.dev",
+    // The models the create page offers. `model` is the provider's id; prices are US dollars per
+    // million tokens (for the usage shown and the day's spend), checked against the providers'
+    // price pages on 2026-10-11. `cache_write` is the 5-minute write, `cache_write_1h` the 1-hour
+    // one (Anthropic only). Haiku's prices hold for prompts up to 100k tokens; a job stays far
+    // below that. A provider without a platform key secret is offered with the user's own key only
+    // (at launch: every model). GPT-6 Luna is a reasoning model: it reasons at its default effort
+    // even though we ask for none, and those tokens are output (they count toward
+    // GENERATION_MAX_OUTPUT_TOKENS and the cost).
+    "GENERATION_MODELS": [
+      {
+        "id": "claude-sonnet",
+        "label": "Claude Sonnet 5.5",
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "context_window": 1000000,
+        "max_tokens": 128000,
+        "cost": { "input": 2, "output": 10, "cache_read": 0.1, "cache_write": 2.5, "cache_write_1h": 4 }
+      },
+      {
+        "id": "claude-haiku",
+        "label": "Claude Haiku 5.5",
+        "provider": "anthropic",
+        "model": "claude-haiku-5-5",
+        "context_window": 1000000,
+        "max_tokens": 128000,
+        "cost": {
+          "input": 0.1,
+          "output": 0.5,
+          "cache_read": 0.01,
+          "cache_write": 0.125,
+          "cache_write_1h": 0.2
+        }
+      },
+      {
+        "id": "deepseek-flash",
+        "label": "DeepSeek Flash",
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "context_window": 1000000,
+        "max_tokens": 384000,
+        "cost": { "input": 0.3, "output": 1.2, "cache_read": 0.006, "cache_write": 0 }
+      },
+      {
+        "id": "gpt-6-luna",
+        "label": "GPT-6 Luna",
+        "provider": "openai",
+        "model": "gpt-6-luna",
+        "context_window": 272000,
+        "max_tokens": 128000,
+        "cost": { "input": 0.1, "output": 0.5, "cache_read": 0.01, "cache_write": 0.125 }
+      }
+    ],
+    // Platform-paid jobs per user per UTC day; model requests and output tokens per job.
+    "GENERATION_DAILY_JOBS": "3",
+    "GENERATION_MAX_TURNS": "12",
+    "GENERATION_MAX_OUTPUT_TOKENS": "60000"
+  }
   // Secrets (wrangler secret put): BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-  // ADMIN_USER_IDS (optional; moderators' user ids, comma-separated).
+  // ADMIN_USER_IDS (optional; moderators' user ids, comma-separated), and for AI generation
+  // BYOK_KEK (required for launch: users' own keys are the only billing) and ANTHROPIC_API_KEY,
+  // OPENAI_API_KEY, DEEPSEEK_API_KEY (each optional, unset at launch: setting one turns on the
+  // platform-paid daily quota for that provider's models).
   // Locally they come from .dev.vars (see .dev.vars.example).
 }

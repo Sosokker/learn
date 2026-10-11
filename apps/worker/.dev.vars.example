@@ -12,3 +12,21 @@ GOOGLE_CLIENT_SECRET=replace-with-google-client-secret
 # User ids (the `user.id` column) that may moderate: the reports queue at /admin/reports and
 # hiding comments. Comma-separated; empty means nobody.
 ADMIN_USER_IDS=
+
+# AI lesson generation (ADR 0009). This model is the scripted fake (packages/agent/src/fake-provider.ts,
+# "fake": true): no network, it writes a tiny lesson. It keeps Anthropic's key slot, so with no
+# ANTHROPIC_API_KEY it is BYOK-only, as every model is at launch: save any made-up key of the right
+# shape (sk-ant-api03-<20+ characters>) in Settings to try the flow. Fake models are refused
+# unless APP_ENV is dev or test. Add real models as in wrangler.jsonc `vars.GENERATION_MODELS`
+# (one JSON line here).
+GENERATION_MODELS=[{"id":"fake","label":"Fake model (dev)","provider":"anthropic","fake":true,"model":"fake","context_window":200000,"max_tokens":8192,"cost":{"input":3,"output":15,"cache_read":0.3,"cache_write":3.75,"cache_write_1h":6}}]
+GENERATION_DAILY_JOBS=3
+# Platform keys (optional; never commit real ones). A provider without one is BYOK-only, and the
+# create page then shows no daily quota for its models.
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
+DEEPSEEK_API_KEY=
+# Encrypts users' own provider keys (AES-GCM). 32 random bytes: openssl rand -base64 32
+# Required for launch (BYOK is the only billing). This dev value is public; never use it deployed.
+# A bad value turns AI generation off (logged); the rest of the site keeps working.
+BYOK_KEK=fOI5sfBnXsVUY4kU6fN5xGq3x1y3wC0v7m7l2y0Q1Qc=

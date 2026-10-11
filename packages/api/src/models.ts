@@ -546,3 +546,144 @@ export type ReportResolve = typeof ReportResolve.Type
 // A validator finding, as returned by @app/domain's checkLesson / checkConcept.
 export const Issue = Schema.Struct({ path: Schema.String, code: Schema.String, message: Schema.String })
 export type Issue = typeof Issue.Type
+
+// ── AI lesson generation (ADR 0009, design §6.12)
+
+export const GenerationId = Uuid.pipe(Schema.brand("GenerationId"))
+export type GenerationId = typeof GenerationId.Type
+
+// Who pays the provider: the platform (daily quota) or the user's own key (BYOK).
+export const GenerationBilling = Schema.Literals(["platform", "byok"])
+export type GenerationBilling = typeof GenerationBilling.Type
+
+// Providers a user can store a key for. `fake` is the scripted dev/test provider; no key.
+export const ByokProvider = Schema.Literals(["anthropic", "openai", "deepseek"])
+export type ByokProvider = typeof ByokProvider.Type
+
+export const GenerationStatus = Schema.Literals(["queued", "running", "succeeded", "failed", "canceled"])
+export type GenerationStatus = typeof GenerationStatus.Type
+
+// A model the server offers (an entry of GENERATION_MODELS). `platform`: the platform has a key for
+// its provider, so platform billing can use it; otherwise only the user's own key can.
+export const GenerationModel = Schema.Struct({
+  id: Schema.String,
+  label: Schema.String,
+  provider: Schema.Literals(["anthropic", "openai", "deepseek", "fake"]),
+  platform: Schema.Boolean,
+})
+export type GenerationModel = typeof GenerationModel.Type
+
+// A stored key as the API shows it: never the key, only its provider and last four characters.
+export const ByokKey = Schema.Struct({ provider: ByokProvider, last4: Schema.String, created_at: Millis })
+export type ByokKey = typeof ByokKey.Type
+
+export const ByokKeySet = Schema.Struct({
+  key: Schema.String.check(Schema.isTrimmed(), Schema.isMinLength(20), Schema.isMaxLength(400)),
+})
+export type ByokKeySet = typeof ByokKeySet.Type
+
+// What the create page needs: the models, today's platform quota, and the user's stored keys.
+export const GenerationOptions = Schema.Struct({
+  models: Schema.Array(GenerationModel),
+  daily_limit: Schema.Int,
+  used_today: Schema.Int,
+  // When today's quota resets (next UTC midnight).
+  resets_at: Millis,
+  keys: Schema.Array(ByokKey),
+  // False when the server has no BYOK_KEK: keys cannot be stored.
+  byok_enabled: Schema.Boolean,
+})
+export type GenerationOptions = typeof GenerationOptions.Type
+
+export const maxGenerationPrompt = 4000
+
+export const GenerationCreate = Schema.Struct({
+  prompt: Schema.String.check(
+    Schema.isTrimmed(),
+    Schema.isMinLength(10),
+    Schema.isMaxLength(maxGenerationPrompt),
+  ),
+  lang: LessonLang,
+  model: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(80)),
+  billing: GenerationBilling,
+})
+export type GenerationCreate = typeof GenerationCreate.Type
+
+export const GenerationUsage = Schema.Struct({
+  input: Schema.Int,
+  output: Schema.Int,
+  cache_read: Schema.Int,
+  cache_write: Schema.Int,
+  // US dollars, from the model's configured prices.
+  cost_usd: Schema.Finite,
+})
+export type GenerationUsage = typeof GenerationUsage.Type
+
+// The draft a job saved: a private lesson of the user.
+export const GenerationDraft = Schema.Struct({
+  lesson_id: LessonId,
+  owner_handle: Handle,
+  slug: LessonSlug,
+  title: Schema.String,
+})
+export type GenerationDraft = typeof GenerationDraft.Type
+
+export const Generation = Schema.Struct({
+  id: GenerationId,
+  status: GenerationStatus,
+  prompt: Schema.String,
+  lang: LessonLang,
+  model: Schema.String,
+  billing: GenerationBilling,
+  draft: Schema.NullOr(GenerationDraft),
+  error: Schema.NullOr(Schema.String),
+  turns: Schema.Int,
+  usage: GenerationUsage,
+  created_at: Millis,
+  started_at: Schema.NullOr(Millis),
+  finished_at: Schema.NullOr(Millis),
+})
+export type Generation = typeof Generation.Type
+
+export const GenerationPage = Schema.Struct({
+  items: Schema.Array(Generation),
+  next_cursor: Schema.NullOr(FeedCursor),
+})
+export type GenerationPage = typeof GenerationPage.Type
+
+export const GenerationTool = Schema.Literals([
+  "search_concepts",
+  "get_concept",
+  "validate_lesson",
+  "save_draft",
+])
+export type GenerationTool = typeof GenerationTool.Type
+
+// One event of a job's progress stream (Server-Sent Events, `data:` is this JSON). Small on
+// purpose: tool steps with a short label, not the specs the model writes.
+export const GenerationEvent = Schema.Union([
+  Schema.Struct({ type: Schema.Literal("status"), status: GenerationStatus }),
+  // The model started its n-th request.
+  Schema.Struct({ type: Schema.Literal("turn"), n: Schema.Int }),
+  Schema.Struct({
+    type: Schema.Literal("tool"),
+    tool: GenerationTool,
+    phase: Schema.Literals(["start", "end"]),
+    // The search words or concept slug; the lesson title for validate and save.
+    label: Schema.NullOr(Schema.String),
+    ok: Schema.NullOr(Schema.Boolean),
+    // validate_lesson / save_draft: the issues found (at most a few), for "fixing …" steps.
+    issues: Schema.Array(Issue),
+    issue_count: Schema.Int,
+  }),
+  // What the model said between tool calls, shortened.
+  Schema.Struct({ type: Schema.Literal("text"), text: Schema.String }),
+  Schema.Struct({ type: Schema.Literal("usage"), usage: GenerationUsage }),
+  Schema.Struct({
+    type: Schema.Literal("done"),
+    status: GenerationStatus,
+    draft: Schema.NullOr(GenerationDraft),
+    error: Schema.NullOr(Schema.String),
+  }),
+])
+export type GenerationEvent = typeof GenerationEvent.Type

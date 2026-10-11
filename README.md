@@ -59,9 +59,33 @@ Start from `apps/worker/.dev.vars.example`.
 | `BETTER_AUTH_TRUSTED_ORIGINS` | Optional. Extra origins, comma-separated. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | From your Google OAuth client |
 | `ADMIN_USER_IDS` | Optional. User ids that may moderate (reports, hiding comments), comma-separated. Empty: nobody. |
+| `GENERATION_MODELS` | The AI models `/create` offers, one JSON line. The example lists only the fake model (below). |
+| `GENERATION_DAILY_JOBS`, `GENERATION_MAX_TURNS`, `GENERATION_MAX_OUTPUT_TOKENS` | Optional limits: platform-paid jobs per user per UTC day (3), model requests per job (12), output tokens per job (60000). |
+| `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `DEEPSEEK_API_KEY` | Optional platform keys. Leave them empty locally. A provider without a key is offered with the user's own key only (BYOK), and `/create` shows no daily quota for it. |
+| `BYOK_KEK` | Encrypts users' own provider keys. The example value is public and is refused when deployed. Empty: users cannot store keys. |
+
+### AI lessons locally (fake provider)
+
+`/create` runs each job in a Durable Object (ADR 0009). Locally, use the fake
+model from `.dev.vars.example`: a scripted model inside the Worker
+(`packages/agent/src/fake-provider.ts`). It makes no network call. It searches
+concepts, sends a lesson with one problem to `validate_lesson`, fixes it, and
+saves a private draft.
+
+The example entry is `"provider": "anthropic", "fake": true`: it uses the
+Anthropic key slot, so without `ANTHROPIC_API_KEY` it is BYOK-only, as every
+model is at launch. To try the flow, open Settings and save any made-up key of
+the right shape (`sk-ant-api03-` and 20 or more letters or digits). The fake
+model ignores it. An entry with `"provider": "fake"` instead needs no key and
+runs on the platform quota. The Worker refuses both kinds when `APP_ENV` is
+deployed. Do not put real provider keys in `.dev.vars` unless you mean to pay
+for local runs.
 
 The Worker reads its settings when it gets its first request. If a value is
-missing or wrong, it answers 503 and logs one cause.
+missing or wrong, it answers 503 and logs one cause. The AI settings
+(`GENERATION_*`, `BYOK_KEK`) are the exception: when they are wrong, only AI
+generation is off (`/api/generations` answers 503 `GenerationUnavailable`), the
+cause is logged once, and the rest of the site works.
 
 ## Commands
 
@@ -146,7 +170,36 @@ bunx wrangler r2 bucket create learn-content
    bunx wrangler secret put GOOGLE_CLIENT_SECRET
    # Moderators: user ids (the `user.id` column), comma-separated. Optional.
    bunx wrangler secret put ADMIN_USER_IDS
+   # AI lessons (ADR 0009). Required for launch: users pay with their own keys.
+   openssl rand -base64 32 | bunx wrangler secret put BYOK_KEK
+   # Optional, unset at launch. Setting one turns on the platform-paid daily quota
+   # (GENERATION_DAILY_JOBS) for that provider's models; deleting it turns it off.
+   bunx wrangler secret put ANTHROPIC_API_KEY
+   bunx wrangler secret put OPENAI_API_KEY
+   bunx wrangler secret put DEEPSEEK_API_KEY
    ```
+
+   Never change `BYOK_KEK` while keys are stored: they would no longer decrypt.
+   Each stored key records the KEK version that sealed it (`byok_key.kek_version`,
+   now always 1), so a rotation is possible later: add the new key as version 2
+   next to the old one, re-seal the version-1 rows with it (or delete them and ask
+   those users to save their keys again), then remove the old key. The code for
+   that is not written yet. Until then a key whose version the server does not
+   know fails its job with "set your key again".
+
+   The model list (`GENERATION_MODELS`) and the limits (`GENERATION_DAILY_JOBS`,
+   `GENERATION_MAX_TURNS`, `GENERATION_MAX_OUTPUT_TOKENS`) are vars in
+   `wrangler.jsonc`. Prices there are US dollars per million tokens, with a
+   separate `cache_write_1h` for Anthropic's 1-hour cache writes; check them
+   against the provider before a deploy. OpenAI reasoning models (GPT-6 Luna)
+   reason even though the job asks for none, and those tokens count as output:
+   toward `GENERATION_MAX_OUTPUT_TOKENS` and the cost.
+
+   `wrangler.jsonc` also sets `limits.cpu_ms` to 300000 (5 minutes, the Workers
+   Paid maximum). A job runs in one Durable Object alarm, and pi-ai re-parses
+   the whole tool-call JSON on every streamed chunk, so a large lesson costs CPU
+   time that grows with the square of its size. The Worker is built with
+   `minify` and uploads its source map.
 
    `ADMIN_USER_IDS` is a secret, not a var, so a deploy does not reset it.
    Change it with the same command; the next isolate reads the new list.

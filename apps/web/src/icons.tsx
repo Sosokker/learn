@@ -101,3 +101,23 @@ export const ShieldIcon = () => (
     <path d="M8 2 3 4v4c0 3 2.2 5.2 5 6 2.8-.8 5-3 5-6V4z" />
   </Icon>
 )
+
+export const SparkIcon = () => (
+  <Icon>
+    <path d="M8 2v3M8 11v3M2 8h3M11 8h3M4.2 4.2l1.6 1.6M10.2 10.2l1.6 1.6M4.2 11.8l1.6-1.6M10.2 5.8l1.6-1.6" />
+  </Icon>
+)
+
+export const CheckCircleIcon = () => (
+  <Icon>
+    <circle cx="8" cy="8" r="5.75" />
+    <path d="m5.5 8.2 1.7 1.7 3.3-3.6" />
+  </Icon>
+)
+
+export const AlertIcon = () => (
+  <Icon>
+    <path d="M8 2.5 14 13H2z" />
+    <path d="M8 6.5v3M8 11.25v.01" />
+  </Icon>
+)

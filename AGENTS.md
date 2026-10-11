@@ -45,16 +45,20 @@ the packages you touched.
 ```
 apps/web           React SPA                                   -> api, domain, lesson, ui
 apps/worker        Worker entry (worker.ts), HTTP handlers (http.ts), session middleware
-                   (session.ts), R2 layer; wrangler.jsonc; scripts/seed-local.ts; tests
-                                                               -> api, auth, db, domain, services
+                   (session.ts), R2 layer, the AI job Durable Object (generation-agent.ts);
+                   wrangler.jsonc; scripts/seed-local.ts; tests
+                                                               -> agent, api, auth, db, domain, services
 packages/domain    LessonSpec/ConceptSpec schemas, Rich parser, expression parser, validator,
                    codec + JSON Schema export. Pure: no IO.
 packages/api       HttpApi definition (api.ts), models, errors, middleware tags   -> domain
 packages/db        Drizzle sqlite schema, auth schema, migrations, Database layer  -> domain
 packages/auth      Better Auth (Google only, native D1), profile hook, secret rules -> api, db, domain
 packages/services  Lessons, Engagement (likes, bookmarks, progress), Concepts, Feeds,
-                   Categories, Profiles, ContentAccess, HotScore, Storage seam
+                   Categories, Profiles, ContentAccess, HotScore, Generations, ByokKeys,
+                   GenerationSettings; Storage and GenerationRunner seams
                                                                -> api, db, domain
+packages/agent     AI lesson agent (ADR 0009): pi loop, fixed tools, static prompt,
+                   fake provider                               -> api, domain, services
 packages/ui        Linear tokens, fonts, role colors, Base UI wrappers, app i18n
 packages/lesson    The lesson renderer (sections, widgets, inspector, KaTeX, @ref prompts)
                                                                -> domain, ui
@@ -152,6 +156,15 @@ Imports go one way only. `apps/web` never imports `db`, `auth` or
 - Workers runtime types come from `@cloudflare/workers-types`, listed in each
   package that uses `D1Database` or `R2Bucket`.
 
+### AI generation
+
+- The prompt prefix (tools in `packages/agent/src/tools.ts`, `systemPrompt` in
+  `prompt.ts`) must be the same bytes for every job: no dates, users or ids.
+  A change is a cache miss for every user until it warms again.
+- Tools never take a user or lesson id. The job's user comes from its row.
+- Provider keys (platform or BYOK) are passed to pi explicitly. Tests use the
+  fake provider: never a real key or a network call to a provider.
+
 ## Code standards
 
 ### Effect v4
@@ -209,5 +222,6 @@ template (`~/work/parich/projects/projects-template/.claude/skills/effect-v4/SKI
 
 pi's `/publish` extension (API tokens and `scripts/publish.ts` exist); fork; the
 `problem_hash` reuse check; hot feeds by language or category; anonymous feed
-caching; e2e audit port.
+caching; e2e audit port; for AI jobs: cheaper sub-task models, Batch APIs, a
+daily cost cap, a real-provider smoke test.
 See `docs/design.md` §6.8.
