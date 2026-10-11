@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AtChar123handleChar125SlugRouteImport } from './routes/@{$handle}.$slug'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -35,26 +37,40 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AtChar123handleChar125SlugRoute =
   AtChar123handleChar125SlugRouteImport.update({
     id: '/@{$handle}/$slug',
     path: '/@{$handle}/$slug',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/guide': typeof GuideRoute
   '/library': typeof LibraryRoute
+  '/settings': typeof SettingsRoute
   '/@{$handle}/$slug': typeof AtChar123handleChar125SlugRoute
+  '/admin/reports': typeof AdminReportsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/guide': typeof GuideRoute
   '/library': typeof LibraryRoute
+  '/settings': typeof SettingsRoute
   '/@{$handle}/$slug': typeof AtChar123handleChar125SlugRoute
+  '/admin/reports': typeof AdminReportsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,15 +78,38 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/guide': typeof GuideRoute
   '/library': typeof LibraryRoute
+  '/settings': typeof SettingsRoute
   '/@{$handle}/$slug': typeof AtChar123handleChar125SlugRoute
+  '/admin/reports': typeof AdminReportsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/explore' | '/guide' | '/library' | '/@{$handle}/$slug'
+  fullPaths:
+    | '/'
+    | '/explore'
+    | '/guide'
+    | '/library'
+    | '/settings'
+    | '/@{$handle}/$slug'
+    | '/admin/reports'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/explore' | '/guide' | '/library' | '/@{$handle}/$slug'
+  to:
+    | '/'
+    | '/explore'
+    | '/guide'
+    | '/library'
+    | '/settings'
+    | '/@{$handle}/$slug'
+    | '/admin/reports'
   id:
-    '__root__' | '/' | '/explore' | '/guide' | '/library' | '/@{$handle}/$slug'
+    | '__root__'
+    | '/'
+    | '/explore'
+    | '/guide'
+    | '/library'
+    | '/settings'
+    | '/@{$handle}/$slug'
+    | '/admin/reports'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -78,7 +117,9 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   GuideRoute: typeof GuideRoute
   LibraryRoute: typeof LibraryRoute
+  SettingsRoute: typeof SettingsRoute
   AtChar123handleChar125SlugRoute: typeof AtChar123handleChar125SlugRoute
+  AdminReportsRoute: typeof AdminReportsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -111,11 +152,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/@{$handle}/$slug': {
       id: '/@{$handle}/$slug'
       path: '/@{$handle}/$slug'
       fullPath: '/@{$handle}/$slug'
       preLoaderRoute: typeof AtChar123handleChar125SlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -126,7 +181,9 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   GuideRoute: GuideRoute,
   LibraryRoute: LibraryRoute,
+  SettingsRoute: SettingsRoute,
   AtChar123handleChar125SlugRoute: AtChar123handleChar125SlugRoute,
+  AdminReportsRoute: AdminReportsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

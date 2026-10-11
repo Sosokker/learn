@@ -9,6 +9,7 @@ import {
   sqliteTable,
   text,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core"
 import { authUser } from "./auth-schema.ts"
 
@@ -21,7 +22,7 @@ import { authUser } from "./auth-schema.ts"
 // index backwards for `order by published_at desc, id desc`, so a desc index buys nothing. Counters live on the row and change in the same
 // D1 batch (one transaction) as the rows they count.
 //
-// FTS5 tables (`concept_fts`) cannot be declared in Drizzle; they live in a hand-written
+// FTS5 tables (`concept_fts`, `lesson_fts`) cannot be declared in Drizzle; they live in a hand-written
 // migration (see migrations/). The category seed is a migration too.
 
 const visibilities = sql`('private', 'unlisted', 'public')`
@@ -98,11 +99,11 @@ export const lesson = sqliteTable(
     index("lesson_hot_idx")
       .on(table.hot_score, table.id)
       .where(sql`visibility = 'public' and deleted_at is null`),
-    index("lesson_cat_idx")
-      .on(table.category_id, table.published_at, table.id)
-      .where(sql`visibility = 'public' and deleted_at is null`),
     index("lesson_kind_idx")
       .on(table.kind, table.published_at, table.id)
+      .where(sql`visibility = 'public' and deleted_at is null`),
+    index("lesson_kind_hot_idx")
+      .on(table.kind, table.hot_score, table.id)
       .where(sql`visibility = 'public' and deleted_at is null`),
     index("lesson_owner_idx").on(table.owner_id, table.updated_at, table.id),
     index("lesson_problem_idx").on(table.problem_hash).where(sql`problem_hash is not null`),
@@ -134,7 +135,8 @@ export const lessonVersion = sqliteTable(
   ],
 )
 
-// The current version of each language of a lesson (replaces lesson.current_version_id).
+// The current version of each language of a lesson (replaces lesson.current_version_id), plus
+// what lesson search indexes and the per-language feed.
 export const lessonLang = sqliteTable(
   "lesson_lang",
   {
@@ -147,11 +149,27 @@ export const lessonLang = sqliteTable(
       .references(() => lessonVersion.id),
     title: text().notNull(),
     summary: text().notNull(),
+    // The text given to lesson_fts: title and summary, Thai split into words (like
+    // concept_lang.search). Null only for rows from before migration 0007; the cron fills those.
+    search: text(),
+    // The rowid of this row's lesson_fts row, fixed when the row is created (see concept_lang).
+    // lesson_fts holds a row only while the lesson is public.
+    fts_rowid: integer(),
+    // Copies from lesson, kept in sync in the same batch (like lesson_tag), so the feed of one
+    // language reads this index only.
+    is_public: integer().notNull().default(0),
+    published_at: integer(),
     updated_at: integer().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.lesson_id, table.lang] }),
     check("lesson_lang_lang_check", sql`${table.lang} in ${langs}`),
+    uniqueIndex("lesson_lang_fts_rowid_unique").on(table.fts_rowid),
+    index("lesson_lang_feed_idx")
+      .on(table.lang, table.published_at, table.lesson_id)
+      .where(sql`is_public = 1`),
+    // The cron's search backfill reads only the rows still waiting.
+    index("lesson_lang_search_todo_idx").on(table.lesson_id).where(sql`search is null`),
   ],
 )
 
@@ -160,9 +178,32 @@ export const tag = sqliteTable("tag", {
   // Normalized: NFC, lowercase, words joined with dashes.
   slug: text().notNull().unique(),
   name: text().notNull(),
-  // Public lessons only.
+  // Public lessons only. Changed by ±1 in the batch that changes a lesson's tags or visibility
+  // (see Lessons.update), never recounted.
   lesson_count: integer().notNull().default(0),
 })
+
+// The category feeds: one row per public lesson for its category and every ancestor of it
+// (`math.analysis.real-analysis` also lists under `math.analysis` and `math`), with a copy of
+// published_at. So the feed of any category, parent or leaf, is one range of this index in
+// feed order, and no sort. Rows exist only while the lesson is public; the batch that changes a
+// lesson's category or visibility deletes and rewrites them.
+export const lessonCategory = sqliteTable(
+  "lesson_category",
+  {
+    lesson_id: text()
+      .notNull()
+      .references(() => lesson.id),
+    category_id: text()
+      .notNull()
+      .references(() => category.id),
+    published_at: integer().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.lesson_id, table.category_id] }),
+    index("lesson_category_feed_idx").on(table.category_id, table.published_at, table.lesson_id),
+  ],
+)
 
 // At most 5 per lesson. is_public, published_at and hot_score are copies from lesson, kept in
 // sync in the same batch, so a tag feed reads this index only.
@@ -185,6 +226,8 @@ export const lessonTag = sqliteTable(
       .on(table.tag_id, table.published_at, table.lesson_id)
       .where(sql`is_public = 1`),
     index("lesson_tag_hot_idx").on(table.tag_id, table.hot_score, table.lesson_id).where(sql`is_public = 1`),
+    // The hot-score cron rewrites only rows published in its window: a range of this index.
+    index("lesson_tag_recent_idx").on(table.published_at).where(sql`is_public = 1`),
   ],
 )
 
@@ -199,7 +242,11 @@ export const lessonLike = sqliteTable(
       .references(() => lesson.id),
     created_at: integer().notNull(),
   },
-  (table) => [primaryKey({ columns: [table.user_id, table.lesson_id] })],
+  (table) => [
+    // The PK answers "did I like it"; this one the lesson delete, which removes its likes.
+    primaryKey({ columns: [table.user_id, table.lesson_id] }),
+    index("lesson_like_lesson_idx").on(table.lesson_id),
+  ],
 )
 
 export const bookmark = sqliteTable(
@@ -213,9 +260,22 @@ export const bookmark = sqliteTable(
       .references(() => lesson.id),
     created_at: integer().notNull(),
   },
-  (table) => [primaryKey({ columns: [table.user_id, table.lesson_id] })],
+  (table) => [
+    primaryKey({ columns: [table.user_id, table.lesson_id] }),
+    // "My bookmarks", newest first (keyset), and the lesson delete.
+    index("bookmark_user_idx").on(table.user_id, table.created_at, table.lesson_id),
+    index("bookmark_lesson_idx").on(table.lesson_id),
+  ],
 )
 
+// Comments on a lesson, anchored to one piece of it (design §6.11). Ids of parts,
+// cards, sections and items are the same in every language and stay across versions, so a
+// comment belongs to the lesson and survives new versions; the reader says when its anchor is
+// gone. One level of replies: a reply's parent is a top-level comment, and it has its anchor.
+//
+// `lesson.comment_count` counts the comments everyone sees (not deleted, not hidden); it moves
+// by ±1 in the batch that creates, deletes, hides or unhides one. `reply_count` counts every reply
+// ever written (deleted ones too); it only caps a thread's size.
 export const comment = sqliteTable(
   "comment",
   {
@@ -226,21 +286,42 @@ export const comment = sqliteTable(
     user_id: text()
       .notNull()
       .references(() => authUser.id),
-    // Anchors belong to one version.
+    // The version the author was reading (its language is the comment's language).
     version_id: text()
       .notNull()
       .references(() => lessonVersion.id),
-    // `@slug/section.item`, or null for the whole lesson.
+    // `lesson` (the whole lesson), `part:<id>`, `card:<id>`, `section:<id>` or
+    // `item:<section>.<item>` (the renderer's target keys). Never null since migration 0010.
     anchor: text(),
     parent_id: text().references((): AnySQLiteColumn => comment.id),
+    // Plain text, never markup (ADR 0004). Emptied when the comment is deleted.
     body: text().notNull(),
+    reply_count: integer().notNull().default(0),
     created_at: integer().notNull(),
+    edited_at: integer(),
     deleted_at: integer(),
+    // Hidden by a moderator: `owner` (the lesson's owner) or `admin`. Only the author, the lesson
+    // owner and admins still see it.
+    hidden_at: integer(),
+    hidden_by: text(),
   },
-  (table) => [index("comment_lesson_idx").on(table.lesson_id, table.created_at, table.id)],
+  (table) => [
+    // A lesson's threads, newest first, and the threads of one anchor.
+    index("comment_thread_idx").on(table.lesson_id, table.created_at, table.id).where(sql`parent_id is null`),
+    index("comment_anchor_idx")
+      .on(table.lesson_id, table.anchor, table.created_at, table.id)
+      .where(sql`parent_id is null`),
+    // The replies of a page of threads.
+    index("comment_reply_idx")
+      .on(table.parent_id, table.created_at, table.id)
+      .where(sql`parent_id is not null`),
+  ],
 )
 
-// Private learning state (step, revealed cards, quiz answers), JSON ≤ 4 KB.
+// Private reading progress, one row per user and lesson (section ids are the same in every
+// language, so it carries over). `state` is JSON written by Progress.save: the sections seen, the
+// last one, how many the version has, and its language. `done` is 1 once every section was seen;
+// "Continue learning" lists the unfinished rows only.
 export const progress = sqliteTable(
   "progress",
   {
@@ -254,12 +335,18 @@ export const progress = sqliteTable(
       .notNull()
       .references(() => lessonVersion.id),
     state: text().notNull(),
+    done: integer().notNull().default(0),
     updated_at: integer().notNull(),
   },
-  (table) => [primaryKey({ columns: [table.user_id, table.lesson_id] })],
+  (table) => [
+    primaryKey({ columns: [table.user_id, table.lesson_id] }),
+    index("progress_user_idx").on(table.user_id, table.updated_at, table.lesson_id).where(sql`done = 0`),
+    index("progress_lesson_idx").on(table.lesson_id),
+  ],
 )
 
-// Bearer tokens for pi's /publish. Only the sha256 of a token is stored, never the token.
+// Bearer tokens for pi's /publish (ADR 0008). Only the sha256 of a token is stored, never the
+// token. `prefix` is its first characters, not secret, so the settings page can tell tokens apart.
 export const apiToken = sqliteTable(
   "api_token",
   {
@@ -269,29 +356,52 @@ export const apiToken = sqliteTable(
       .references(() => authUser.id, { onDelete: "cascade" }),
     hash: text().notNull().unique(),
     name: text().notNull(),
+    prefix: text().notNull().default(""),
     last_used_at: integer(),
     created_at: integer().notNull(),
     revoked_at: integer(),
   },
-  (table) => [index("api_token_user_idx").on(table.user_id, table.created_at)],
+  (table) => [
+    // The user-delete cascade.
+    index("api_token_user_idx").on(table.user_id, table.created_at),
+    // The settings list and the per-user cap read active tokens only, so revoked rows cost nothing.
+    index("api_token_active_idx")
+      .on(table.user_id, table.created_at, table.id)
+      .where(sql`revoked_at is null`),
+  ],
 )
 
+// A signed-in user's report of a lesson or a comment. Nobody but admins lists them. One open
+// report per user and target (the partial unique index); resolving closes every open report of
+// the target at once.
 export const report = sqliteTable(
   "report",
   {
     id: text().primaryKey(),
+    // `lesson` or `comment` (checked by the API schema; the table predates it).
     target_type: text().notNull(),
     target_id: text().notNull(),
     reporter_id: text()
       .notNull()
       .references(() => authUser.id),
+    // spam | abuse | wrong | other (the API schema checks it).
     reason: text().notNull(),
+    // Optional short text from the reporter, plain text.
+    note: text(),
     status: text().notNull().default("open"),
     created_at: integer().notNull(),
+    resolved_at: integer(),
+    resolved_by: text(),
   },
   (table) => [
     check("report_status_check", sql`${table.status} in ('open', 'resolved', 'dismissed')`),
-    index("report_open_idx").on(table.created_at).where(sql`status = 'open'`),
+    // The admin queue, newest first (keyset).
+    index("report_queue_idx").on(table.created_at, table.id).where(sql`status = 'open'`),
+    uniqueIndex("report_open_unique")
+      .on(table.reporter_id, table.target_type, table.target_id)
+      .where(sql`status = 'open'`),
+    // Resolving a target closes its open reports.
+    index("report_target_idx").on(table.target_type, table.target_id).where(sql`status = 'open'`),
   ],
 )
 
@@ -347,11 +457,16 @@ export const conceptLang = sqliteTable(
     // JSON array of strings.
     aliases: text().notNull(),
     search: text().notNull(),
+    // The rowid of this row's concept_fts row, fixed when the row is created. concept_fts's other
+    // columns are UNINDEXED, so finding its row by concept_id would scan the whole FTS table.
+    // Null only before migration 0005 backfilled it.
+    fts_rowid: integer(),
     updated_at: integer().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.concept_id, table.lang] }),
     check("concept_lang_lang_check", sql`${table.lang} in ${langs}`),
+    uniqueIndex("concept_lang_fts_rowid_unique").on(table.fts_rowid),
   ],
 )
 

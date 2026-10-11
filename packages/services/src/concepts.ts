@@ -5,6 +5,7 @@ import {
   type ConceptHit,
   ConceptNotFound,
   type ConceptPublished,
+  type ConceptUnchanged,
   ConceptVersionId,
   CurrentUser,
   Handle,
@@ -45,10 +46,15 @@ export class Concepts extends Context.Service<
     }) => Effect.Effect<ReadonlyArray<ConceptHit>>
     readonly get: (slug: string) => Effect.Effect<Concept, ConceptNotFound>
     // Creates the concept, or adds the next version of the body's language. Only the creator may
-    // add versions: a concept is shared by every lesson that pins it.
+    // add versions: a concept is shared by every lesson that pins it. A body identical to the
+    // language's current version writes nothing and returns it (`created: false`).
     readonly publish: (
       body: Uint8Array,
-    ) => Effect.Effect<ConceptPublished, InvalidConcept | ConceptForbidden | PayloadTooLarge, CurrentUser>
+    ) => Effect.Effect<
+      ConceptPublished | ConceptUnchanged,
+      InvalidConcept | ConceptForbidden | PayloadTooLarge,
+      CurrentUser
+    >
   }
 >()("@app/services/Concepts") {
   static readonly layer = Layer.effect(
@@ -215,11 +221,30 @@ export class Concepts extends Context.Service<
 
         const canonical = canonicalJson(spec)
         const hash = yield* Effect.promise(() => sha256Hex(canonical))
+        // The body holds everything a version is (card, aliases, needs), so the same hash is the
+        // same version.
+        if (Option.isSome(existing)) {
+          const current = yield* db
+            .query(
+              raw(sql`select cv.id as version_id, cv.n, cv.body_hash from concept_lang cl
+                join concept_version cv on cv.id = cl.version_id
+                where cl.concept_id = ${existing.value.id} and cl.lang = ${spec.lang}`),
+              CurrentRow,
+            )
+            .pipe(Effect.orDie)
+          const same = current[0]
+          if (same !== undefined && same.body_hash === hash) {
+            const unchanged: ConceptUnchanged = { slug: spec.slug, lang: spec.lang, ...same, created: false }
+            return unchanged
+          }
+        }
         const key = contentKey(hash)
         if (!(yield* storage.exists(key).pipe(Effect.orDie))) {
           yield* storage.put(key, { body: canonical, contentType: "application/json" }).pipe(Effect.orDie)
         }
 
+        // Rows an older Worker left must be in line before this batch takes the next rowid.
+        yield* repairConceptFts(db)
         const now = Date.now()
         const conceptId = Option.match(existing, { onNone: () => uuidv7(now), onSome: (row) => row.id })
         const versionId = uuidv7(now)
@@ -235,19 +260,24 @@ export class Concepts extends Context.Service<
             raw(sql`insert into concept_version (id, concept_id, lang, n, body_hash, body_bytes, created_at)
               select ${versionId}, ${conceptId}, ${spec.lang}, coalesce(max(n), 0) + 1, ${hash}, ${canonical.byteLength}, ${now}
               from concept_version where concept_id = ${conceptId} and lang = ${spec.lang}`),
-            raw(sql`insert into concept_lang (concept_id, lang, version_id, kind, title, aliases, search, updated_at)
+            // A new row takes the next FTS rowid (nextConceptFtsRowid); an existing row keeps its own.
+            raw(sql`insert into concept_lang (concept_id, lang, version_id, kind, title, aliases, search, fts_rowid, updated_at)
               values (${conceptId}, ${spec.lang}, ${versionId}, ${spec.card.kind}, ${richPlainText(spec.card.title)},
-                ${JSON.stringify(spec.aliases)}, ${search}, ${now})
+                ${JSON.stringify(spec.aliases)}, ${search}, ${nextConceptFtsRowid}, ${now})
               on conflict (concept_id, lang) do update set version_id = excluded.version_id, kind = excluded.kind,
-                title = excluded.title, aliases = excluded.aliases, search = excluded.search, updated_at = excluded.updated_at`),
+                title = excluded.title, aliases = excluded.aliases, search = excluded.search,
+                fts_rowid = coalesce(concept_lang.fts_rowid, excluded.fts_rowid), updated_at = excluded.updated_at`),
             raw(sql`delete from concept_need where concept_id = ${conceptId}`),
             ...needs.map((need) =>
               raw(sql`insert into concept_need (concept_id, need_id) values (${conceptId}, ${need.id})`),
             ),
-            raw(sql`delete from concept_fts where concept_id = ${conceptId} and lang = ${spec.lang}`),
-            raw(
-              sql`insert into concept_fts (concept_id, lang, search) values (${conceptId}, ${spec.lang}, ${search})`,
-            ),
+            // By rowid: concept_fts's concept_id and lang are UNINDEXED, so `where concept_id = ?`
+            // would scan the whole FTS table.
+            raw(sql`delete from concept_fts where rowid = (select fts_rowid from concept_lang
+              where concept_id = ${conceptId} and lang = ${spec.lang})`),
+            raw(sql`insert into concept_fts (rowid, concept_id, lang, search)
+              select fts_rowid, concept_id, lang, search from concept_lang
+              where concept_id = ${conceptId} and lang = ${spec.lang}`),
           ])
           .pipe(Effect.orDie)
 
@@ -260,6 +290,7 @@ export class Concepts extends Context.Service<
           n: stored[0]?.n ?? 1,
           version_id: ConceptVersionId.make(versionId),
           body_hash: BodyHash.make(hash),
+          created: true,
         }
         return published
       })
@@ -268,6 +299,68 @@ export class Concepts extends Context.Service<
     }),
   )
 }
+
+// The FTS rowid for a new concept_lang row: past both the highest one handed out and the highest
+// row in concept_fts (see nextLessonFtsRowid), so a row an older Worker inserted with an automatic
+// rowid cannot collide with it. Two single-row reads.
+const nextConceptFtsRowid = sql`(select max(
+    coalesce((select max(fts_rowid) from concept_lang), 0),
+    coalesce((select rowid from concept_fts order by rowid desc limit 1), 0)
+  ) + 1)`
+
+// Repairs what a Worker from before migration 0004 leaves when it publishes a concept after the
+// migrations ran (the deploy window): a concept_lang row without fts_rowid, and a concept_fts row
+// with an automatic rowid (max + 1 at the time) that no concept_lang row points at, which would
+// stay as a duplicate hit. Run by the cron and before every concept publish. With nothing to
+// repair it costs two index reads: the strays are above the highest fts_rowid (a rowid range of
+// concept_fts), and rows without one are a range of the unique fts_rowid index.
+export const repairConceptFts = Effect.fn("Concepts.repairFts")(function* (db: Database["Service"]) {
+  const strays = yield* db
+    .query(
+      raw(sql`select rowid as fts_rowid, concept_id, lang from concept_fts
+        where rowid > (select coalesce(max(fts_rowid), 0) from concept_lang) order by rowid`),
+      StrayRow,
+    )
+    .pipe(Effect.orDie)
+  const missing = yield* db
+    .query(raw(sql`select concept_id, lang from concept_lang where fts_rowid is null limit 25`), KeyRow)
+    .pipe(Effect.orDie)
+  const adopted = (key: typeof KeyRow.Type) =>
+    strays.some((stray) => stray.concept_id === key.concept_id && stray.lang === key.lang)
+  const unmatched = missing.filter((key) => !adopted(key))
+  if (strays.length === 0 && unmatched.length === 0) return
+  // Rebuilt from concept_lang.search, which every Worker version writes, so the FTS row has the
+  // current text whichever write came last.
+  const resync = (key: typeof KeyRow.Type) => [
+    raw(sql`delete from concept_fts where rowid = (select fts_rowid from concept_lang
+      where concept_id = ${key.concept_id} and lang = ${key.lang})`),
+    raw(sql`insert into concept_fts (rowid, concept_id, lang, search)
+      select fts_rowid, concept_id, lang, search from concept_lang
+      where concept_id = ${key.concept_id} and lang = ${key.lang} and fts_rowid is not null`),
+  ]
+  yield* db
+    .batch([
+      // A stray becomes its row's FTS row when the row has none, else it goes.
+      ...strays.flatMap((stray) => [
+        raw(sql`update concept_lang set fts_rowid = ${stray.fts_rowid}
+          where concept_id = ${stray.concept_id} and lang = ${stray.lang} and fts_rowid is null`),
+        raw(sql`delete from concept_fts where rowid = ${stray.fts_rowid}`),
+        ...resync(stray),
+      ]),
+      // Rows still without one get the next rowid. The old Worker's FTS row for them is found by
+      // its UNINDEXED columns, a scan of concept_fts; only rows from the deploy window get here.
+      ...unmatched.flatMap((key) => [
+        raw(sql`update concept_lang set fts_rowid = ${nextConceptFtsRowid}
+          where concept_id = ${key.concept_id} and lang = ${key.lang} and fts_rowid is null`),
+        raw(sql`delete from concept_fts where concept_id = ${key.concept_id} and lang = ${key.lang}`),
+        ...resync(key),
+      ]),
+    ])
+    .pipe(Effect.orDie)
+})
+
+const StrayRow = Schema.Struct({ fts_rowid: Schema.Int, concept_id: Schema.String, lang: LessonLang })
+const KeyRow = Schema.Struct({ concept_id: Schema.String, lang: LessonLang })
 
 const cardText = (card: Card): ReadonlyArray<string> =>
   [card.title, card.body, card.says, card.useWhen, card.example]
@@ -300,3 +393,4 @@ const NeedRow = Schema.Struct({ id: Schema.String, slug: Schema.String })
 const IdRow = Schema.Struct({ id: Schema.String })
 const HashRow = Schema.Struct({ body_hash: BodyHash })
 const NRow = Schema.Struct({ n: Schema.Int })
+const CurrentRow = Schema.Struct({ version_id: ConceptVersionId, n: Schema.Int, body_hash: BodyHash })

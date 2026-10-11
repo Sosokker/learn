@@ -1,51 +1,105 @@
-import { Button, EmptyState, Input, Select, Tag, useI18n } from "@app/ui"
+import type { FeedSort } from "@app/api"
+import { LessonKind, LessonLang } from "@app/domain"
+import { Button, cx, EmptyState, Input, Select, Tag, useI18n } from "@app/ui"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { Schema } from "effect"
 import { useEffect, useId, useState } from "react"
-import { categoryPath } from "../format.ts"
+import { categoryPath, kindKey } from "../format.ts"
 import { LessonList } from "../lesson-list.tsx"
-import { categoriesQuery, type Feed, feedQuery } from "../queries.ts"
+import { categoriesQuery, type Feed, feedQuery, lessonSearchQuery } from "../queries.ts"
 
-type ExploreSearch = { readonly category?: string | undefined; readonly tag?: string | undefined }
+type ExploreSearch = {
+  readonly q?: string | undefined
+  readonly category?: string | undefined
+  readonly tag?: string | undefined
+  readonly kind?: LessonKind | undefined
+  readonly lang?: LessonLang | undefined
+  readonly sort?: FeedSort | undefined
+}
 
 const categoryPattern = /^[a-z0-9-]+(\.[a-z0-9-]+){0,4}$/u
+const isKind = Schema.is(LessonKind)
+const isLang = Schema.is(LessonLang)
+const kinds = LessonKind.literals
 
-// The filter lives in the URL, so a filtered list can be shared. One filter at a time (the API
-// has one feed per category and per tag): a category wins over a tag.
-const feedOf = (search: ExploreSearch): Feed =>
-  search.category !== undefined
-    ? { kind: "category", id: search.category }
-    : search.tag !== undefined
-      ? { kind: "tag", slug: search.tag }
-      : { kind: "new" }
+const text = (value: unknown) =>
+  typeof value === "string" || typeof value === "number" ? String(value).trim() : ""
+
+// The filter lives in the URL, so a filtered list can be shared. The API has one index per feed,
+// so one filter at a time (category, then tag, kind, language), and Hot only where an index
+// covers it (not with a category or a language). A search (`q`) uses the language only.
+const feedOf = (search: ExploreSearch): Feed => {
+  const sort = search.sort ?? "new"
+  if (search.category !== undefined) return { kind: "category", id: search.category }
+  if (search.tag !== undefined) return { kind: "tag", slug: search.tag, sort }
+  if (search.lang !== undefined) return { kind: "new", lang: search.lang }
+  return sort === "hot" ? { kind: "hot", lessonKind: search.kind } : { kind: "new", lessonKind: search.kind }
+}
 
 export const Route = createFileRoute("/explore")({
   validateSearch: (search: Record<string, unknown>): ExploreSearch => {
-    const category = typeof search.category === "string" ? search.category : ""
-    const tag =
-      typeof search.tag === "string" || typeof search.tag === "number" ? String(search.tag).trim() : ""
-    if (categoryPattern.test(category)) return { category }
-    if (tag !== "") return { tag: tag.slice(0, 40) }
-    return {}
+    const q = text(search.q).slice(0, 100)
+    const sort = search.sort === "hot" ? ({ sort: "hot" } as const) : {}
+    const lang = isLang(search.lang) ? { lang: search.lang } : {}
+    const filter = (() => {
+      const category = text(search.category)
+      if (categoryPattern.test(category)) return { category }
+      const tag = text(search.tag)
+      if (tag !== "") return { tag: tag.slice(0, 40) }
+      if (isKind(search.kind)) return { kind: search.kind }
+      return lang
+    })()
+    return q === "" ? { ...filter, ...sort } : { q, ...lang }
   },
-  loaderDeps: (match) => ({ category: match.search.category, tag: match.search.tag }),
-  loader: (match) => void match.context.queryClient.prefetchInfiniteQuery(feedQuery(feedOf(match.deps))),
+  loaderDeps: (match) => match.search,
+  loader: (match) =>
+    void (match.deps.q === undefined
+      ? match.context.queryClient.prefetchInfiniteQuery(feedQuery(feedOf(match.deps)))
+      : match.context.queryClient.prefetchInfiniteQuery(lessonSearchQuery(match.deps.q, match.deps.lang))),
   component: ExplorePage,
 })
 
 const allCategories = "__all__"
+const allKinds = "__all__"
+const allLangs = "__all__"
 
 function ExplorePage() {
   const { t, locale } = useI18n()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const categories = useQuery(categoriesQuery)
-  const feed = useInfiniteQuery(feedQuery(feedOf(search)))
+  const searching = search.q !== undefined
+  const feed = useInfiniteQuery({ ...feedQuery(feedOf(search)), enabled: !searching })
+  const results = useInfiniteQuery({
+    ...lessonSearchQuery(search.q ?? "", search.lang),
+    enabled: searching,
+  })
   const [tagDraft, setTagDraft] = useState(search.tag ?? "")
+  const [queryDraft, setQueryDraft] = useState(search.q ?? "")
   const tagId = useId()
+  const queryId = useId()
+  const hotHintId = useId()
   useEffect(() => setTagDraft(search.tag ?? ""), [search.tag])
+  useEffect(() => setQueryDraft(search.q ?? ""), [search.q])
 
-  const filtered = search.category !== undefined || search.tag !== undefined
+  // Keeps the sort (and the search) and replaces the one filter.
+  const setFilter = (filter: Partial<Pick<ExploreSearch, "category" | "tag" | "kind" | "lang">>) =>
+    void navigate({
+      search: {
+        ...(search.q === undefined ? {} : { q: search.q }),
+        ...(search.sort === undefined ? {} : { sort: search.sort }),
+        ...filter,
+      },
+    })
+  const hotAvailable = search.category === undefined && search.lang === undefined
+  const sort = hotAvailable ? (search.sort ?? "new") : "new"
+  const filtered =
+    search.category !== undefined ||
+    search.tag !== undefined ||
+    search.kind !== undefined ||
+    search.lang !== undefined
+
   const categoryOptions = [
     { value: allCategories, label: t("explore.allCategories") },
     ...(categories.data ?? [])
@@ -55,6 +109,23 @@ function ExplorePage() {
       }))
       .toSorted((a, b) => a.label.localeCompare(b.label, locale)),
   ]
+  const kindOptions = [
+    { value: allKinds, label: t("explore.allKinds") },
+    ...kinds.map((kind) => ({ value: kind, label: t(kindKey[kind]) })),
+  ]
+  const langOptions = [
+    { value: allLangs, label: t("explore.allLangs") },
+    { value: "en", label: t("lang.en") },
+    { value: "th", label: t("lang.th") },
+  ]
+  const langSelect = (
+    <Select
+      label={t("lang.label")}
+      options={langOptions}
+      value={search.lang ?? allLangs}
+      onValueChange={(value) => setFilter(isLang(value) ? { lang: value } : {})}
+    />
+  )
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
@@ -63,70 +134,165 @@ function ExplorePage() {
         <p className="text-body-sm text-ink-subtle">{t("explore.description")}</p>
       </header>
 
-      <section aria-label={t("explore.filters")} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <Select
-          label={t("explore.category")}
-          className="sm:w-64"
-          options={categoryOptions}
-          value={search.category ?? allCategories}
-          onValueChange={(value) =>
-            void navigate({ search: value === allCategories ? {} : { category: value } })
+      <form
+        className="flex flex-col gap-1.5"
+        onSubmit={(event) => {
+          event.preventDefault()
+          const q = queryDraft.trim()
+          void navigate({
+            search: q === "" ? {} : { q, ...(search.lang === undefined ? {} : { lang: search.lang }) },
+          })
+        }}
+      >
+        <label htmlFor={queryId} className="text-dense font-medium text-ink-muted">
+          {t("explore.search.label")}
+        </label>
+        <div className="flex gap-2">
+          <Input
+            id={queryId}
+            type="search"
+            value={queryDraft}
+            maxLength={100}
+            placeholder={t("explore.search.placeholder")}
+            onValueChange={(value) => setQueryDraft(value)}
+          />
+          <Button type="submit">{t("explore.search.submit")}</Button>
+        </div>
+      </form>
+
+      {searching ? (
+        <section aria-label={t("explore.filters")} className="flex flex-col gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">{langSelect}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-body-sm text-ink-muted">
+              {t("explore.search.results", { query: search.q ?? "" })}
+            </p>
+            <Button variant="ghost" size="sm" onClick={() => void navigate({ search: {} })}>
+              {t("explore.search.clear")}
+            </Button>
+          </div>
+        </section>
+      ) : (
+        <section aria-label={t("explore.filters")} className="flex flex-col gap-3">
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1.5 text-dense font-medium text-ink-muted">{t("explore.sort")}</legend>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <div className="inline-flex w-fit rounded-md border border-hairline p-0.5">
+                {(["new", "hot"] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={sort === value}
+                    aria-describedby={value === "hot" && !hotAvailable ? hotHintId : undefined}
+                    disabled={value === "hot" && !hotAvailable}
+                    onClick={() =>
+                      void navigate({ search: { ...search, sort: value === "hot" ? "hot" : undefined } })
+                    }
+                    className={cx(
+                      "rounded px-3 py-1 text-body-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50",
+                      sort === value ? "bg-surface-4 text-ink" : "text-ink-subtle hover:text-ink",
+                    )}
+                  >
+                    {t(value === "hot" ? "explore.sort.hot" : "explore.sort.new")}
+                  </button>
+                ))}
+              </div>
+              {hotAvailable ? null : (
+                <p id={hotHintId} className="text-caption text-ink-tertiary">
+                  {t("explore.sort.hotUnavailable")}
+                </p>
+              )}
+            </div>
+          </fieldset>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Select
+              label={t("explore.category")}
+              options={categoryOptions}
+              value={search.category ?? allCategories}
+              onValueChange={(value) => setFilter(value === allCategories ? {} : { category: value })}
+            />
+            <Select
+              label={t("explore.kind")}
+              options={kindOptions}
+              value={search.kind ?? allKinds}
+              onValueChange={(value) => setFilter(isKind(value) ? { kind: value } : {})}
+            />
+            {langSelect}
+            <form
+              className="flex min-w-0 flex-col gap-1.5"
+              onSubmit={(event) => {
+                event.preventDefault()
+                const tag = tagDraft.trim()
+                setFilter(tag === "" ? {} : { tag })
+              }}
+            >
+              <label htmlFor={tagId} className="text-dense font-medium text-ink-muted">
+                {t("explore.tag")}
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  id={tagId}
+                  type="search"
+                  value={tagDraft}
+                  maxLength={40}
+                  placeholder={t("explore.tagPlaceholder")}
+                  onValueChange={(value) => setTagDraft(value)}
+                />
+                <Button type="submit">{t("explore.apply")}</Button>
+              </div>
+            </form>
+          </div>
+          <p className="text-caption text-ink-tertiary">{t("explore.oneFilter")}</p>
+          {filtered ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {search.tag === undefined ? null : <Tag>{search.tag}</Tag>}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  void navigate({ search: search.sort === undefined ? {} : { sort: search.sort } })
+                }
+              >
+                {t("explore.clear")}
+              </Button>
+            </div>
+          ) : null}
+        </section>
+      )}
+
+      {searching ? (
+        <LessonList
+          query={results}
+          label={t("explore.search.list")}
+          empty={
+            <EmptyState
+              title={t("search.noResults", { query: search.q ?? "" })}
+              description={t("search.noResultsHint")}
+            />
           }
         />
-        <form
-          className="flex min-w-0 flex-1 flex-col gap-1.5"
-          onSubmit={(event) => {
-            event.preventDefault()
-            const tag = tagDraft.trim()
-            void navigate({ search: tag === "" ? {} : { tag } })
-          }}
-        >
-          <label htmlFor={tagId} className="text-dense font-medium text-ink-muted">
-            {t("explore.tag")}
-          </label>
-          <div className="flex gap-2">
-            <Input
-              id={tagId}
-              type="search"
-              value={tagDraft}
-              maxLength={40}
-              placeholder={t("explore.tagPlaceholder")}
-              onValueChange={(value) => setTagDraft(value)}
-            />
-            <Button type="submit">{t("explore.apply")}</Button>
-          </div>
-        </form>
-      </section>
-
-      {filtered ? (
-        <div className="flex flex-wrap items-center gap-2">
-          {search.tag === undefined ? null : <Tag>{search.tag}</Tag>}
-          <Button variant="ghost" size="sm" onClick={() => void navigate({ search: {} })}>
-            {t("explore.clear")}
-          </Button>
-        </div>
-      ) : null}
-
-      <LessonList
-        query={feed}
-        label={t("feed.label")}
-        errorMessage={(tag) => (tag === "CategoryNotFound" ? t("explore.unknownFilter") : undefined)}
-        empty={
-          filtered ? (
-            <EmptyState
-              title={t("explore.noMatch.title")}
-              description={t("explore.noMatch.description")}
-              action={
-                <Button size="sm" onClick={() => void navigate({ search: {} })}>
-                  {t("explore.clear")}
-                </Button>
-              }
-            />
-          ) : (
-            <EmptyState title={t("empty.explore.title")} description={t("empty.explore.description")} />
-          )
-        }
-      />
+      ) : (
+        <LessonList
+          query={feed}
+          label={t("feed.label")}
+          errorMessage={(tag) => (tag === "CategoryNotFound" ? t("explore.unknownFilter") : undefined)}
+          empty={
+            filtered ? (
+              <EmptyState
+                title={t("explore.noMatch.title")}
+                description={t("explore.noMatch.description")}
+                action={
+                  <Button size="sm" onClick={() => void navigate({ search: {} })}>
+                    {t("explore.clear")}
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState title={t("empty.explore.title")} description={t("empty.explore.description")} />
+            )
+          }
+        />
+      )}
     </div>
   )
 }

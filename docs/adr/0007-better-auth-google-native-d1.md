@@ -43,5 +43,5 @@ was Better Auth's Drizzle adapter.
 - Users without a Google account can't sign in.
 - Sign-out on one device takes up to 5 minutes to reach another device that
   holds the cookie cache.
-- pi can't use a browser session. Publishing from pi needs API tokens, which
-  are not built yet.
+- pi can't use a browser session. It publishes with API tokens instead
+  (ADR 0008).

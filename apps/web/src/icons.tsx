@@ -63,9 +63,23 @@ export const UploadIcon = () => (
   </Icon>
 )
 
-export const HeartIcon = () => (
-  <Icon className="size-3.5">
-    <path d="M8 13.5S2.5 10.3 2.5 6.3A2.8 2.8 0 0 1 8 5a2.8 2.8 0 0 1 5.5 1.3c0 4-5.5 7.2-5.5 7.2z" />
+const heart = "M8 13.5S2.5 10.3 2.5 6.3A2.8 2.8 0 0 1 8 5a2.8 2.8 0 0 1 5.5 1.3c0 4-5.5 7.2-5.5 7.2z"
+
+export const HeartIcon = (props: { readonly filled?: boolean; readonly large?: boolean }) => (
+  <Icon className={props.large === true ? undefined : "size-3.5"}>
+    <path d={heart} fill={props.filled === true ? "currentColor" : "none"} />
+  </Icon>
+)
+
+export const BookmarkIcon = (props: { readonly filled?: boolean }) => (
+  <Icon>
+    <path d="M4 2.5h8v11L8 10.5l-4 3z" fill={props.filled === true ? "currentColor" : "none"} />
+  </Icon>
+)
+
+export const ResumeIcon = () => (
+  <Icon>
+    <path d="M3 8h9M9 4.5 12.5 8 9 11.5" />
   </Icon>
 )
 
@@ -73,5 +87,17 @@ export const SettingsIcon = () => (
   <Icon>
     <circle cx="8" cy="8" r="2" />
     <path d="M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1.05 1.05M11.35 11.35l1.05 1.05M3.6 12.4l1.05-1.05M11.35 4.65l1.05-1.05" />
+  </Icon>
+)
+
+export const CommentIcon = () => (
+  <Icon>
+    <path d="M2.5 3.5h11v7.5H7l-3 2.5V11H2.5z" />
+  </Icon>
+)
+
+export const ShieldIcon = () => (
+  <Icon>
+    <path d="M8 2 3 4v4c0 3 2.2 5.2 5 6 2.8-.8 5-3 5-6V4z" />
   </Icon>
 )

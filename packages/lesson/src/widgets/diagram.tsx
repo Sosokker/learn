@@ -4,6 +4,7 @@
 // linked highlight work on them like on any other part of the lesson.
 
 import "@xyflow/react/dist/style.css"
+import { useResolvedTheme } from "@app/ui"
 import {
   type Edge,
   Handle,
@@ -46,6 +47,8 @@ const nodeTypes = { lesson: LessonNodeView }
 
 export default function Diagram(props: DiagramProps) {
   const horizontal = props.direction === "LR"
+  // React Flow's own parts (edge labels, controls) follow the reader's theme.
+  const colorMode = useResolvedTheme()
   const { nodes, edges, height } = useMemo(() => {
     const sized = props.nodes.map((n) => ({ n, size: labelSize(n.text) }))
     const layout = layoutDiagram(
@@ -90,7 +93,7 @@ export default function Diagram(props: DiagramProps) {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
-          colorMode="dark"
+          colorMode={colorMode}
           fitView
           fitViewOptions={{ padding: 0.08 }}
           minZoom={0.2}

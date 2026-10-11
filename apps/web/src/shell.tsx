@@ -1,14 +1,23 @@
-import { Button, LanguageSwitch, SidebarNavItem, Spinner, useI18n } from "@app/ui"
+import { Button, buttonClass, DisplayTools, SidebarNavItem, Spinner, useI18n } from "@app/ui"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link, useLocation, useSearch } from "@tanstack/react-router"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 import { authClient, signInWithGoogle } from "./auth.ts"
 import { type CategoryNode, categoryName, categoryTree } from "./format.ts"
-import { CompassIcon, FlagIcon, FolderIcon, HomeIcon, LibraryIcon, MenuIcon } from "./icons.tsx"
-import { categoriesQuery } from "./queries.ts"
+import {
+  CompassIcon,
+  FlagIcon,
+  FolderIcon,
+  HomeIcon,
+  LibraryIcon,
+  MenuIcon,
+  SettingsIcon,
+  ShieldIcon,
+} from "./icons.tsx"
+import { categoriesQuery, meQuery } from "./queries.ts"
 import { useViewer } from "./session.ts"
 
-// The app frame, Linear style: a left sidebar (navigation, categories, language, account) and
+// The app frame, Linear style: a left sidebar (navigation, categories, display tools, account) and
 // the page. Below `md` the sidebar is a drawer opened from a top bar.
 export function Shell(props: { readonly children: ReactNode }) {
   const { t } = useI18n()
@@ -86,11 +95,12 @@ export function Shell(props: { readonly children: ReactNode }) {
             <NavLink to="/guide" label={t("nav.guide")} icon={<FlagIcon />} />
             <NavLink to="/library" label={t("nav.library")} icon={<LibraryIcon />} />
             <NavLink to="/explore" label={t("nav.explore")} icon={<CompassIcon />} />
+            <AdminLink />
           </ul>
           <Categories />
         </nav>
         <div className="flex flex-col gap-3 border-t border-hairline p-3">
-          <LanguageSwitch />
+          <DisplayTools />
           <Account />
         </div>
       </aside>
@@ -124,8 +134,17 @@ export function Shell(props: { readonly children: ReactNode }) {
   )
 }
 
+// The moderators' queue, for admins (GET /api/me says so; the server checks every admin request).
+function AdminLink() {
+  const { t } = useI18n()
+  const viewer = useViewer()
+  const me = useQuery({ ...meQuery(viewer.user?.id ?? ""), enabled: viewer.user !== null })
+  if (me.data?.is_admin !== true) return null
+  return <NavLink to="/admin/reports" label={t("admin.nav")} icon={<ShieldIcon />} />
+}
+
 function NavLink(props: {
-  readonly to: "/" | "/guide" | "/library" | "/explore"
+  readonly to: "/" | "/guide" | "/library" | "/explore" | "/admin/reports"
   readonly label: string
   readonly icon: ReactNode
   readonly exact?: boolean
@@ -235,6 +254,14 @@ function Account() {
         <span className="sr-only">{t("auth.signedInAs", { name: user.name })}</span>
         <span aria-hidden>{user.name}</span>
       </span>
+      <Link
+        to="/settings"
+        aria-label={t("account.settings")}
+        title={t("account.settings")}
+        className={buttonClass("ghost", "icon")}
+      >
+        <SettingsIcon />
+      </Link>
       <Button
         variant="ghost"
         size="sm"

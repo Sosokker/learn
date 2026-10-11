@@ -64,6 +64,23 @@ layer(TestLayer, { excludeTestServices: true })("shared concepts", (it) => {
       // FTS syntax in user input is inert.
       assert.deepStrictEqual(yield* search('" OR * NEAR('), [])
 
+      // The current body again is a no-op: 200, the current version back, no new row.
+      const current = average.langs.find((lang) => lang.lang === "th")
+      const again = yield* author.client.concepts.publish({
+        payload: contentBytes("concepts/physics.average-speed/th.json"),
+      })
+      assert.isFalse(again.created)
+      assert.strictEqual(again.version_id, current?.version_id)
+      assert.strictEqual(again.n, 1)
+      const raw = yield* rawFetch("/api/concepts", {
+        method: "POST",
+        headers: { cookie: author.cookie, "content-type": "application/json" },
+        body: JSON.stringify(concept("physics.average-speed", "th")),
+      })
+      assert.strictEqual(raw.status, 200)
+      const after = yield* anon.concepts.get({ params: { slug: "physics.average-speed" } })
+      assert.deepStrictEqual(after.langs, average.langs)
+
       // Only the creator adds versions.
       const takeover = yield* stranger.client.concepts
         .publish({ payload: contentBytes("concepts/physics.total-time/en.json") })

@@ -68,7 +68,7 @@ test("the 'where this sits' tree renders math titles as math", async ({ page }) 
 
 test("switching to ไทย renders the Thai guide", async ({ page }) => {
   await openGuide(page)
-  await page.getByRole("group", { name: "Language" }).getByText("ไทย").click()
+  await page.getByRole("group", { name: "Language" }).getByRole("button", { name: "ไทย" }).click()
   await expect(page.locator(".lsn")).toHaveAttribute("lang", "th")
   await expect(page.getByRole("heading", { level: 1, name: "เริ่มที่นี่: Learn ใช้งานยังไง" })).toBeVisible()
   await expect(page.locator("html")).toHaveAttribute("lang", "th")

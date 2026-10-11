@@ -19,7 +19,9 @@ export class HotScore extends Context.Service<
     Effect.gen(function* () {
       const db = yield* Database
       return HotScore.of({
-        // The cron (every 30 minutes). lesson_tag keeps a copy for the tag feeds' hot index.
+        // The cron (every 30 minutes). lesson_tag keeps a copy for the tag feeds' hot index. Both
+        // updates read only rows inside the window, as an index range (lesson_new_idx,
+        // lesson_tag_recent_idx), never the whole table.
         recompute: Effect.fn("HotScore.recompute")(function* (now: number) {
           const since = now - window
           yield* db

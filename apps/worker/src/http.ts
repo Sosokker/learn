@@ -1,20 +1,32 @@
 import { Api, ConceptBundle, CurrentUser, CurrentViewer, NotReady } from "@app/api"
-import { Auth } from "@app/auth"
+import { ApiTokens, Auth } from "@app/auth"
 import { Database } from "@app/db"
 import {
+  Admins,
   Categories,
+  type CommentReads,
+  Comments,
   Concepts,
   ContentAccess,
+  Engagement,
   Feeds,
   HotScore,
   type LessonReads,
+  LessonSearch,
   Lessons,
   Profiles,
+  Reports,
 } from "@app/services"
 import { Effect, Layer, Option, Schema } from "effect"
-import { Headers, HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http"
+import { Headers, HttpEffect, HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http"
 import { HttpApiBuilder } from "effect/http-api"
-import { AuthenticatedLive, BodyLimitLive, ViewerLive } from "./session.ts"
+import {
+  AdminLive,
+  AuthenticatedLive,
+  BodyLimitLive,
+  SessionAuthenticatedLive,
+  ViewerLive,
+} from "./session.ts"
 
 const SystemHandlers = HttpApiBuilder.group(
   Api,
@@ -45,6 +57,25 @@ const MeHandlers = HttpApiBuilder.group(
   }),
 )
 
+const TokensHandlers = HttpApiBuilder.group(
+  Api,
+  "tokens",
+  Effect.fn("TokensHandlers")(function* (handlers) {
+    const tokens = yield* ApiTokens
+    return (
+      handlers
+        .handle("list", () => tokens.list)
+        // no-store: the answer holds the secret.
+        .handle("create", (request) =>
+          HttpEffect.appendPreResponseHandler((_, response) =>
+            Effect.succeed(HttpServerResponse.setHeader(response, "cache-control", "no-store")),
+          ).pipe(Effect.andThen(tokens.create(request.payload.name))),
+        )
+        .handle("revoke", (request) => tokens.revoke(request.params.id))
+    )
+  }),
+)
+
 const CategoriesHandlers = HttpApiBuilder.group(
   Api,
   "categories",
@@ -59,6 +90,7 @@ const LessonsHandlers = HttpApiBuilder.group(
   "lessons",
   Effect.fn("LessonsHandlers")(function* (handlers) {
     const lessons = yield* Lessons
+    const search = yield* LessonSearch
     // Anonymous readers get the reads that cannot see private lessons; signed-in readers get the
     // ones that require CurrentUser (and see their own private lessons).
     const asViewer = <A, E>(run: <R>(reads: LessonReads<R>) => Effect.Effect<A, E, R>) =>
@@ -70,6 +102,7 @@ const LessonsHandlers = HttpApiBuilder.group(
       )
     return (
       handlers
+        .handle("search", (request) => search.search(request.query))
         .handle("get", (request) => asViewer((reads) => reads.get(request.params.id)))
         .handle("getBySlug", (request) =>
           asViewer((reads) => reads.getBySlug(request.params.handle, request.params.slug)),
@@ -89,9 +122,10 @@ const LessonsHandlers = HttpApiBuilder.group(
             ),
           ),
         )
-        // Raw, for the cache header: a version's pins never change, so the bundle of a public or
-        // unlisted lesson is cacheable like `/c/` (worker.ts also keeps it in the edge cache). A
-        // private lesson's bundle is never stored.
+        // Raw, for the cache header: a version's pins never change, so the reader's browser may keep
+        // the bundle of a public or unlisted lesson. `private`: no shared cache stores it, because
+        // the lesson can turn private later (worker.ts does not edge-cache it either). A private
+        // lesson's bundle is never stored.
         .handleRaw("concepts", (request) =>
           asViewer((reads) => reads.concepts(request.params.id, request.params.versionId)).pipe(
             Effect.flatMap(({ bundle, shared }) =>
@@ -99,7 +133,7 @@ const LessonsHandlers = HttpApiBuilder.group(
                 Effect.flatMap((encoded) =>
                   HttpServerResponse.json(encoded, {
                     headers: {
-                      "cache-control": shared ? immutableCache : "private, no-store",
+                      "cache-control": shared ? "private, max-age=31536000, immutable" : "private, no-store",
                       "x-content-type-options": "nosniff",
                     },
                   }),
@@ -119,6 +153,26 @@ const LessonsHandlers = HttpApiBuilder.group(
   }),
 )
 
+const EngagementHandlers = HttpApiBuilder.group(
+  Api,
+  "engagement",
+  Effect.fn("EngagementHandlers")(function* (handlers) {
+    const engagement = yield* Engagement
+    return handlers
+      .handle("like", (request) => engagement.like(request.params.id))
+      .handle("unlike", (request) => engagement.unlike(request.params.id))
+      .handle("bookmark", (request) => engagement.bookmark(request.params.id))
+      .handle("unbookmark", (request) => engagement.unbookmark(request.params.id))
+      .handle("saveProgress", (request) => engagement.saveProgress(request.params.id, request.payload))
+      .handle("bookmarks", (request) =>
+        engagement.bookmarks({ cursor: request.query.cursor, limit: request.query.limit }),
+      )
+      .handle("progress", (request) =>
+        engagement.progress({ cursor: request.query.cursor, limit: request.query.limit }),
+      )
+  }),
+)
+
 const FeedsHandlers = HttpApiBuilder.group(
   Api,
   "feeds",
@@ -126,6 +180,7 @@ const FeedsHandlers = HttpApiBuilder.group(
     const feeds = yield* Feeds
     return handlers
       .handle("new", (request) => feeds.latest(request.query))
+      .handle("hot", (request) => feeds.hot(request.query))
       .handle("category", (request) => feeds.category(request.params.id, request.query))
       .handle("tag", (request) => feeds.tag(request.params.slug, request.query))
   }),
@@ -140,6 +195,64 @@ const ConceptsHandlers = HttpApiBuilder.group(
       .handle("search", (request) => concepts.search(request.query))
       .handle("get", (request) => concepts.get(request.params.slug))
       .handle("publish", (request) => concepts.publish(request.payload))
+  }),
+)
+
+const CommentsHandlers = HttpApiBuilder.group(
+  Api,
+  "comments",
+  Effect.fn("CommentsHandlers")(function* (handlers) {
+    const comments = yield* Comments
+    // As for lessons: anonymous readers get the list that cannot see private lessons.
+    const asViewer = <A, E>(run: <R>(reads: CommentReads<R>) => Effect.Effect<A, E, R>) =>
+      Effect.flatMap(Effect.service(CurrentViewer), (viewer) =>
+        Option.match(viewer, {
+          onNone: () => run(comments.anonymous),
+          onSome: (user) => run(comments.asUser).pipe(Effect.provideService(CurrentUser, user)),
+        }),
+      )
+    return handlers
+      .handle("list", (request) =>
+        asViewer((reads) =>
+          reads.list(request.params.id, {
+            cursor: request.query.cursor,
+            limit: request.query.limit,
+            anchor: request.query.anchor,
+          }),
+        ),
+      )
+      .handle("create", (request) => comments.create(request.params.id, request.payload))
+      .handle("update", (request) =>
+        comments.edit(request.params.id, request.params.commentId, request.payload.body),
+      )
+      .handle("delete", (request) => comments.remove(request.params.id, request.params.commentId))
+      .handle("hide", (request) => comments.hide(request.params.id, request.params.commentId))
+      .handle("unhide", (request) => comments.unhide(request.params.id, request.params.commentId))
+  }),
+)
+
+const ReportsHandlers = HttpApiBuilder.group(
+  Api,
+  "reports",
+  Effect.fn("ReportsHandlers")(function* (handlers) {
+    const reports = yield* Reports
+    return handlers.handle("create", (request) => reports.create(request.payload))
+  }),
+)
+
+const AdminHandlers = HttpApiBuilder.group(
+  Api,
+  "admin",
+  Effect.fn("AdminHandlers")(function* (handlers) {
+    const reports = yield* Reports
+    const comments = yield* Comments
+    return handlers
+      .handle("reports", (request) =>
+        reports.queue({ cursor: request.query.cursor, limit: request.query.limit }),
+      )
+      .handle("resolve", (request) => reports.resolve(request.params.id, request.payload))
+      .handle("hideComment", (request) => comments.adminHide(request.params.id))
+      .handle("unhideComment", (request) => comments.adminUnhide(request.params.id))
   }),
 )
 
@@ -192,15 +305,33 @@ const immutableCache = "public, max-age=31536000, immutable"
 export const HandlersLive = Layer.mergeAll(
   SystemHandlers,
   MeHandlers,
+  TokensHandlers,
   CategoriesHandlers,
   LessonsHandlers,
+  EngagementHandlers,
   FeedsHandlers,
   ConceptsHandlers,
+  CommentsHandlers,
+  ReportsHandlers,
+  AdminHandlers,
 ).pipe(
-  Layer.provide(Layer.mergeAll(Lessons.layer, Concepts.layer, Feeds.layer, Categories.layer, Profiles.layer)),
-  Layer.provideMerge(Layer.mergeAll(AuthenticatedLive, ViewerLive, BodyLimitLive)),
-  Layer.provideMerge(Layer.mergeAll(ContentAccess.layer, HotScore.layer)),
-  Layer.provideMerge(Auth.layer),
+  Layer.provide(
+    Layer.mergeAll(
+      Lessons.layer,
+      Engagement.layer,
+      Concepts.layer,
+      Feeds.layer,
+      Categories.layer,
+      Profiles.layer,
+      Comments.layer,
+      Reports.layer,
+    ),
+  ),
+  Layer.provideMerge(
+    Layer.mergeAll(AuthenticatedLive, SessionAuthenticatedLive, ViewerLive, AdminLive, BodyLimitLive),
+  ),
+  Layer.provideMerge(Layer.mergeAll(ContentAccess.layer, HotScore.layer, LessonSearch.layer, Admins.layer)),
+  Layer.provideMerge(Layer.mergeAll(Auth.layer, ApiTokens.layer)),
   Layer.provideMerge(Database.layer),
 )
 

@@ -11,9 +11,10 @@ describe("worker entry", () => {
     assert.strictEqual(key(`/c/${hash}.json`), `https://learn.sirin.dev/c/${hash}.json`)
     // A query string cannot make a fresh entry (or skip the cached one).
     assert.strictEqual(key(`/c/${hash}.json?bust=1`), `https://learn.sirin.dev/c/${hash}.json`)
+    // The concept bundle is keyed by its lesson, which can turn private: never edge-cached.
     const bundle =
       "/api/lessons/0199c1c0-0000-7000-8000-000000000000/versions/0199c1c0-0000-7000-8000-000000000001/concepts"
-    assert.strictEqual(key(`${bundle}?x=y`), `https://learn.sirin.dev${bundle}`)
+    assert.isUndefined(key(bundle))
     // Headers are not part of the key.
     const withCookie = edgeCacheKey(
       new Request(`https://learn.sirin.dev/c/${hash}.json`, { headers: { cookie: "s=1" } }),

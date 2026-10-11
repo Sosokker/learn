@@ -1,7 +1,11 @@
-/* Linear tokens (docs/linear-DESIGN.md). Dark only for now. Depth comes from the surface steps
-   and 1px hairlines: no shadows, no gradients. One accent (lavender), only for the primary
-   button, focus ring, links and selected state. Components use only these semantic colors.
-   The default Tailwind palette and shadows are cleared so nothing else creeps in. */
+/* Linear tokens (docs/linear-DESIGN.md). Depth comes from the surface steps and 1px hairlines:
+   no shadows, no gradients. One accent (lavender), only for the primary button, focus ring,
+   links and selected state. Components use only these semantic colors. The default Tailwind
+   palette and shadows are cleared so nothing else creeps in.
+   Two themes in one set: each themed color is light-dark(<light>, <dark>), picked by the
+   `color-scheme` styles.css sets from <html data-theme> (absent = the system's choice).
+   Linear defines no light theme; ours inverts the ladder (white canvas, surfaces step darker)
+   and darkens the hover lavender, danger and success so text on white keeps 4.5:1. */
 @theme static {
   --color-*: initial;
   --shadow-*: initial;
@@ -12,27 +16,27 @@
   --color-white: #ffffff;
   --color-black: #000000;
 
-  --color-canvas: #010102;
-  --color-surface-1: #0f1011;
-  --color-surface-2: #141516;
-  --color-surface-3: #18191a;
-  --color-surface-4: #191a1b;
-  --color-hairline: #23252a;
-  --color-hairline-strong: #34343a;
+  --color-canvas: light-dark(#ffffff, #010102);
+  --color-surface-1: light-dark(#f7f8f9, #0f1011);
+  --color-surface-2: light-dark(#f2f3f5, #141516);
+  --color-surface-3: light-dark(#eceef1, #18191a);
+  --color-surface-4: light-dark(#e5e7eb, #191a1b);
+  --color-hairline: light-dark(#e3e5e9, #23252a);
+  --color-hairline-strong: light-dark(#cfd2d8, #34343a);
 
-  --color-ink: #f7f8f8;
-  --color-ink-muted: #d0d6e0;
-  --color-ink-subtle: #8a8f98;
-  --color-ink-tertiary: #62666d;
+  --color-ink: light-dark(#0f1011, #f7f8f8);
+  --color-ink-muted: light-dark(#3c4149, #d0d6e0);
+  --color-ink-subtle: light-dark(#5c6069, #8a8f98);
+  --color-ink-tertiary: light-dark(#7a7f88, #62666d);
 
   --color-accent: #5e6ad2;
-  --color-accent-hover: #828fff;
-  --color-accent-pressed: #5e69d1;
+  --color-accent-hover: light-dark(#4c57c0, #828fff);
+  --color-accent-pressed: light-dark(#4651b8, #5e69d1);
   --color-on-accent: #ffffff;
 
   /* Status, for form errors and success notices only (not decoration). */
-  --color-danger: #eb5757;
-  --color-success: #27a644;
+  --color-danger: light-dark(#c93a3a, #eb5757);
+  --color-success: light-dark(#1f8139, #27a644);
   --color-overlay: #000000;
 
   --font-sans: "Inter Variable", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;

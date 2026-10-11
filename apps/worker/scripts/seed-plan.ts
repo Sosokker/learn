@@ -49,6 +49,7 @@ export const platformUser = {
   name: "Learn",
   email: "learn@users.invalid",
   image: null,
+  viaToken: false,
 }
 const guideSlug = "start-here"
 const guideSettings = {

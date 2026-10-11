@@ -1,0 +1,15 @@
+# Response headers for the SPA's static assets (Workers Static Assets reads this file; it is not
+# served). Assets are answered without running the Worker, so the Worker's own headers
+# (apps/worker/src/worker.ts securityHeaders) do not reach them. Not applied by `bun run dev`.
+#
+# script-src 'self': index.html has no inline script (the pre-paint theme script is public/prefs.js);
+# Vite emits module files only.
+# style-src 'unsafe-inline': KaTeX HTML (set as innerHTML) carries style attributes.
+# img-src: Google profile pictures. font-src: KaTeX and @fontsource fonts are bundled.
+# Google sign-in is a top-level navigation, which CSP does not restrict.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://lh3.googleusercontent.com; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

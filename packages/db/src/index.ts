@@ -10,6 +10,7 @@ export {
   conceptNeed,
   conceptVersion,
   lesson,
+  lessonCategory,
   lessonLang,
   lessonLike,
   lessonTag,

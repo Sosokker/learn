@@ -1,5 +1,5 @@
-import { D1 } from "@app/db"
-import { HotScore } from "@app/services"
+import { D1, Database } from "@app/db"
+import { HotScore, LessonSearch, repairConceptFts } from "@app/services"
 import { ConfigProvider, Effect, Exit, Layer, ManagedRuntime } from "effect"
 import { HttpRouter, HttpServer } from "effect/http"
 import { ApiLive, HandlersLive } from "./http.ts"
@@ -22,6 +22,9 @@ export interface Env {
   readonly BETTER_AUTH_TRUSTED_ORIGINS?: string
   readonly GOOGLE_CLIENT_ID?: string
   readonly GOOGLE_CLIENT_SECRET?: string
+  // Comma-separated user ids that may moderate (reports, hiding comments). A secret, so a deploy
+  // does not overwrite it. Unset: nobody.
+  readonly ADMIN_USER_IDS?: string
 }
 
 type App = ReturnType<typeof makeApp>
@@ -45,9 +48,12 @@ const appFor = (env: Env): Promise<App | undefined> => {
 }
 
 // Paths whose successful responses never change, so the edge cache can answer repeats: `/c/<hash>`
-// bodies, and the concept bundle of a lesson version (cached only when the response says
-// `public`, i.e. for public and unlisted lessons).
-const edgeCached = /^\/c\/|^\/api\/lessons\/[^/]+\/versions\/[^/]+\/concepts$/
+// bodies only. Not the concept bundle of a lesson version (/api/lessons/:id/versions/:vid/concepts):
+// its path names the lesson, so a cached copy would keep answering 200 after the lesson turns
+// private or is deleted, and private must be 404 (ADR 0003). The concepts in it are public, but
+// which ones a lesson pins, and its card ids, are the lesson's. Each request checks access (a few
+// index reads, plus one R2 read per pinned concept).
+const edgeCached = /^\/c\//
 
 // The edge cache key of a request, or undefined when it is not cached. The key is the path alone,
 // so a query string or a header (a cookie) cannot make a new entry or skip the cached one.
@@ -57,8 +63,37 @@ export const edgeCacheKey = (request: Request): Request | undefined => {
   return new Request(`${url.origin}${url.pathname}`, { method: "GET" })
 }
 
+// Security headers on every response the Worker makes (/api/*, /c/*): JSON, JSON bodies and
+// auth redirects, so the policy allows almost nothing. Inline styles stay allowed for Better
+// Auth's own error page (/api/auth/error). The SPA is served as static assets without running the
+// Worker, so its policy is in apps/web/public/_headers.
+export const securityHeaders: Readonly<Record<string, string>> = {
+  "content-security-policy":
+    "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "x-frame-options": "DENY",
+}
+
+const withSecurityHeaders = (response: Response): Response => {
+  // A copy: responses from the cache and from fetch have immutable headers.
+  const secured = new Response(response.body, response)
+  for (const [name, value] of Object.entries(securityHeaders)) {
+    if (!secured.headers.has(name)) secured.headers.set(name, value)
+  }
+  return secured
+}
+
 // The Worker's fetch, with `waitUntil` passed alone so tests can call it.
 export async function handleFetch(
+  request: Request,
+  env: Env,
+  waitUntil: (promise: Promise<unknown>) => void,
+): Promise<Response> {
+  return withSecurityHeaders(await route(request, env, waitUntil))
+}
+
+async function route(
   request: Request,
   env: Env,
   waitUntil: (promise: Promise<unknown>) => void,
@@ -82,11 +117,21 @@ export async function handleFetch(
 
 export default {
   fetch: (request, env, ctx) => handleFetch(request, env, (promise) => ctx.waitUntil(promise)),
-  // Cron Trigger (*/30): recompute hot scores of lessons made public in the last 14 days.
+  // Cron Trigger (*/30): recompute hot scores of lessons made public in the last 14 days (an index
+  // range on each table, see HotScore); fill the search text of up to 50 lesson languages from
+  // before migration 0007 (none once it has caught up; a read of an empty partial index), in
+  // batches of at most 125 statements; and repair concept_fts rows an older Worker wrote during a
+  // deploy (two index reads when there is nothing to do).
   scheduled(controller, env, ctx) {
     ctx.waitUntil(
       appFor(env).then((current) =>
-        current?.services.runPromise(HotScore.use((hot) => hot.recompute(controller.scheduledTime))),
+        current?.services.runPromise(
+          Effect.all([
+            HotScore.use((hot) => hot.recompute(controller.scheduledTime)),
+            LessonSearch.use((search) => search.backfill(50)),
+            Database.use(repairConceptFts),
+          ]),
+        ),
       ),
     )
   },
@@ -110,6 +155,7 @@ function makeApp(env: Env) {
       BETTER_AUTH_TRUSTED_ORIGINS: env.BETTER_AUTH_TRUSTED_ORIGINS,
       GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
       GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+      ADMIN_USER_IDS: env.ADMIN_USER_IDS,
     }),
   )
   const platform = Layer.mergeAll(

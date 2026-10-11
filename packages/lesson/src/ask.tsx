@@ -68,6 +68,24 @@ export function AskBar(props: {
             return (
               <li key={targetKey(r)} className="lsn-chip" title={plainTitle(model, r, 80)}>
                 <span>{name}</span>
+                {actions.discuss !== undefined && r.kind !== "concept" && (
+                  <button
+                    type="button"
+                    className="lsn-chip-x lsn-chip-discuss"
+                    aria-label={t("ask.discuss", { name })}
+                    onClick={() => actions.discuss?.(r)}
+                  >
+                    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden focusable="false">
+                      <path
+                        d="M3 3.5h10v7H7l-3 2.5v-2.5H3z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                )}
                 <button
                   type="button"
                   className="lsn-chip-x"

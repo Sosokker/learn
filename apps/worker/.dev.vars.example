@@ -9,3 +9,6 @@ BETTER_AUTH_URL=http://localhost:5187
 # https://learn.sirin.dev/api/auth/callback/google (deployed).
 GOOGLE_CLIENT_ID=replace-with-google-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=replace-with-google-client-secret
+# User ids (the `user.id` column) that may moderate: the reports queue at /admin/reports and
+# hiding comments. Comma-separated; empty means nobody.
+ADMIN_USER_IDS=

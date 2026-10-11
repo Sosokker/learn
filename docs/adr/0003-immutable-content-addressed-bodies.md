@@ -20,6 +20,11 @@ the Worker only needs to hand out JSON. Some lessons are private.
   it in the edge cache (`caches.default`), keyed by the path alone.
 - A hash is served only if it belongs to a non-deleted public or unlisted
   lesson version, or to a concept version (`ContentAccess`). Otherwise 404.
+- The concept bundle of a lesson version
+  (`/api/lessons/:id/versions/:vid/concepts`) is not edge-cached: its path
+  names the lesson, so a cached copy would keep answering after the lesson
+  turns private. It is checked on every request and sent `private` (browser
+  only, immutable) for public and unlisted lessons.
 - A private body is read only through
   `GET /api/lessons/:id/versions/:versionId/body`, which checks the owner and
   sends `private, no-store`.

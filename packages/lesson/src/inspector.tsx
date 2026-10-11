@@ -410,6 +410,15 @@ export function Inspector(props: InspectorProps) {
                 {t("inspector.addRef")}
               </button>
             )}
+            {target !== undefined && target.kind !== "concept" && actions.discuss !== undefined && (
+              <button
+                type="button"
+                className="lsn-btn lsn-btn-ghost"
+                onClick={() => actions.discuss?.(target)}
+              >
+                {t("inspector.discuss")}
+              </button>
+            )}
             {target !== undefined && hasRef(target) && (
               <button
                 type="button"

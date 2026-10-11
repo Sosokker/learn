@@ -11,6 +11,8 @@ export interface LessonActions {
   readonly copy: (text: string, announce?: string) => void
   /** Show a target in the inspector as a hover preview (for widgets that track hover themselves). */
   readonly preview: (t: Target | undefined) => void
+  /** Open the host's comments on a target; undefined when the host has none. */
+  readonly discuss: ((t: Target) => void) | undefined
 }
 
 export interface LessonContextValue {

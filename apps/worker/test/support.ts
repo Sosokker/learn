@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { Api } from "@app/api"
 import { Auth } from "@app/auth"
-import { createTestSession } from "@app/auth/testing"
+import { createTestSession, createTestSessionFor } from "@app/auth/testing"
 import { D1 } from "@app/db"
 import { ConfigProvider, Context, Effect, Layer } from "effect"
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpRouter, HttpServer } from "effect/http"
@@ -26,7 +26,11 @@ const testConfig = {
   BETTER_AUTH_URL: origin,
   GOOGLE_CLIENT_ID: "test-client-id",
   GOOGLE_CLIENT_SECRET: "test-client-secret",
+  // signInAdmin's user. Spaces and an empty entry, as a hand-edited secret might have.
+  ADMIN_USER_IDS: " test-admin, ,",
 }
+
+export const adminUserId = "test-admin"
 
 export class TestEnv extends Context.Service<
   TestEnv,
@@ -172,6 +176,29 @@ export const signIn = (
     const session = yield* auth.use((instance) => createTestSession(instance, { name, email }))
     const client = yield* clientWith({ cookie: session.cookie })
     return { user: session.user, cookie: session.cookie, client }
+  }).pipe(Effect.orDie)
+
+// The admin of testConfig (inserted once per database, with a profile) and a fresh session.
+export const signInAdmin = () =>
+  Effect.gen(function* () {
+    const env = yield* TestEnv
+    const auth = yield* Auth
+    yield* Effect.promise(() =>
+      env.db.batch([
+        env.db
+          .prepare(
+            `insert or ignore into "user" (id, name, email, email_verified, image, created_at, updated_at)
+            values (?, 'Admin', 'admin@users.invalid', 1, null, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+          )
+          .bind(adminUserId),
+        env.db
+          .prepare("insert or ignore into profile (user_id, handle, created_at) values (?, 'site_admin', 0)")
+          .bind(adminUserId),
+      ]),
+    )
+    const cookie = yield* auth.use((instance) => createTestSessionFor(instance, adminUserId))
+    const client = yield* clientWith({ cookie })
+    return { cookie, client }
   }).pipe(Effect.orDie)
 
 // Raw request to the Worker app (for /c/*, /api/auth/*, and bodies the typed client won't send).

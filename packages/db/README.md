@@ -21,15 +21,23 @@ Apply locally with `bun run db:migrate:local`; `bun run deploy` applies them rem
 
 ## FTS and exports
 
-`concept_fts` (FTS5) lives in the main database, so concept writes and their index update stay
-in one D1 batch. `wrangler d1 export` refuses databases with virtual tables, and the index is
-derived data, so an export drops it first and rebuilds it after:
+`concept_fts` and `lesson_fts` (FTS5) live in the main database, so writes and their index
+update stay in one D1 batch. `wrangler d1 export` refuses databases with virtual tables, and the
+indexes are derived data, so an export drops them first and rebuilds them after:
 
 ```sql
 DROP TABLE concept_fts;
--- export, then re-run migrations/0002_concept_fts.sql and:
-INSERT INTO concept_fts (concept_id, lang, search) SELECT concept_id, lang, search FROM concept_lang;
+DROP TABLE lesson_fts;
+-- export, then re-run the CREATE VIRTUAL TABLE of migrations/0002_concept_fts.sql and
+-- migrations/0008_lesson_fts.sql (only that statement), and:
+INSERT INTO concept_fts (rowid, concept_id, lang, search)
+  SELECT fts_rowid, concept_id, lang, search FROM concept_lang;
+-- lesson_fts holds public lessons only.
+INSERT INTO lesson_fts (rowid, lesson_id, lang, search)
+  SELECT fts_rowid, lesson_id, lang, search FROM lesson_lang
+  WHERE is_public = 1 AND search IS NOT NULL;
 ```
 
-`concept_lang.search` already holds the text with Thai split into words (Intl.Segmenter), so the
-rebuild needs no Worker code. D1 Time Travel remains the main backup.
+`concept_lang.search` and `lesson_lang.search` already hold the text with Thai split into words (Intl.Segmenter), so the
+rebuild needs no Worker code. Keep the rowids: `concept_lang.fts_rowid` is how a concept update
+finds its FTS row, and `lesson_lang.fts_rowid` a lesson's (the other FTS columns are UNINDEXED, so any other lookup scans the table). D1 Time Travel remains the main backup.

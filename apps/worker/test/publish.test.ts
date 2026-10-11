@@ -117,11 +117,30 @@ layer(TestLayer, { excludeTestServices: true })("publish rules", (it) => {
       const old = yield* author.client.lessons.body({ params: { id: lesson.id, versionId: en1.version.id } })
       assert.strictEqual(old.title, "Tiny one")
 
-      // The same body again is a new version that points at the same stored object.
+      // The current body again is a no-op: 200, the current version back, nothing written.
       const before = (yield* Effect.promise(() => env.bucket.list())).objects.length
-      const en4 = yield* publish(tinyLesson("en", "three"))
+      assert.isTrue(en3.created)
+      const again = yield* publish(tinyLesson("en", "three"))
+      assert.isFalse(again.created)
+      assert.strictEqual(again.version.id, en3.version.id)
+      assert.strictEqual(again.lesson.updated_at, en3.lesson.updated_at)
+      const raw = yield* publishRaw(author.cookie, "speed", JSON.stringify(tinyLesson("en", "three")))
+      assert.strictEqual(raw.status, 200)
+      // Key order and spacing do not matter: the hash is of the canonical JSON.
+      const reordered = Object.fromEntries(Object.entries(tinyLesson("en", "three")).reverse())
+      assert.isFalse((yield* publish(reordered)).created)
+      const th = yield* publish(tinyLesson("th", "หนึ่ง"))
+      assert.strictEqual(th.version.id, th1.version.id)
+      assert.strictEqual(
+        (yield* author.client.lessons.versions({ params: { id: lesson.id }, query: {} })).length,
+        4,
+      )
+
+      // An older body is a new version that points at the same stored object.
+      const en4 = yield* publish(tinyLesson("en", "two"))
+      assert.isTrue(en4.created)
       assert.strictEqual(en4.version.n, 4)
-      assert.strictEqual(en4.version.body_hash, en3.version.body_hash)
+      assert.strictEqual(en4.version.body_hash, en2.version.body_hash)
       assert.strictEqual((yield* Effect.promise(() => env.bucket.list())).objects.length, before)
 
       // A translation must have the same structure as the other language.

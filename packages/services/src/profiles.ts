@@ -2,6 +2,7 @@ import { CurrentUser, Handle, HandleTaken, InvalidHandle, isReservedHandle, type
 import { Database, raw } from "@app/db"
 import { sql } from "drizzle-orm"
 import { Context, Effect, Layer, Schema } from "effect"
+import { Admins } from "./admins.ts"
 
 export class Profiles extends Context.Service<
   Profiles,
@@ -15,6 +16,7 @@ export class Profiles extends Context.Service<
     Profiles,
     Effect.gen(function* () {
       const db = yield* Database
+      const admins = yield* Admins
 
       const me = Effect.gen(function* () {
         const user = yield* CurrentUser
@@ -32,6 +34,7 @@ export class Profiles extends Context.Service<
           handle: rows[0]?.handle ?? null,
           bio: rows[0]?.bio ?? null,
           lesson_count: rows[0]?.lesson_count ?? 0,
+          is_admin: admins.isAdmin(user),
         }
         return result
       }).pipe(Effect.withSpan("Profiles.me"))

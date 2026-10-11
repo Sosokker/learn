@@ -22,3 +22,8 @@ export class Categories extends Context.Service<
     }),
   )
 }
+
+// A category id and the ids of every category above it, from the dotted path:
+// `math.analysis.real-analysis` → `math`, `math.analysis`, `math.analysis.real-analysis`.
+export const categoryAncestors = (id: string): ReadonlyArray<string> =>
+  id.split(".").map((_, index, parts) => parts.slice(0, index + 1).join("."))

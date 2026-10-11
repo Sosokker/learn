@@ -17,11 +17,13 @@ import {
   maxTags,
   PayloadTooLarge,
   type Published,
+  type PublishUnchanged,
   platformPrefix,
   platformUserId,
+  type UserId,
   VersionNotFound,
 } from "@app/api"
-import { Database, lesson, lessonLang, raw, sqlBuilder, uuidv7 } from "@app/db"
+import { Database, lesson, raw, sqlBuilder, uuidv7 } from "@app/db"
 import {
   compareTranslations,
   decodeConcept,
@@ -35,7 +37,10 @@ import {
 } from "@app/domain"
 import { sql } from "drizzle-orm"
 import { Context, Effect, Layer, Option, Result, Schema } from "effect"
+import { categoryAncestors } from "./categories.ts"
 import { canonicalJson, contentKey, sha256Hex } from "./content.ts"
+import { forgetLesson, viewerStateOf } from "./engagement.ts"
+import { lessonSearchText, nextLessonFtsRowid, syncLessonLangs } from "./lesson-search.ts"
 import {
   after,
   HashRow,
@@ -94,11 +99,13 @@ export class Lessons extends Context.Service<
       readonly cursor?: FeedCursor | undefined
       readonly limit?: number | undefined
     }) => Effect.Effect<LessonPage, never, CurrentUser>
-    // pi's /publish: validate, store the body by hash, add the next version of its language.
+    // pi's /publish: validate, store the body by hash, add the next version of its language. A
+    // body identical to the language's current version (same hash, same concept pins) writes
+    // nothing and returns that version (`created: false`).
     readonly publish: (
       slug: string,
       body: Uint8Array,
-    ) => Effect.Effect<Published, InvalidLesson | PayloadTooLarge, CurrentUser>
+    ) => Effect.Effect<Published | PublishUnchanged, InvalidLesson | PayloadTooLarge, CurrentUser>
   }
 >()("@app/services/Lessons") {
   // Database, storage and decoding failures are unexpected here; they become defects (HTTP 500).
@@ -114,8 +121,14 @@ export class Lessons extends Context.Service<
           Effect.map((rows) => Option.fromNullishOr(rows[0])),
         )
 
-      const toLesson = Effect.fn("Lessons.toLesson")(function* (row: LessonRow, viewer: string | undefined) {
-        const extra = yield* langsAndTags(db, [row.id]).pipe(Effect.orDie)
+      const toLesson = Effect.fn("Lessons.toLesson")(function* (row: LessonRow, viewer: UserId | undefined) {
+        const { extra, state } = yield* Effect.all(
+          {
+            extra: langsAndTags(db, [row.id]).pipe(Effect.orDie),
+            state: viewer === undefined ? Effect.succeed(null) : viewerStateOf(db, row.id, viewer),
+          },
+          { concurrency: "unbounded" },
+        )
         const result: Lesson = {
           id: row.id,
           owner_handle: row.owner_handle,
@@ -137,15 +150,17 @@ export class Lessons extends Context.Service<
             updated_at: lang.updated_at,
           })),
           like_count: row.like_count,
+          comment_count: row.comment_count,
           published_at: row.published_at,
           created_at: row.created_at,
           updated_at: row.updated_at,
           is_owner: viewer === row.owner_id,
+          viewer: state,
         }
         return result
       })
 
-      const readable = Effect.fn("Lessons.readable")(function* (id: LessonId, viewer: string | undefined) {
+      const readable = Effect.fn("Lessons.readable")(function* (id: LessonId, viewer: UserId | undefined) {
         const row = yield* loadRow(sql`l.id = ${id} and ${readableBy(viewer)}`)
         if (Option.isNone(row)) return yield* new LessonNotFound()
         return row.value
@@ -170,7 +185,7 @@ export class Lessons extends Context.Service<
       })
 
       // One implementation of the reads; `viewer` says whose private lessons are visible.
-      const reads = <R>(viewer: Effect.Effect<string | undefined, never, R>): LessonReads<R> => ({
+      const reads = <R>(viewer: Effect.Effect<UserId | undefined, never, R>): LessonReads<R> => ({
         get: Effect.fn("Lessons.get")(function* (id: LessonId) {
           const who = yield* viewer
           return yield* toLesson(yield* readable(id, who), who)
@@ -225,7 +240,7 @@ export class Lessons extends Context.Service<
 
       const anonymous = reads(Effect.succeed(undefined))
       const asUser = reads(
-        Effect.service(CurrentUser).pipe(Effect.map((user): string | undefined => user.id)),
+        Effect.service(CurrentUser).pipe(Effect.map((user): UserId | undefined => user.id)),
       )
 
       const owned = Effect.fn("Lessons.owned")(function* (id: LessonId) {
@@ -297,32 +312,29 @@ export class Lessons extends Context.Service<
                         where slug in ${inList(tags.map((tag) => tag.slug))}`),
                     ]),
               ]
-        const touchedTags = sql.join(
-          [
-            ...(oldTags.length === 0 ? [] : [sql`id in ${inList(oldTags.map((tag) => tag.id))}`]),
-            ...(tags === undefined || tags.length === 0
-              ? []
-              : [sql`slug in ${inList(tags.map((tag) => tag.slug))}`]),
-          ],
-          sql` or `,
-        )
-        const hasTouched = oldTags.length > 0 || (tags !== undefined && tags.length > 0)
+        // Only public lessons are listed by category, under the category and each ancestor.
+        const categoryStatements = [
+          raw(sql`delete from lesson_category where lesson_id = ${id}`),
+          ...(visibility === "public" && categoryId !== null && publishedAt !== null
+            ? [
+                raw(sql`insert into lesson_category (lesson_id, category_id, published_at)
+                  select ${id}, id, ${publishedAt} from category
+                  where id in ${inList(categoryAncestors(categoryId))}`),
+              ]
+            : []),
+        ]
 
         yield* db
           .batch([
+            ...countedAs(id, user.id, -1),
             sqlBuilder
               .update(lesson)
               .set({ visibility, category_id: categoryId, published_at: publishedAt, updated_at: now })
               .where(sql`${lesson.id} = ${id}`),
             ...tagStatements,
-            // Counters are recounted from the index, in the same batch, so they cannot drift.
-            ...(hasTouched
-              ? [
-                  raw(sql`update tag set lesson_count = (select count(*) from lesson_tag lt
-                    where lt.tag_id = tag.id and lt.is_public = 1) where ${touchedTags}`),
-                ]
-              : []),
-            recountProfile(user.id),
+            ...categoryStatements,
+            ...countedAs(id, user.id, 1),
+            ...syncLessonLangs(id),
           ])
           .pipe(Effect.orDie)
         return yield* asUser.get(id).pipe(Effect.orDie)
@@ -334,15 +346,18 @@ export class Lessons extends Context.Service<
         const now = Date.now()
         // Soft delete. The slug gets the id appended, so the owner can reuse the slug. Bodies stay
         // in R2 (another lesson may share a hash); `/c/` stops serving them for this lesson.
+        // Everyone's likes, bookmarks and progress of it go too, and like_count with them.
         yield* db
           .batch([
+            ...countedAs(id, user.id, -1),
             raw(sql`update lesson set deleted_at = ${now}, updated_at = ${now}, visibility = 'private',
-              slug = ${`${row.slug}~${row.id}`} where id = ${id}`),
+              slug = ${`${row.slug}~${row.id}`}, like_count = 0 where id = ${id}`),
+            ...forgetLesson(id),
             raw(sql`update lesson_tag set is_public = 0 where lesson_id = ${id}`),
-            raw(sql`update tag set lesson_count = (select count(*) from lesson_tag lt
-              where lt.tag_id = tag.id and lt.is_public = 1)
-              where id in (select tag_id from lesson_tag where lesson_id = ${id})`),
-            recountProfile(user.id),
+            raw(sql`delete from lesson_category where lesson_id = ${id}`),
+            // Out of the language feeds and search.
+            ...syncLessonLangs(id),
+            // No `countedAs(+1)`: a deleted lesson counts nowhere.
           ])
           .pipe(Effect.orDie)
       })
@@ -421,6 +436,45 @@ export class Lessons extends Context.Service<
 
         const canonical = canonicalJson(spec)
         const hash = yield* Effect.promise(() => sha256Hex(canonical))
+        const pins = refs.flatMap((ref) => {
+          const pin = pinOf(ref.slug, ref.version)
+          return pin === undefined ? [] : [{ card_id: ref.cardId, concept_version_id: pin.version_id }]
+        })
+
+        // Republishing the current body is a no-op. An unpinned `{ concept }` ref may resolve to a
+        // newer concept version than the current version pinned, so the pins must match too.
+        if (Option.isSome(existing)) {
+          const current = yield* db
+            .query(
+              raw(sql`select v.id, v.body_hash from lesson_lang ll join lesson_version v on v.id = ll.version_id
+                where ll.lesson_id = ${existing.value.id} and ll.lang = ${spec.lang}`),
+              CurrentRow,
+            )
+            .pipe(Effect.orDie)
+          const same = current[0]
+          if (same !== undefined && same.body_hash === hash) {
+            const pinned = yield* db
+              .query(
+                raw(sql`select card_id, concept_version_id from lesson_version_concept
+                  where lesson_version_id = ${same.id}`),
+                PinRow,
+              )
+              .pipe(Effect.orDie)
+            const key = (pin: typeof PinRow.Type) => `${pin.card_id}=${pin.concept_version_id}`
+            const samePins =
+              pinned.length === pins.length &&
+              pins.every((pin) => pinned.some((other) => key(other) === key(pin)))
+            if (samePins) {
+              const unchanged: PublishUnchanged = {
+                lesson: yield* asUser.get(existing.value.id).pipe(Effect.orDie),
+                version: yield* version(existing.value.id, same.id).pipe(Effect.orDie),
+                created: false,
+              }
+              return unchanged
+            }
+          }
+        }
+
         const key = contentKey(hash)
         if (!(yield* storage.exists(key).pipe(Effect.orDie))) {
           yield* storage.put(key, { body: canonical, contentType: "application/json" }).pipe(Effect.orDie)
@@ -432,6 +486,7 @@ export class Lessons extends Context.Service<
           onSome: (row) => row.id,
         })
         const versionId = uuidv7(now)
+        const search = lessonSearchText(spec.title, spec.summary)
         yield* db
           .batch([
             ...(Option.isNone(existing)
@@ -455,40 +510,34 @@ export class Lessons extends Context.Service<
               select ${versionId}, ${lessonId}, ${spec.lang}, coalesce(max(n), 0) + 1, ${hash}, ${canonical.byteLength},
                 ${lessonSchemaVersion}, null, ${now}
               from lesson_version where lesson_id = ${lessonId} and lang = ${spec.lang}`),
-            sqlBuilder
-              .insert(lessonLang)
-              .values({
-                lesson_id: lessonId,
-                lang: spec.lang,
-                version_id: versionId,
-                title: spec.title,
-                summary: spec.summary,
-                updated_at: now,
-              })
-              .onConflictDoUpdate({
-                target: [lessonLang.lesson_id, lessonLang.lang],
-                set: { version_id: versionId, title: spec.title, summary: spec.summary, updated_at: now },
-              }),
+            // A new row takes the next FTS rowid (nextLessonFtsRowid); an existing row keeps its
+            // own. is_public and published_at are set by syncLessonLangs.
+            raw(sql`insert into lesson_lang (lesson_id, lang, version_id, title, summary, search, fts_rowid, updated_at)
+              values (${lessonId}, ${spec.lang}, ${versionId}, ${spec.title}, ${spec.summary}, ${search},
+                ${nextLessonFtsRowid}, ${now})
+              on conflict (lesson_id, lang) do update set version_id = excluded.version_id, title = excluded.title,
+                summary = excluded.summary, search = excluded.search,
+                fts_rowid = coalesce(lesson_lang.fts_rowid, excluded.fts_rowid), updated_at = excluded.updated_at`),
             raw(sql`update lesson set updated_at = ${now},
               title = case when default_lang = ${spec.lang} then ${spec.title} else title end,
               summary = case when default_lang = ${spec.lang} then ${spec.summary} else summary end
               where id = ${lessonId}`),
             // Pin the concept version each `{ concept }` card resolved to now.
-            ...refs.flatMap((ref) => {
-              const pin = pinOf(ref.slug, ref.version)
-              return pin === undefined
-                ? []
-                : [
-                    raw(sql`insert into lesson_version_concept (lesson_version_id, card_id, concept_version_id)
-                      values (${versionId}, ${ref.cardId}, ${pin.version_id})`),
-                  ]
-            }),
+            ...pins.map((pin) =>
+              raw(sql`insert into lesson_version_concept (lesson_version_id, card_id, concept_version_id)
+                values (${versionId}, ${pin.card_id}, ${pin.concept_version_id})`),
+            ),
+            // A new language of a public lesson joins its feed and search here.
+            ...syncLessonLangs(lessonId),
           ])
           .pipe(Effect.orDie)
 
-        const published = yield* asUser.get(lessonId).pipe(Effect.orDie)
-        const stored = yield* version(lessonId, LessonVersionId.make(versionId)).pipe(Effect.orDie)
-        return { lesson: published, version: stored }
+        const published: Published = {
+          lesson: yield* asUser.get(lessonId).pipe(Effect.orDie),
+          version: yield* version(lessonId, LessonVersionId.make(versionId)).pipe(Effect.orDie),
+          created: true,
+        }
+        return published
       })
 
       // Every version of the given concepts in one language, with which one is current.
@@ -516,6 +565,8 @@ export class Lessons extends Context.Service<
 }
 
 const IdRow = Schema.Struct({ id: Schema.String })
+const CurrentRow = Schema.Struct({ id: LessonVersionId, body_hash: Schema.String })
+const PinRow = Schema.Struct({ card_id: Schema.String, concept_version_id: Schema.String })
 const ConceptPinRow = Schema.Struct({
   slug: Schema.String,
   n: Schema.Int,
@@ -524,9 +575,16 @@ const ConceptPinRow = Schema.Struct({
 })
 const PinnedRow = ConceptBundleItem.mapFields(({ spec: _spec, ...fields }) => fields)
 
-const recountProfile = (userId: string) =>
-  raw(sql`update profile set lesson_count = (select count(*) from lesson
-    where owner_id = ${userId} and visibility = 'public' and deleted_at is null) where user_id = ${userId}`)
+// One lesson's share of the public counters (its tags' and its owner's lesson_count): 1 while it
+// is public, else 0. A change takes the share out (-1) before it touches the lesson and puts it
+// back (+1) after, in the same batch (one transaction). So each counter moves by at most one,
+// reading only this lesson's rows, and stays exact without a count over every lesson.
+const countedAs = (lessonId: LessonId, ownerId: UserId, sign: 1 | -1) => [
+  raw(sql`update tag set lesson_count = lesson_count + ${sign}
+    where id in (select tag_id from lesson_tag where lesson_id = ${lessonId} and is_public = 1)`),
+  raw(sql`update profile set lesson_count = lesson_count + ${sign} where user_id = ${ownerId}
+    and exists (select 1 from lesson where id = ${lessonId} and visibility = 'public' and deleted_at is null)`),
+]
 
 const normalizeTags = Effect.fn("Lessons.normalizeTags")(function* (inputs: ReadonlyArray<string>) {
   const tags = inputs.map((input) => ({ name: input.trim(), slug: normalizeTag(input) }))

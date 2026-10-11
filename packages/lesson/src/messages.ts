@@ -12,6 +12,7 @@ export const en = {
   "reveal.why": "Say why, then reveal",
   "reveal.next": "Reveal next",
   "reveal.all": "Reveal all",
+  "progress.read": "{seen} of {total} sections read",
 
   "inspector.title": "Inspect",
   "inspector.empty":
@@ -22,6 +23,7 @@ export const en = {
   "inspector.open": "Open inspector",
   "inspector.addRef": "@ Add to question",
   "inspector.copyRef": "Copy ref",
+  "inspector.discuss": "Comments",
   "inspector.hintPinned": "Click a dashed word to go deeper · Esc to close",
   "inspector.hintHover": "Click to pin · Alt-click or @ to reference",
   "inspector.where": "Where this sits",
@@ -94,6 +96,7 @@ export const en = {
   "ask.copy": "Copy prompt for pi",
   "ask.copied": "Prompt copied. Paste it into pi.",
   "ask.remove": "Remove {name}",
+  "ask.discuss": "Comments on {name}",
   "ask.noMatch": "No match",
   "ask.suggestions": "References",
   "ask.noQuestion": "(no question typed)",
@@ -133,6 +136,7 @@ export const th: Record<LessonMessageKey, string> = {
   "reveal.why": "บอกเหตุผลก่อน แล้วเปิดดู",
   "reveal.next": "เปิดขั้นถัดไป",
   "reveal.all": "เปิดทั้งหมด",
+  "progress.read": "อ่านแล้ว {seen} จาก {total} ส่วน",
 
   "inspector.title": "ตรวจดู",
   "inspector.empty":
@@ -143,6 +147,7 @@ export const th: Record<LessonMessageKey, string> = {
   "inspector.open": "เปิดแผงตรวจดู",
   "inspector.addRef": "@ เพิ่มลงคำถาม",
   "inspector.copyRef": "คัดลอกที่อยู่",
+  "inspector.discuss": "ความคิดเห็น",
   "inspector.hintPinned": "คลิกคำเส้นประเพื่อเจาะลึก · Esc เพื่อปิด",
   "inspector.hintHover": "คลิกเพื่อปัก · Alt-คลิก หรือ @ เพื่ออ้างอิง",
   "inspector.where": "อยู่ตรงไหนของเรื่อง",
@@ -215,6 +220,7 @@ export const th: Record<LessonMessageKey, string> = {
   "ask.copy": "คัดลอกพรอมต์ให้ pi",
   "ask.copied": "คัดลอกพรอมต์แล้ว นำไปวางใน pi ได้เลย",
   "ask.remove": "ลบ {name}",
+  "ask.discuss": "ความคิดเห็นเกี่ยวกับ {name}",
   "ask.noMatch": "ไม่พบ",
   "ask.suggestions": "ที่อ้างอิงได้",
   "ask.noQuestion": "(ยังไม่ได้พิมพ์คำถาม)",

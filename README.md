@@ -58,6 +58,7 @@ Start from `apps/worker/.dev.vars.example`.
 | `BETTER_AUTH_URL` | `http://localhost:5187` |
 | `BETTER_AUTH_TRUSTED_ORIGINS` | Optional. Extra origins, comma-separated. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | From your Google OAuth client |
+| `ADMIN_USER_IDS` | Optional. User ids that may moderate (reports, hiding comments), comma-separated. Empty: nobody. |
 
 The Worker reads its settings when it gets its first request. If a value is
 missing or wrong, it answers 503 and logs one cause.
@@ -79,6 +80,37 @@ missing or wrong, it answers 503 and logs one cause.
 
 Run one package's tests with `bun run --cwd packages/domain test` (or
 `apps/worker`, `packages/lesson`).
+
+## Publish from the command line
+
+pi, or you, can publish a lesson without the browser. It uses an API token
+(ADR 0008).
+
+1. Sign in, open **Settings** (the gear next to your name), and create a token.
+   Copy it. It is shown only once.
+2. Run:
+
+```sh
+export LEARN_TOKEN=lrn_...
+bun scripts/publish.ts path/to/lesson.json            # one language
+bun scripts/publish.ts path/to/lesson/                # en.json + th.json
+bun scripts/publish.ts path/to/lesson/ --dry-run      # validate only
+bun scripts/publish.ts lesson.json --slug my-lesson --url http://localhost:5187
+```
+
+The script validates each file with `packages/domain` first (schema,
+references, expressions, en/th parity in a folder) and prints the problems. It
+then posts each language, `en.json` first. The slug defaults to the folder
+name (or the file name). `--url` defaults to `LEARN_URL`, then
+`https://learn.sirin.dev`. New lessons are private; change that in the
+Library.
+
+The raw API is `POST /api/me/lessons/<slug>/versions` with
+`Authorization: Bearer <token>` and one LessonSpec JSON as the body. It answers
+201 with the new version, or 200 (`created: false`) when the body is the same
+as the current version of its language, which adds nothing. A token
+can read and change your lessons but cannot create, list or revoke tokens.
+Revoke a token on the Settings page.
 
 ## Google sign-in
 
@@ -112,7 +144,12 @@ bunx wrangler r2 bucket create learn-content
    openssl rand -base64 32 | bunx wrangler secret put BETTER_AUTH_SECRET
    bunx wrangler secret put GOOGLE_CLIENT_ID
    bunx wrangler secret put GOOGLE_CLIENT_SECRET
+   # Moderators: user ids (the `user.id` column), comma-separated. Optional.
+   bunx wrangler secret put ADMIN_USER_IDS
    ```
+
+   `ADMIN_USER_IDS` is a secret, not a var, so a deploy does not reset it.
+   Change it with the same command; the next isolate reads the new list.
 
    `BETTER_AUTH_URL` is a var in `wrangler.jsonc` (`https://learn.sirin.dev`).
    `APP_ENV` is unset in production, which means `deployed`.
@@ -144,3 +181,39 @@ It uses your `wrangler login`, reads the remote rows, and runs the same
 publish code as the API. Run it again after you change `content/`: it writes
 only what changed, and prints "up to date" when nothing did. `seed:local`
 does the same for local state.
+
+### Deploy checklist
+
+1. Order: `bun run deploy` (build, then remote migrations, then
+   `wrangler deploy`). Run `bun run seed:remote` only after the new Worker is
+   live, never before. Don't publish or change lesson settings while the
+   deploy runs: the old Worker would write stale search rows that nothing
+   repairs.
+2. Admins: `bunx wrangler secret put ADMIN_USER_IDS` (comma-separated user
+   ids) if the list changed. Admin powers need a session cookie; an API token
+   never has them.
+3. Search rows. During the deploy the old Worker can still serve for a few
+   seconds after the migrations ran. The cron (every 30 minutes) and every
+   concept publish repair what it wrote. Both counts must reach 0:
+
+   ```bash
+   bunx wrangler d1 execute learn --remote --command \
+     "select (select count(*) from lesson_lang where fts_rowid is null) as lesson_null,
+             (select count(*) from concept_lang where fts_rowid is null) as concept_null"
+   ```
+
+   Search backfill progress (lesson languages still without search text; the
+   cron fills 50 per run):
+
+   ```bash
+   bunx wrangler d1 execute learn --remote --command \
+     "select count(*) as todo from lesson_lang where search is null"
+   ```
+
+4. Security headers: the Worker and the static assets each set a CSP.
+
+   ```bash
+   curl -sI https://learn.sirin.dev/ | grep -i content-security-policy
+   curl -sI https://learn.sirin.dev/explore | grep -i content-security-policy
+   curl -sI https://learn.sirin.dev/api/health | grep -i content-security-policy
+   ```

@@ -1,7 +1,19 @@
-import type { CategoryId, FeedCursor, Lesson, LessonLangInfo, LessonPage } from "@app/api"
-import { decodeLesson, type LessonSpec } from "@app/domain"
+import type {
+  CategoryId,
+  CommentAnchor,
+  CommentPage,
+  FeedCursor,
+  FeedSort,
+  Lesson,
+  LessonId,
+  LessonLangInfo,
+  LessonPage,
+  ProgressPage,
+  ReportPage,
+} from "@app/api"
+import { decodeLesson, type LessonKind, type LessonLang, type LessonSpec } from "@app/domain"
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query"
-import { type Effect, Result } from "effect"
+import { Effect, Result } from "effect"
 import { callApi } from "./api.ts"
 
 // Query keys and functions, shared by route loaders (prefetch) and components.
@@ -63,17 +75,30 @@ export const conceptBundleQuery = (lesson: Lesson, info: LessonLangInfo) =>
     staleTime: Number.POSITIVE_INFINITY,
   })
 
+// One feed of the API. Each is one index range on the server, so only these combinations exist:
+// newest by kind or by language, hot by kind, a category (newest), a tag (newest or hot).
 export type Feed =
-  | { readonly kind: "new" }
+  | {
+      readonly kind: "new"
+      readonly lessonKind?: LessonKind | undefined
+      readonly lang?: LessonLang | undefined
+    }
+  | { readonly kind: "hot"; readonly lessonKind?: LessonKind | undefined }
   | { readonly kind: "category"; readonly id: CategoryId }
-  | { readonly kind: "tag"; readonly slug: string }
+  | { readonly kind: "tag"; readonly slug: string; readonly sort: FeedSort }
 
-const feedKey = (feed: Feed) =>
-  feed.kind === "new"
-    ? ["feed", "new"]
-    : feed.kind === "category"
-      ? ["feed", "category", feed.id]
-      : ["feed", "tag", feed.slug]
+const feedKey = (feed: Feed) => {
+  switch (feed.kind) {
+    case "new":
+      return ["feed", "new", feed.lessonKind ?? "", feed.lang ?? ""]
+    case "hot":
+      return ["feed", "hot", feed.lessonKind ?? ""]
+    case "category":
+      return ["feed", "category", feed.id]
+    case "tag":
+      return ["feed", "tag", feed.slug, feed.sort]
+  }
+}
 
 export const feedQuery = (feed: Feed, limit?: number) =>
   infiniteQueryOptions({
@@ -86,14 +111,42 @@ export const feedQuery = (feed: Feed, limit?: number) =>
       return callApi((client): Effect.Effect<LessonPage, unknown> => {
         switch (feed.kind) {
           case "new":
-            return client.feeds.new({ query })
+            return client.feeds.new({
+              query: {
+                ...query,
+                ...(feed.lessonKind === undefined ? {} : { kind: feed.lessonKind }),
+                ...(feed.lang === undefined ? {} : { lang: feed.lang }),
+              },
+            })
+          case "hot":
+            return client.feeds.hot({
+              query: { ...query, ...(feed.lessonKind === undefined ? {} : { kind: feed.lessonKind }) },
+            })
           case "category":
             return client.feeds.category({ params: { id: feed.id }, query })
           case "tag":
-            return client.feeds.tag({ params: { slug: feed.slug }, query })
+            return client.feeds.tag({ params: { slug: feed.slug }, query: { ...query, sort: feed.sort } })
         }
       }, context.signal)
     },
+    initialPageParam: null as FeedCursor | null,
+    getNextPageParam: (last: LessonPage) => last.next_cursor,
+    retry: false,
+  })
+
+// Lesson search: the best matches, one page (the API has no further pages), shaped as a feed so
+// the same list renders it.
+export const lessonSearchQuery = (q: string, lang: LessonLang | undefined) =>
+  infiniteQueryOptions({
+    queryKey: ["lesson-search", q, lang ?? ""] as const,
+    queryFn: (context): Promise<LessonPage> =>
+      callApi(
+        (client) =>
+          client.lessons
+            .search({ query: lang === undefined ? { q } : { q, lang } })
+            .pipe(Effect.map((hits): LessonPage => ({ items: hits.items, next_cursor: null }))),
+        context.signal,
+      ),
     initialPageParam: null as FeedCursor | null,
     getNextPageParam: (last: LessonPage) => last.next_cursor,
     retry: false,
@@ -114,5 +167,82 @@ export const myLessonsQuery = (userId: string) =>
     getNextPageParam: (last: LessonPage) => last.next_cursor,
   })
 
+export const bookmarksKey = ["bookmarks"] as const
+
+export const bookmarksQuery = (userId: string) =>
+  infiniteQueryOptions({
+    queryKey: [...bookmarksKey, userId] as const,
+    queryFn: (context) =>
+      callApi(
+        (client) =>
+          client.engagement.bookmarks({
+            query: context.pageParam === null ? {} : { cursor: context.pageParam },
+          }),
+        context.signal,
+      ),
+    initialPageParam: null as FeedCursor | null,
+    getNextPageParam: (last: LessonPage) => last.next_cursor,
+  })
+
+export const progressKey = ["progress"] as const
+
+// "Continue learning": unfinished lessons, most recently read first.
+export const progressQuery = (userId: string, limit?: number) =>
+  infiniteQueryOptions({
+    queryKey: [...progressKey, userId, limit ?? 0] as const,
+    queryFn: (context) =>
+      callApi(
+        (client) =>
+          client.engagement.progress({
+            query: {
+              ...(context.pageParam === null ? {} : { cursor: context.pageParam }),
+              ...(limit === undefined ? {} : { limit }),
+            },
+          }),
+        context.signal,
+      ),
+    initialPageParam: null as FeedCursor | null,
+    getNextPageParam: (last: ProgressPage) => last.next_cursor,
+  })
+
 // The platform guide ("Start here"), published by seed:local as @learn/start-here.
 export const guideRef = { handle: "learn", slug: "start-here" } as const
+
+// Comments of one lesson (all anchors, or one), newest thread first. Keyed by the viewer: hidden
+// comments read differently for their author, the lesson's owner and admins.
+export const commentsKey = (lessonId: string) => ["comments", lessonId] as const
+
+export const commentsQuery = (lessonId: LessonId, anchor: CommentAnchor | undefined, viewer: string | null) =>
+  infiniteQueryOptions({
+    queryKey: [...commentsKey(lessonId), anchor ?? "", viewer] as const,
+    queryFn: (context) =>
+      callApi(
+        (client) =>
+          client.comments.list({
+            params: { id: lessonId },
+            query: {
+              ...(context.pageParam === null ? {} : { cursor: context.pageParam }),
+              ...(anchor === undefined ? {} : { anchor }),
+            },
+          }),
+        context.signal,
+      ),
+    initialPageParam: null as FeedCursor | null,
+    getNextPageParam: (last: CommentPage) => last.next_cursor,
+    retry: false,
+  })
+
+export const adminReportsKey = ["admin-reports"] as const
+
+export const adminReportsQuery = infiniteQueryOptions({
+  queryKey: adminReportsKey,
+  queryFn: (context) =>
+    callApi(
+      (client) =>
+        client.admin.reports({ query: context.pageParam === null ? {} : { cursor: context.pageParam } }),
+      context.signal,
+    ),
+  initialPageParam: null as FeedCursor | null,
+  getNextPageParam: (last: ReportPage) => last.next_cursor,
+  retry: false,
+})

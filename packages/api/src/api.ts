@@ -1,43 +1,73 @@
-import { LessonLang, LessonSpec } from "@app/domain"
+import { LessonKind, LessonLang, LessonSpec } from "@app/domain"
 import { Schema } from "effect"
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/http-api"
 import {
+  Admin,
+  ApiTokenLimit,
+  ApiTokenNotFound,
   Authenticated,
   BodyLimit,
   CategoryNotFound,
+  CommentNotFound,
   ConceptForbidden,
   ConceptNotFound,
   HandleTaken,
+  InvalidComment,
   InvalidConcept,
   InvalidHandle,
   InvalidLesson,
   InvalidSettings,
   LessonNotFound,
   PayloadTooLarge,
+  ReportNotFound,
+  SessionAuthenticated,
+  UnsupportedFilter,
   VersionNotFound,
   Viewer,
 } from "./errors.ts"
 import {
+  ApiToken,
+  ApiTokenCreate,
+  ApiTokenCreated,
+  ApiTokenId,
   Category,
   CategoryId,
+  Comment,
+  CommentAnchor,
+  CommentCreate,
+  CommentId,
+  CommentPage,
+  CommentUpdate,
   Concept,
   ConceptBundle,
   ConceptHit,
   ConceptPublished,
   ConceptSearch,
+  ConceptUnchanged,
   FeedCursor,
+  FeedSort,
   Handle,
   HandleUpdate,
   Lesson,
+  LessonHits,
   LessonId,
   LessonPage,
+  LessonSearchText,
   LessonSlug,
   LessonUpdate,
   LessonVersion,
   LessonVersionId,
+  LikeState,
   Me,
   PageLimit,
+  ProgressPage,
+  ProgressUpdate,
   Published,
+  PublishUnchanged,
+  ReportCreate,
+  ReportId,
+  ReportPage,
+  ReportResolve,
 } from "./models.ts"
 
 export class NotReady extends Schema.TaggedError<NotReady>()("NotReady", {}, { httpApiStatus: 503 }) {}
@@ -70,12 +100,44 @@ export class MeApi extends HttpApiGroup.make("me")
   )
   .middleware(Authenticated) {}
 
+// API tokens for pi (ADR 0008). Session cookie only: a token cannot manage tokens.
+export class TokensApi extends HttpApiGroup.make("tokens")
+  // Active tokens, newest first (at most maxApiTokens).
+  .add(HttpApiEndpoint.get("list", "/me/tokens", { success: Schema.Array(ApiToken) }))
+  // The answer holds the secret, once; it is never shown again.
+  .add(
+    HttpApiEndpoint.post("create", "/me/tokens", {
+      payload: ApiTokenCreate,
+      success: ApiTokenCreated.pipe(HttpApiSchema.status(201)),
+      error: ApiTokenLimit,
+    }),
+  )
+  // Owner only: anyone else's token id is the same 404 as a missing one.
+  .add(
+    HttpApiEndpoint.delete("revoke", "/me/tokens/:id", {
+      params: { id: ApiTokenId },
+      success: HttpApiSchema.NoContent,
+      error: ApiTokenNotFound,
+    }),
+  )
+  .middleware(SessionAuthenticated) {}
+
 export class CategoriesApi extends HttpApiGroup.make("categories").add(
   // The whole curated tree (a few dozen rows); the client builds the tree from parent_id.
   HttpApiEndpoint.get("list", "/categories", { success: Schema.Array(Category) }),
 ) {}
 
 export class LessonsApi extends HttpApiGroup.make("lessons").add(
+  // Full-text search over the title and summary of public lessons, every language (Thai split into
+  // words). The best `limit` matches by rank; no further pages (see LessonSearch).
+  HttpApiEndpoint.get("search", "/lessons/search", {
+    query: {
+      q: LessonSearchText,
+      lang: Schema.optionalKey(LessonLang),
+      limit: Schema.optionalKey(PageLimit),
+    },
+    success: LessonHits,
+  }),
   // Public reads. A private lesson is a 404 unless the viewer owns it.
   HttpApiEndpoint.get("get", "/lessons/:id", {
     params: { id: LessonId },
@@ -126,17 +188,77 @@ export class LessonsApi extends HttpApiGroup.make("lessons").add(
   HttpApiEndpoint.post("publish", "/me/lessons/:slug/versions", {
     params: { slug: LessonSlug },
     payload: JsonBytes,
-    success: Published.pipe(HttpApiSchema.status(201)),
+    // 201 with a new version; 200 when the body is identical to the current one (nothing written).
+    success: [Published.pipe(HttpApiSchema.status(201)), PublishUnchanged],
     error: [InvalidLesson, PayloadTooLarge],
   })
     .middleware(BodyLimit)
     .middleware(Authenticated),
 ) {}
 
+// The signed-in user's likes, bookmarks and reading progress. Each write is idempotent (a second
+// like changes nothing) and works only on a lesson the user can read: anyone else's private
+// lesson is the same 404 as a missing one. The lesson read (`viewer`) says what is set already.
+export class EngagementApi extends HttpApiGroup.make("engagement")
+  .add(
+    HttpApiEndpoint.put("like", "/lessons/:id/like", {
+      params: { id: LessonId },
+      success: LikeState,
+      error: LessonNotFound,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.delete("unlike", "/lessons/:id/like", {
+      params: { id: LessonId },
+      success: LikeState,
+      error: LessonNotFound,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.put("bookmark", "/lessons/:id/bookmark", {
+      params: { id: LessonId },
+      success: HttpApiSchema.NoContent,
+      error: LessonNotFound,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.delete("unbookmark", "/lessons/:id/bookmark", {
+      params: { id: LessonId },
+      success: HttpApiSchema.NoContent,
+      error: LessonNotFound,
+    }),
+  )
+  // Replaces the reading progress of one lesson. Unchanged progress writes nothing.
+  .add(
+    HttpApiEndpoint.put("saveProgress", "/lessons/:id/progress", {
+      params: { id: LessonId },
+      payload: ProgressUpdate,
+      success: HttpApiSchema.NoContent,
+      error: [LessonNotFound, VersionNotFound],
+    }),
+  )
+  // Bookmarked lessons the user can still read, most recently bookmarked first.
+  .add(HttpApiEndpoint.get("bookmarks", "/me/bookmarks", { query: pageQuery, success: LessonPage }))
+  // "Continue learning": unfinished lessons the user can still read, most recently read first.
+  .add(HttpApiEndpoint.get("progress", "/me/progress", { query: pageQuery, success: ProgressPage }))
+  .middleware(Authenticated) {}
+
+// Every filter here is one index range (D1 bills rows scanned); a combination no index covers is a
+// 400 UnsupportedFilter rather than a scan.
 export class FeedsApi extends HttpApiGroup.make("feeds").add(
-  // Public lessons, newest first (first-public time).
-  HttpApiEndpoint.get("new", "/feeds/new", { query: pageQuery, success: LessonPage }),
-  // A category and its sub-categories.
+  // Public lessons, newest first (first-public time). `kind` or `lang` (lessons with a version in
+  // that language, shown in it), not both.
+  HttpApiEndpoint.get("new", "/feeds/new", {
+    query: { ...pageQuery, kind: Schema.optionalKey(LessonKind), lang: Schema.optionalKey(LessonLang) },
+    success: LessonPage,
+    error: UnsupportedFilter,
+  }),
+  // Public lessons by hot score, optionally of one kind.
+  HttpApiEndpoint.get("hot", "/feeds/hot", {
+    query: { ...pageQuery, kind: Schema.optionalKey(LessonKind) },
+    success: LessonPage,
+  }),
+  // A category and its sub-categories, newest first.
   HttpApiEndpoint.get("category", "/feeds/categories/:id", {
     params: { id: CategoryId },
     query: pageQuery,
@@ -145,7 +267,7 @@ export class FeedsApi extends HttpApiGroup.make("feeds").add(
   }),
   HttpApiEndpoint.get("tag", "/feeds/tags/:slug", {
     params: { slug: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(40)) },
-    query: pageQuery,
+    query: { ...pageQuery, sort: Schema.optionalKey(FeedSort) },
     success: LessonPage,
   }),
 ) {}
@@ -169,19 +291,115 @@ export class ConceptsApi extends HttpApiGroup.make("concepts").add(
   // Body: one ConceptSpec JSON. Creates the concept, or adds the next version of its language.
   HttpApiEndpoint.post("publish", "/concepts", {
     payload: JsonBytes,
-    success: ConceptPublished.pipe(HttpApiSchema.status(201)),
+    success: [ConceptPublished.pipe(HttpApiSchema.status(201)), ConceptUnchanged],
     error: [InvalidConcept, ConceptForbidden, PayloadTooLarge],
   })
     .middleware(BodyLimit)
     .middleware(Authenticated),
 ) {}
 
+// Comments on a lesson (design §6.11). Every endpoint first checks that the caller can read the
+// lesson: anyone else's private lesson is the same 404 as a missing one.
+export class CommentsApi extends HttpApiGroup.make("comments")
+  // Threads, newest first; `anchor` keeps one anchor's threads.
+  .add(
+    HttpApiEndpoint.get("list", "/lessons/:id/comments", {
+      params: { id: LessonId },
+      query: { ...pageQuery, anchor: Schema.optionalKey(CommentAnchor) },
+      success: CommentPage,
+      error: LessonNotFound,
+    }).middleware(Viewer),
+  )
+  .add(
+    HttpApiEndpoint.post("create", "/lessons/:id/comments", {
+      params: { id: LessonId },
+      payload: CommentCreate,
+      success: Comment.pipe(HttpApiSchema.status(201)),
+      error: [LessonNotFound, VersionNotFound, CommentNotFound, InvalidComment],
+    }).middleware(Authenticated),
+  )
+  // The author only.
+  .add(
+    HttpApiEndpoint.patch("update", "/lessons/:id/comments/:commentId", {
+      params: { id: LessonId, commentId: CommentId },
+      payload: CommentUpdate,
+      success: Comment,
+      error: [LessonNotFound, CommentNotFound],
+    }).middleware(Authenticated),
+  )
+  // The author only. Soft: the body goes, the thread stays.
+  .add(
+    HttpApiEndpoint.delete("delete", "/lessons/:id/comments/:commentId", {
+      params: { id: LessonId, commentId: CommentId },
+      success: HttpApiSchema.NoContent,
+      error: [LessonNotFound, CommentNotFound],
+    }).middleware(Authenticated),
+  )
+  // The lesson's owner moderates its comments. Unhide undoes only the owner's own hide.
+  .add(
+    HttpApiEndpoint.put("hide", "/lessons/:id/comments/:commentId/hidden", {
+      params: { id: LessonId, commentId: CommentId },
+      success: Comment,
+      error: [LessonNotFound, CommentNotFound],
+    }).middleware(Authenticated),
+  )
+  .add(
+    HttpApiEndpoint.delete("unhide", "/lessons/:id/comments/:commentId/hidden", {
+      params: { id: LessonId, commentId: CommentId },
+      success: Comment,
+      error: [LessonNotFound, CommentNotFound],
+    }).middleware(Authenticated),
+  ) {}
+
+// Any signed-in user reports a lesson or comment they can see. A second open report of the same
+// target by the same user changes nothing. Nobody but admins lists reports.
+export class ReportsApi extends HttpApiGroup.make("reports").add(
+  HttpApiEndpoint.post("create", "/reports", {
+    payload: ReportCreate,
+    success: HttpApiSchema.NoContent,
+    error: [LessonNotFound, CommentNotFound],
+  }).middleware(Authenticated),
+) {}
+
+// Moderation, for the users in ADMIN_USER_IDS (session cookie only). Everyone else gets a plain
+// 404, as for a path that does not exist.
+export class AdminApi extends HttpApiGroup.make("admin")
+  .add(HttpApiEndpoint.get("reports", "/admin/reports", { query: pageQuery, success: ReportPage }))
+  .add(
+    HttpApiEndpoint.post("resolve", "/admin/reports/:id/resolve", {
+      params: { id: ReportId },
+      payload: ReportResolve,
+      success: HttpApiSchema.NoContent,
+      error: ReportNotFound,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.put("hideComment", "/admin/comments/:id/hidden", {
+      params: { id: CommentId },
+      success: HttpApiSchema.NoContent,
+      error: CommentNotFound,
+    }),
+  )
+  .add(
+    HttpApiEndpoint.delete("unhideComment", "/admin/comments/:id/hidden", {
+      params: { id: CommentId },
+      success: HttpApiSchema.NoContent,
+      error: CommentNotFound,
+    }),
+  )
+  .middleware(Admin) {}
+
 export class Api extends HttpApi.make("learn")
   .add(SystemApi)
   .add(MeApi)
+  .add(TokensApi)
   .add(CategoriesApi)
   .add(LessonsApi)
+  .add(EngagementApi)
   .add(FeedsApi)
   .add(ConceptsApi)
+  .add(CommentsApi)
+  .add(ReportsApi)
+  .add(AdminApi)
   .prefix("/api")
   .annotateMerge(OpenApi.annotations({ title: "Learn API" })) {}

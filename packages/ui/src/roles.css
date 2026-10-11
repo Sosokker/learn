@@ -1,23 +1,25 @@
 /* Lesson role palette: for lesson content ONLY (parts, cards, widgets). The app UI never uses
    these; it stays lavender. Names match `RoleColor` in packages/domain/src/lesson.ts exactly.
-   Every color has the same OKLCH lightness (0.76) so none shouts on the dark canvas; chroma is
-   kept low enough to stay inside sRGB at that lightness. One color = one meaning in a lesson.
+   Every color has the same OKLCH lightness so none shouts: 0.76 on the dark canvas, 0.53 on the
+   light one (about 5:1 against white, so a role color can color text). Chroma is kept low
+   enough to stay inside sRGB at that lightness. One color = one meaning in a lesson.
+   light-dark(<light>, <dark>), like tokens.css.
    Use as `text-role-teal`, `border-role-teal`, `bg-role-teal/15` (tint), or
    `var(--color-role-teal)` (see roleColorVar in roles.ts). `static` emits every variable even
    when no class uses it, because the renderer picks colors from data at runtime. */
 @theme static {
-  --color-role-red: oklch(0.76 0.13 25);
-  --color-role-orange: oklch(0.76 0.13 55);
-  --color-role-peach: oklch(0.76 0.08 45);
-  --color-role-yellow: oklch(0.76 0.13 95);
-  --color-role-mustard: oklch(0.76 0.11 80);
-  --color-role-olive: oklch(0.76 0.1 120);
-  --color-role-green: oklch(0.76 0.13 150);
-  --color-role-teal: oklch(0.76 0.11 185);
-  --color-role-cyan: oklch(0.76 0.1 215);
-  --color-role-blue: oklch(0.76 0.1 255);
-  --color-role-purple: oklch(0.76 0.12 300);
-  --color-role-pink: oklch(0.76 0.12 345);
-  --color-role-rose: oklch(0.76 0.09 10);
-  --color-role-grey: oklch(0.76 0.01 260);
+  --color-role-red: light-dark(oklch(0.53 0.13 25), oklch(0.76 0.13 25));
+  --color-role-orange: light-dark(oklch(0.53 0.13 55), oklch(0.76 0.13 55));
+  --color-role-peach: light-dark(oklch(0.53 0.08 45), oklch(0.76 0.08 45));
+  --color-role-yellow: light-dark(oklch(0.53 0.13 95), oklch(0.76 0.13 95));
+  --color-role-mustard: light-dark(oklch(0.53 0.11 80), oklch(0.76 0.11 80));
+  --color-role-olive: light-dark(oklch(0.53 0.1 120), oklch(0.76 0.1 120));
+  --color-role-green: light-dark(oklch(0.53 0.13 150), oklch(0.76 0.13 150));
+  --color-role-teal: light-dark(oklch(0.53 0.11 185), oklch(0.76 0.11 185));
+  --color-role-cyan: light-dark(oklch(0.53 0.1 215), oklch(0.76 0.1 215));
+  --color-role-blue: light-dark(oklch(0.53 0.1 255), oklch(0.76 0.1 255));
+  --color-role-purple: light-dark(oklch(0.53 0.12 300), oklch(0.76 0.12 300));
+  --color-role-pink: light-dark(oklch(0.53 0.12 345), oklch(0.76 0.12 345));
+  --color-role-rose: light-dark(oklch(0.53 0.09 10), oklch(0.76 0.09 10));
+  --color-role-grey: light-dark(oklch(0.53 0.01 260), oklch(0.76 0.01 260));
 }

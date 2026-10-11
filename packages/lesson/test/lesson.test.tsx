@@ -1,6 +1,7 @@
 import { compile, parseRef, type Section } from "@app/domain"
 import { renderToString } from "react-dom/server"
 import { describe, expect, it } from "vitest"
+import { anchorOf, describeAnchor, lessonAnchor } from "../src/anchors.ts"
 import { AskBar } from "../src/ask.tsx"
 import { LessonContext } from "../src/context.tsx"
 import { highlightCss, partColorCss } from "../src/highlight.ts"
@@ -51,6 +52,26 @@ describe("rendering the guide", () => {
       expect(html).toContain('data-target="item:chain.s2"')
     })
   }
+
+  it("shows reading progress only when the host tracks it, from the saved sections", () => {
+    const spec = loadGuide("en")
+    const first = spec.sections[0]?.id ?? ""
+    const total = spec.sections.length
+    expect(render("en")).not.toContain("lsn-progress")
+    const tracked = renderToString(
+      <Lesson
+        spec={spec}
+        concepts={concepts}
+        seen={[first, "gone_section", first]}
+        onProgress={() => undefined}
+      />,
+    )
+    expect(tracked).toContain(`1 of ${total} sections read`)
+    const thai = renderToString(
+      <Lesson spec={loadGuide("th")} concepts={concepts} seen={[]} onProgress={() => undefined} />,
+    )
+    expect(thai).toContain(`อ่านแล้ว 0 จาก ${total} ส่วน`)
+  })
 
   it("renders Thai with the Thai lesson text", () => {
     const html = render("th")
@@ -371,7 +392,7 @@ describe("titles with math", () => {
   const ctx = {
     model,
     t,
-    actions: { pin: noop, addRef: noop, copy: noop, preview: noop },
+    actions: { pin: noop, addRef: noop, copy: noop, preview: noop, discuss: undefined },
     lessonHref: undefined,
   }
   // KaTeX keeps the TeX source in its MathML <annotation>; only what is shown matters.
@@ -416,5 +437,57 @@ describe("titles with math", () => {
     expect(texToText("\\text{km/h}")).toBe("km/h")
     expect(texToText("F_{\\text{net}}")).toBe("Fₙₑₜ")
     expect(texToText("F_{\\text{big}}")).toBe("F_(big)")
+  })
+})
+
+describe("comment anchors", () => {
+  const model = buildModel({ spec: loadGuide("en"), slug: "guide", concepts })
+  const noop = () => {}
+
+  it("names every referenceable piece by its target key, and finds it again", () => {
+    for (const target of referenceableTargets(model)) {
+      const anchor = anchorOf(target)
+      expect(anchor).toBe(targetKey(target))
+      const info = describeAnchor(model, anchor ?? "")
+      expect(info?.target).toEqual(target)
+      expect(info?.name).toBe(refName(model, target))
+    }
+    expect(describeAnchor(model, lessonAnchor)?.title).toBe(model.spec.title)
+    expect(anchorOf({ kind: "concept", slug: "physics.total-time" })).toBeUndefined()
+  })
+
+  it("says a piece is gone rather than guessing", () => {
+    for (const anchor of [
+      "section:no_such",
+      "item:chain.zz",
+      "part:nope",
+      "card:nope",
+      "concept:x.y",
+      "junk",
+    ]) {
+      expect(describeAnchor(model, anchor)).toBeUndefined()
+    }
+  })
+
+  it("shows comment buttons only when the host takes comments", () => {
+    const v: Target = { kind: "section", section: "chain" }
+    const html = (discuss: ((t: Target) => void) | undefined) =>
+      renderToString(
+        <LessonContext
+          value={{
+            model,
+            t,
+            actions: { pin: noop, addRef: noop, copy: noop, preview: noop, discuss },
+            lessonHref: undefined,
+          }}
+        >
+          <Inspector target={v} pinned stack={[v]} onNavigate={noop} onClose={noop} />
+          <AskBar refs={[v]} onRemove={noop} onAdd={noop} onAsk={undefined} />
+        </LessonContext>,
+      )
+    expect(html(undefined)).not.toContain("Comments")
+    const withComments = html(noop)
+    expect(withComments).toContain(">Comments</button>")
+    expect(withComments).toContain('aria-label="Comments on @guide/chain"')
   })
 })

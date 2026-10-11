@@ -34,6 +34,7 @@ OAuth and Cloudflare setup: `README.md`.
 | `bun run test` | All package tests (Vitest; the Worker's run on Miniflare) |
 | `bun run test:e2e` | Playwright |
 | `bun run build` | SPA build + Worker dry-run bundle |
+| `bun scripts/publish.ts <file\|dir>` | Validate locally, then publish a lesson with `LEARN_TOKEN` (`--dry-run`, `--slug`, `--url`) |
 | `bun run deploy` | Build, remote migrations, `wrangler deploy` (ask the user first) |
 
 Run `bun run typecheck` and `bun run lint` after every change, and the tests of
@@ -51,8 +52,9 @@ packages/domain    LessonSpec/ConceptSpec schemas, Rich parser, expression parse
 packages/api       HttpApi definition (api.ts), models, errors, middleware tags   -> domain
 packages/db        Drizzle sqlite schema, auth schema, migrations, Database layer  -> domain
 packages/auth      Better Auth (Google only, native D1), profile hook, secret rules -> api, db, domain
-packages/services  Lessons, Concepts, Feeds, Categories, Profiles, ContentAccess, HotScore,
-                   Storage seam                                -> api, db, domain
+packages/services  Lessons, Engagement (likes, bookmarks, progress), Concepts, Feeds,
+                   Categories, Profiles, ContentAccess, HotScore, Storage seam
+                                                               -> api, db, domain
 packages/ui        Linear tokens, fonts, role colors, Base UI wrappers, app i18n
 packages/lesson    The lesson renderer (sections, widgets, inspector, KaTeX, @ref prompts)
                                                                -> domain, ui
@@ -88,8 +90,12 @@ Imports go one way only. `apps/web` never imports `db`, `auth` or
   `asUser: LessonReads<CurrentUser>` adds the owner's own.
 - Owner-only changes look the row up with `owner_id = CurrentUser.id` and
   return the same 404 when it doesn't match.
-- `CurrentUser` comes only from the `Authenticated` or `Viewer` middleware
-  (session cookie). Never take a user id from a body, query or header.
+- `CurrentUser` comes only from the `Authenticated`, `SessionAuthenticated` or
+  `Viewer` middleware (session cookie, or an API token's hash looked up in D1).
+  Never take a user id from a body, query or header.
+- API tokens (ADR 0008) act as their user everywhere `Authenticated` or
+  `Viewer` is used, but never on `/api/me/tokens` (`SessionAuthenticated`), so
+  a token cannot mint or revoke tokens. Store only the sha256.
 - `/c/<hash>.json` serves only hashes of non-deleted public or unlisted lesson
   versions, or concept versions (`ContentAccess`). Private bodies go through
   the owner-checked `/body` endpoint with `no-store`. Read ADR 0003 before you
@@ -104,7 +110,8 @@ Imports go one way only. `apps/web` never imports `db`, `auth` or
 - Lists are keyset pages (`after`, `toPage` in
   `packages/services/src/rows.ts`, cursor in `packages/api/src/models.ts`).
   **No `OFFSET`. No `COUNT(*)` for totals.** Counters live on the row and are
-  recounted in the same batch as the change.
+  adjusted (±1, only the changed lesson's rows read) in the same batch as the
+  change. See `countedAs` in `packages/services/src/lessons.ts`.
 - D1 has no interactive transactions. A multi-row change is one
   `Database.batch([...])`.
 - Drizzle only compiles SQL (`sqlBuilder`, `raw(sql\`…\`)`); `Database.query`
@@ -200,7 +207,7 @@ template (`~/work/parich/projects/projects-template/.claude/skills/effect-v4/SKI
 
 ## Not built yet
 
-API tokens + bearer auth for pi's `/publish`; likes, bookmarks, comments,
-progress, reports (tables exist, no services); lesson search; hot feed
-endpoint; fork; anonymous feed caching; e2e audit port.
+pi's `/publish` extension (API tokens and `scripts/publish.ts` exist); fork; the
+`problem_hash` reuse check; hot feeds by language or category; anonymous feed
+caching; e2e audit port.
 See `docs/design.md` §6.8.

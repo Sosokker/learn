@@ -1,9 +1,11 @@
 import { buttonClass, Card, EmptyState, useI18n } from "@app/ui"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { ProgressList } from "../engagement.tsx"
 import { FlagIcon } from "../icons.tsx"
 import { LessonList } from "../lesson-list.tsx"
-import { feedQuery } from "../queries.ts"
+import { feedQuery, progressQuery } from "../queries.ts"
+import { useViewer } from "../session.ts"
 
 const homeFeed = feedQuery({ kind: "new" }, 10)
 
@@ -15,6 +17,7 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const { t } = useI18n()
   const feed = useInfiniteQuery(homeFeed)
+  const viewer = useViewer()
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
       <header className="flex flex-col gap-2">
@@ -45,6 +48,8 @@ function HomePage() {
         </Card>
       </section>
 
+      {viewer.user === null ? null : <ContinueLearning userId={viewer.user.id} />}
+
       <section aria-labelledby="home-new" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="home-new" className="text-body font-semibold text-ink">
@@ -61,5 +66,30 @@ function HomePage() {
         />
       </section>
     </div>
+  )
+}
+
+// The signed-in reader's unfinished lessons, newest first. Nothing at all until there is one.
+function ContinueLearning(props: { readonly userId: string }) {
+  const { t } = useI18n()
+  const progress = useInfiniteQuery(progressQuery(props.userId, 3))
+  if (progress.isPending || progress.isError) return null
+  if (progress.data.pages.every((page) => page.items.length === 0)) return null
+  return (
+    <section aria-labelledby="home-continue" className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="home-continue" className="text-body font-semibold text-ink">
+          {t("home.continue")}
+        </h2>
+        <Link
+          to="/library"
+          search={{ tab: "progress" }}
+          className="text-dense text-accent-hover hover:underline"
+        >
+          {t("library.title")}
+        </Link>
+      </div>
+      <ProgressList query={progress} label={t("home.continue")} empty={null} paged={false} />
+    </section>
   )
 }

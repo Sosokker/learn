@@ -106,8 +106,10 @@ real cost question is **who runs the LLM**, not the hosting.
    so a missing index is a cost bug, not only a speed bug. Use keyset paging
    (as the template does), never `OFFSET` or `COUNT(*)`. Store counters
    on the row.
-7. **Don't write on every view.** No view counter rows. Save progress with a
-   10 s debounce plus one `sendBeacon` when the page closes.
+7. **Don't write on every view.** No view counter rows. Save progress at most
+   once every 10 s, only when it changed, plus one `keepalive` request when the
+   page is hidden or closed. The server skips the write when the row would not
+   change (6.10).
 8. **Few moving parts.** No KV, Durable Objects, Queues or Vectorize in v1. Add
    each one only when a feature needs it (section 9).
 9. **The session lives in a cookie.** Better Auth `cookieCache` (5 min) means a
@@ -384,18 +386,23 @@ milliseconds. Enumerations are checked text. Columns are snake_case.
 | `category` | `id` PK = dotted path (`physics.mechanics`), `parent_id`, `name_en`, `name_th`, `sort` | Seeded by migration `0003`, which includes `platform.guide`. There is no `slug` column: the id is the slug. |
 | `lesson` | `owner_id`, `slug` (unique per owner), `kind`, `default_lang`, `title`, `summary`, `category_id`, `visibility`, `forked_from_version_id`, `problem_hash`, counters, `hot_score`, `published_at`, `deleted_at` | `default_lang` is the first language published; feeds show its title and summary. No `current_version_id` and no `draft_key`. |
 | `lesson_version` | `lesson_id`, `lang`, `n`, `body_hash`, `body_bytes`, `schema`, `note` | Immutable. `unique(lesson_id, lang, n)`: numbered per language (en v1, en v2, th v1). |
-| `lesson_lang` | PK `(lesson_id, lang)`, `version_id`, `title`, `summary`, `updated_at` | The current version of each language. |
+| `lesson_lang` | PK `(lesson_id, lang)`, `version_id`, `title`, `summary`, `search`, `fts_rowid`, `is_public`, `published_at`, `updated_at` | The current version of each language. `search` is the text `lesson_fts` indexes (title and summary, Thai split into words); null only for rows from before migration `0007`, which the cron fills. `fts_rowid` works as in `concept_lang`. `is_public` and `published_at` are copies from `lesson`, kept in sync in the same batch, for the per-language feed. |
 | `tag` | `slug` unique, `name`, `lesson_count` | Slug: NFC, lowercase, runs of non-letters/digits become one `-`, ≤ 40. Thai letters stay. |
 | `lesson_tag` | PK `(lesson_id, tag_id)`, `is_public`, `published_at`, `hot_score` | Copies from `lesson`, kept in sync in the same batch, so a tag feed reads one index. ≤ 5 tags per lesson. |
+| `lesson_category` | PK `(lesson_id, category_id)`, `published_at` | One row per public lesson for its category and each ancestor, so a parent category's feed is one index range with no sort. Rows exist only while the lesson is public. |
 | `concept` | `slug` unique, `owner_id` | |
 | `concept_version` | `concept_id`, `lang`, `n`, `body_hash`, `body_bytes` | Immutable. `unique(concept_id, lang, n)`. |
-| `concept_lang` | PK `(concept_id, lang)`, `version_id`, `kind`, `title`, `aliases` (JSON), `search` | Current version per language. `search` holds the indexed text (Thai already split into words). |
+| `concept_lang` | PK `(concept_id, lang)`, `version_id`, `kind`, `title`, `aliases` (JSON), `search`, `fts_rowid` | Current version per language. `search` holds the indexed text (Thai already split into words). `fts_rowid` is the row's fixed `concept_fts` rowid, so an update replaces its FTS row by rowid instead of scanning. |
 | `concept_need` | PK `(concept_id, need_id)` | Prerequisite edges of the current versions. Acyclic. |
 | `lesson_version_concept` | PK `(lesson_version_id, card_id)`, `concept_version_id` | The concept version each `{ concept }` card was pinned to at publish. |
 | `concept_fts` | FTS5 `(concept_id UNINDEXED, lang UNINDEXED, search)`, `unicode61 remove_diacritics 2` | Hand-written migration `0002`. A regular (not contentless) FTS table. |
-| `lesson_like`, `bookmark`, `comment`, `progress`, `api_token`, `report` | as in the first draft | Tables exist. **No service or endpoint uses them yet.** |
-
-There is no `lesson_fts` yet. Lesson search is not built.
+| `lesson_fts` | FTS5 `(lesson_id UNINDEXED, lang UNINDEXED, search)`, same tokenizer | Hand-written migration `0008`. One row per language of a **public, not deleted** lesson only. Every batch that publishes, changes settings or deletes a lesson ends with `syncLessonLangs`: delete its rows by rowid, insert them again if public. Tags are not indexed (they have their own feed, and a re-tag then writes no FTS rows). |
+| `api_token` | `hash` unique, `user_id`, `name`, `prefix`, `last_used_at`, `revoked_at` | sha256 of the token only. Partial index `(user_id, created_at, id) where revoked_at is null` for the list and the cap (6.9). |
+| `lesson_like` | PK `(user_id, lesson_id)`, `created_at` | One row per like. `lesson.like_count` moves with it in the same batch (5.3). |
+| `bookmark` | PK `(user_id, lesson_id)`, `created_at` | |
+| `progress` | PK `(user_id, lesson_id)`, `version_id`, `state` (JSON), `done`, `updated_at` | Reading progress (6.10). `state`: sections seen, the last one, the section total, the language. `done` = every section seen. |
+| `comment` | `lesson_id`, `user_id`, `version_id`, `anchor`, `parent_id`, `body`, `reply_count`, `edited_at`, `deleted_at`, `hidden_at`, `hidden_by` | Comments on a piece of a lesson (6.11). `anchor` is a renderer target key or `lesson`. One level of replies. Delete is soft (the body is emptied). |
+| `report` | `target_type` (`lesson` \| `comment`), `target_id`, `reporter_id`, `reason`, `note`, `status`, `resolved_at`, `resolved_by` | Reports for moderators (6.11). At most one open report per reporter and target. |
 
 ### 5.2 Indexes
 
@@ -406,12 +413,27 @@ SQLite walks an index backwards for `order by published_at desc, id desc`.
 | Index | On | Used by |
 |---|---|---|
 | `lesson_new_idx` | `lesson (published_at, id)` where public and not deleted | `/api/feeds/new` |
-| `lesson_hot_idx` | `lesson (hot_score, id)` where public | a hot feed (not built yet) |
-| `lesson_cat_idx` | `lesson (category_id, published_at, id)` where public | `/api/feeds/categories/:id` |
-| `lesson_kind_idx` | `lesson (kind, published_at, id)` where public | a kind filter (not built yet) |
+| `lesson_hot_idx` | `lesson (hot_score, id)` where public | `/api/feeds/hot` |
+| `lesson_kind_hot_idx` | `lesson (kind, hot_score, id)` where public | `/api/feeds/hot?kind=` |
+| `lesson_category_feed_idx` | `lesson_category (category_id, published_at, lesson_id)` | `/api/feeds/categories/:id` (parent and leaf) |
+| `lesson_kind_idx` | `lesson (kind, published_at, id)` where public | `/api/feeds/new?kind=` |
+| `lesson_lang_feed_idx` | `lesson_lang (lang, published_at, lesson_id)` where `is_public = 1` | `/api/feeds/new?lang=` |
+| `lesson_lang_fts_rowid_unique` | `lesson_lang (fts_rowid)` unique | next FTS rowid for a new lesson language |
+| `lesson_lang_search_todo_idx` | `lesson_lang (lesson_id)` where `search is null` | the cron's search backfill (empty once done) |
 | `lesson_owner_idx` | `lesson (owner_id, updated_at, id)` | `/api/me/lessons` |
+| `bookmark_user_idx` | `bookmark (user_id, created_at, lesson_id)` | `/api/me/bookmarks` |
+| `progress_user_idx` | `progress (user_id, updated_at, lesson_id)` where `done = 0` | `/api/me/progress` ("Continue learning") |
+| `lesson_like_lesson_idx`, `bookmark_lesson_idx`, `progress_lesson_idx` | `(lesson_id)` | the lesson delete, which removes them |
+| `comment_thread_idx` | `comment (lesson_id, created_at, id)` where `parent_id is null` | a lesson's comment threads |
+| `comment_anchor_idx` | `comment (lesson_id, anchor, created_at, id)` where `parent_id is null` | the threads of one anchor |
+| `comment_reply_idx` | `comment (parent_id, created_at, id)` where `parent_id is not null` | the replies of a page of threads |
+| `report_queue_idx` | `report (created_at, id)` where `status = 'open'` | `/api/admin/reports` |
+| `report_open_unique` | `report (reporter_id, target_type, target_id)` unique, where open | one open report per user and target |
+| `report_target_idx` | `report (target_type, target_id)` where open | resolving closes a target's open reports |
 | `lesson_problem_idx` | `lesson (problem_hash)` where not null | reuse check (not built yet) |
 | `lesson_tag_feed_idx`, `lesson_tag_hot_idx` | `lesson_tag (tag_id, published_at \| hot_score, lesson_id)` where `is_public = 1` | `/api/feeds/tags/:slug` |
+| `lesson_tag_recent_idx` | `lesson_tag (published_at)` where `is_public = 1` | the hot-score cron |
+| `concept_lang_fts_rowid_unique` | `concept_lang (fts_rowid)` unique | next FTS rowid for a new concept language |
 | `lesson_version_hash_idx`, `concept_version_hash_idx` | `body_hash` | `/c/<hash>.json` access check |
 
 Lists are keyset pages: an opaque base64url cursor of `{ at, id }`, `limit`
@@ -421,12 +443,33 @@ Lists are keyset pages: an opaque base64url cursor of `{ at, id }`, `limit`
 
 - A D1 batch is one transaction. Every multi-row change is one
   `Database.batch`.
-- Counters (`tag.lesson_count`, `profile.lesson_count`) are recounted from the
-  index with a subquery in the same batch, so they cannot drift.
+- Counters (`tag.lesson_count`, `profile.lesson_count`) change in the same
+  batch as the lesson: the batch first takes the lesson's share out (−1 for
+  each counter it counts in now), then changes the lesson, then puts the share
+  back (+1). Each step reads only that lesson's rows, so a popular tag costs the
+  same as a new one, and the counters cannot drift.
+- `lesson.like_count` changes in the batch that writes the like: like is
+  `update … +1 where not exists (the like)`, then `insert … on conflict do
+  nothing`; unlike is `update … −1 where exists (the like)`, then `delete`.
+  The guard reads the like's primary key, so a repeated like or unlike moves
+  nothing. The lesson delete removes every like, bookmark and progress row of
+  the lesson and sets `like_count` to 0 in its own batch. (Users are never
+  deleted today; if that is added, the `user_id` cascade must take their likes
+  out of `like_count` first.)
+- `lesson.comment_count` counts comments everyone sees (not deleted, not
+  hidden). Create, delete, hide and unhide move it by one in the same batch,
+  guarded by the comment's state just before the change (`exists (… deleted_at
+  is null and hidden_at is null)`), so a repeat moves nothing. A reply also
+  adds one to its parent's `reply_count` (all replies, a size cap only).
 - Hot score: the cron (`*/30 * * * *`) recomputes
   `(likes + 2·forks + comments + 1) / (age_hours + 2)^1.5` for lessons first
   made public in the last 14 days, rounded to 6 places. It writes only rows
-  whose score changed, and copies the score to `lesson_tag`.
+  whose score changed, and copies the score to `lesson_tag`. Both updates
+  read an index range of the window (`lesson_new_idx`,
+  `lesson_tag_recent_idx`), not the whole table.
+- The same cron fills `lesson_lang.search` (and the `lesson_fts` row) for up
+  to 200 rows from before migration `0007` per run (`LessonSearch.backfill`).
+  SQL cannot split Thai into words, so the migration leaves them null.
 
 ### 5.4 Thai search
 
@@ -450,9 +493,10 @@ workerd isolate.
 - D1 Time Travel is the main backup. Lesson and concept bodies in R2 are
   immutable, so they are their own backup.
 - `wrangler d1 export` refuses a database with virtual tables. `concept_fts`
-  stays in the main database (so a concept write and its index update are one
-  batch). It is derived data: drop it, export, then recreate it and refill it
-  from `concept_lang.search` with one statement (see `packages/db/README.md`).
+  and `lesson_fts` stay in the main database (so a write and its index update
+  are one batch). They are derived data: drop them, export, then recreate them
+  and refill each from `concept_lang.search` / `lesson_lang.search` with one
+  statement (see `packages/db/README.md`).
 
 ---
 
@@ -488,7 +532,7 @@ Better Auth owns `/api/auth/*`. Google is the only provider.
 ### 6.2 Publish a lesson version
 
 `POST /api/me/lessons/:slug/versions`, body = one LessonSpec JSON, signed in
-with the session cookie.
+with the session cookie or an API token (6.9).
 
 1. `BodyLimit` refuses a body over 512 KB (413).
 2. The body must be UTF-8 JSON, decode strictly, and pass `validateLesson` with
@@ -502,11 +546,21 @@ with the session cookie.
    this language), insert `lesson_version` with the next `n` of this language,
    upsert `lesson_lang`, update the lesson's title and summary if this is the
    default language, and insert one `lesson_version_concept` row per
-   `{ concept }` card.
-5. 201 with `{ lesson, version }`.
+   `{ concept }` card. The batch ends with `syncLessonLangs` (feed copies and
+   `lesson_fts`), so a new language of a public lesson is listed and
+   searchable at once.
+5. 201 with `{ lesson, version, created: true }`.
 
-**pi cannot call this yet.** It needs a session cookie. API tokens (the
-`api_token` table) and a bearer middleware are not built.
+A body whose canonical hash equals the language's current version, and whose
+`{ concept }` cards pin the same concept versions, writes nothing (no R2 put,
+no D1 batch): 200 with `{ lesson, version, created: false }`, where `version`
+is the current one. The pins are compared because an unpinned `slug` ref can
+resolve to a newer concept version than the current version pinned. An older
+body is still a new version. `POST /api/concepts` does the same (a concept body
+holds its card, aliases and needs, so the hash alone decides).
+
+pi (and `scripts/publish.ts`) call it with `Authorization: Bearer lrn_…`
+(6.9).
 
 ### 6.3 Settings, visibility and delete
 
@@ -545,10 +599,15 @@ type can't read a private lesson.
      sent as `private, no-store`.
 3. The pinned concepts: `GET /api/lessons/:id/versions/:versionId/concepts`
    returns every `{ concept }` card's pinned version with its spec. Pins never
-   change, so for a public or unlisted lesson it is sent as `public,
-   max-age=31536000, immutable` and kept in the edge cache like `/c/` (same
-   caveat as 6.5). A private lesson's bundle is `private, no-store`.
+   change, so for a public or unlisted lesson it is sent as `private,
+   max-age=31536000, immutable` (the browser keeps it). It is not edge-cached:
+   the path names the lesson, which can turn private, and a cached copy would
+   keep answering 200 (ADR 0003). A private lesson's bundle is
+   `private, no-store`.
 4. The browser renders it with `<Lesson>` from `packages/lesson`.
+5. For a signed-in reader, the lesson carries `viewer`: liked, bookmarked and
+   the reading progress, from one query of primary-key lookups. It is `null`
+   for anonymous readers.
 
 ### 6.5 `/c/<hash>.json`
 
@@ -573,6 +632,22 @@ type can't read a private lesson.
   category under it) and `/api/feeds/tags/:slug` return public lessons,
   newest first, in keyset pages. An unknown tag is an empty page, like a tag
   used only by private lessons, so the feed can't tell them apart.
+- `GET /api/feeds/hot` sorts by `hot_score`; `/api/feeds/tags/:slug?sort=hot`
+  does the same on the tag's copy. The cursor holds the score, so a page read
+  after a cron run can repeat or skip a lesson whose score changed.
+- Filters exist only where one index range covers them (5.2): `new?kind=`,
+  `new?lang=` (lessons with a version in that language, shown in it),
+  `hot?kind=`. `new?kind=&lang=` together is 400 `UnsupportedFilter`. Not
+  offered: hot by language or by category (they would need a `hot_score` copy
+  on `lesson_lang` / `lesson_category` that the cron keeps), and filters on
+  category and tag feeds. Each would read rows the page then drops.
+- `GET /api/lessons/search?q=&lang=&limit=` is full-text search over the title
+  and summary of public lessons, in every language (Thai split as in 5.4). It
+  returns the best `limit` (≤ 50) by bm25 rank, one page, no cursor: FTS5
+  scores every match to order by rank, so a later page costs as much as the
+  first, and a rank cursor shifts as lessons change. Each hit shows the title
+  and summary of the language that matched; a lesson matching in both is one
+  hit. Search has no viewer: owners don't see their own private lessons there.
 - Names under `platform.` (concept slugs and the `platform` category tree)
   are only for the platform user `learn`.
 - `GET /api/concepts?q=&lang=&limit=` is full-text search over slug words,
@@ -591,6 +666,9 @@ is at `/api/openapi.json`.
 | `GET /health/ready` | anyone | D1 answers (503 `NotReady` if not) |
 | `GET /me` | signed in | The user and their profile |
 | `PATCH /me` | signed in | Change the handle (409 `HandleTaken`, 422 `InvalidHandle` for reserved) |
+| `GET /me/tokens` | session only | Active API tokens (name, prefix, created, last used) |
+| `POST /me/tokens` | session only | Create a token; the answer holds the secret once (409 `ApiTokenLimit` over 10) |
+| `DELETE /me/tokens/:id` | session only, owner | Revoke (404 `ApiTokenNotFound` for anyone else's) |
 | `GET /categories` | anyone | The whole category tree (flat; build it from `parent_id`) |
 | `GET /lessons/:id` | viewer | One lesson. Private: owner only, else 404. |
 | `GET /lessons/by/:handle/:slug` | viewer | The same, by URL |
@@ -600,32 +678,130 @@ is at `/api/openapi.json`.
 | `PATCH /lessons/:id` | owner | Visibility, category, tags |
 | `DELETE /lessons/:id` | owner | Soft delete |
 | `GET /me/lessons` | signed in | The user's library, all visibilities, by `updated_at` |
-| `POST /me/lessons/:slug/versions` | signed in | Publish (6.2) |
-| `GET /feeds/new` | anyone | Public lessons, newest first |
+| `POST /me/lessons/:slug/versions` | signed in | Publish (6.2): 201 new version, 200 unchanged |
+| `PUT`/`DELETE /lessons/:id/like` | signed in, can read | Like / unlike (idempotent); answers `{ liked, like_count }` |
+| `PUT`/`DELETE /lessons/:id/bookmark` | signed in, can read | Bookmark / remove (idempotent), 204 |
+| `PUT /lessons/:id/progress` | signed in, can read | Replace the reading progress (6.10), 204 |
+| `GET /me/bookmarks` | signed in | Bookmarked lessons the user can still read, newest bookmark first |
+| `GET /me/progress` | signed in | Unfinished lessons the user can still read, most recently read first |
+| `GET /lessons/search?q=&lang=&limit=` | anyone | Lesson search (public only, one page) |
+| `GET /feeds/new?kind= \| lang=` | anyone | Public lessons, newest first (400 `UnsupportedFilter` for both) |
+| `GET /feeds/hot?kind=` | anyone | Public lessons by hot score |
 | `GET /feeds/categories/:id` | anyone | One category and its children |
-| `GET /feeds/tags/:slug` | anyone | One tag |
+| `GET /feeds/tags/:slug?sort=new\|hot` | anyone | One tag |
 | `GET /concepts?q=` | anyone | Concept search |
 | `GET /concepts/:slug` | anyone | One concept |
-| `POST /concepts` | signed in | Create a concept or add a version |
+| `POST /concepts` | signed in | Create a concept or add a version (200 when unchanged) |
+| `GET /lessons/:id/comments?anchor=&cursor=&limit=` | viewer, can read | Comment threads, newest first, with their replies |
+| `POST /lessons/:id/comments` | signed in, can read | Comment or reply (201) |
+| `PATCH`/`DELETE /lessons/:id/comments/:commentId` | author | Edit / soft delete |
+| `PUT`/`DELETE /lessons/:id/comments/:commentId/hidden` | lesson owner | Hide / unhide (the owner's own hide only) |
+| `POST /reports` | signed in, can see target | Report a lesson or a comment, 204 |
+| `GET /admin/reports` | admin | Open reports, newest first |
+| `POST /admin/reports/:id/resolve` | admin | Resolve or dismiss; closes every open report of the target |
+| `PUT`/`DELETE /admin/comments/:id/hidden` | admin | Hide / unhide any comment |
 | `* /auth/*` | Better Auth | Google sign-in, callback, session, sign-out |
 
-Outside `/api`: `GET /c/<sha256>.json` (6.5). All other paths are static
-assets, and unknown paths get the SPA's `index.html`.
+"signed in" and "viewer" accept a session cookie or an API token; "session
+only" refuses a token. "admin" is a session cookie of a user in
+`ADMIN_USER_IDS`; for anyone else the admin routes are the router's empty 404. Outside `/api`: `GET /c/<sha256>.json` (6.5). All other
+paths are static assets, and unknown paths get the SPA's `index.html`.
 
 ### 6.8 Not built yet
 
-- API tokens and a bearer middleware, and pi's `/publish` extension.
-- Likes, bookmarks, comments on `@ref`s, progress, reports. The tables exist,
-  but there are no services or endpoints.
-- Lesson search (`lesson_fts`), the reuse check by `problem_hash`, and fork.
-- A hot feed endpoint, and kind/lang filters on feeds. The hot score cron
-  runs already.
+- pi's `/publish` extension (the server side and `scripts/publish.ts` exist,
+  6.9).
+- The reuse check by `problem_hash`, and fork.
+- Hot feeds by language or category, and filters on category and tag feeds
+  (6.6 says why).
 - The 60-second edge cache for anonymous feeds.
 - Drafts in R2, and the "ask" answer saved as a card (phase 2). In phase 1,
   the reader copies a prompt for pi (`buildPrompt` in `packages/lesson`).
-- Moderation: hide comments, admin list of reports.
+- Moderation beyond comments: hiding a lesson, banning a user, a report
+  count on the target, notifications to moderators.
+
+### 6.9 API tokens
+
+How pi publishes without a browser (ADR 0008).
+
+1. The user creates a token on `/settings`. The token is `lrn_` + 32 random
+   bytes (base64url). It is shown once. D1 keeps its sha256 and a display
+   prefix (`lrn_` + 6 characters). At most 10 active tokens per user.
+2. `Authorization: Bearer lrn_…` is accepted by `Authenticated` and `Viewer`.
+   If the header is present, it is the only credential checked: a bad token
+   is 401 `Unauthenticated` even when a valid cookie is also sent (`Viewer`
+   reads it as anonymous).
+3. Token requests skip the cross-site check (a browser never sends the token
+   on its own) but spend the same per-user write budget.
+4. `last_used_at` is written at most once every 5 minutes per token.
+5. `/api/me/tokens` takes the session cookie only, so a leaked token cannot
+   mint, list or revoke tokens. Revoking sets `revoked_at`; the token stops
+   working on the next request.
+6. `bun scripts/publish.ts <file.json | dir>` validates locally with
+   `packages/domain` (schema, validator, en/th parity in a dir), then posts
+   each language with `LEARN_TOKEN`.
 
 ---
+
+### 6.10 Likes, bookmarks and reading progress
+
+- "can read" above means public, unlisted, or the user's own. Anyone else's
+  private lesson is the same 404 as a missing one, for every write. The
+  lists join each row to its lesson and skip the ones the user can no longer
+  read, so a bookmark of a lesson made private disappears (and comes back if
+  it is made public again). A deleted lesson takes its rows with it.
+- Progress is per user and lesson, not per language: section ids are the
+  same in every language. The renderer counts a section as seen when half of
+  it, or 40% of the screen, is in view, and reports the seen set, the last
+  section and the total. The web app sends it at most every 10 s and when the
+  page is hidden; the server sorts the ids, and its upsert has
+  `where state <> excluded.state`, so a repeat writes no row. Every save spends
+  the user's write budget (30 per minute), shared with likes and bookmarks.
+- Likes count in the hot score (5.3) as before; the cron picks up the new
+  `like_count` on its next run.
+
+### 6.11 Comments, reports and moderation
+
+- **Anchor.** A comment points at the whole lesson (`lesson`) or at one part,
+  card, section or item, named by the renderer's target key (`part:v`,
+  `item:chain.s2`; `anchorOf` / `describeAnchor` in `packages/lesson`). Ids are
+  the same in every language and stay across versions, so a comment belongs to
+  the lesson, not to a version. It keeps the `version_id` (and so the
+  language) it was written on. When the version being read has no such piece,
+  the reader says "not in the version you are reading" instead of guessing.
+  The server checks the anchor's form only; reading the body to check that the
+  piece exists would cost an R2 read per comment.
+- **Shape.** One level of replies: a reply's parent is a top-level comment and
+  takes its anchor. At most 50 replies per thread (`maxReplies`), checked
+  again inside the write batch. A page is a keyset range of threads plus one
+  `parent_id in (…)` query for their replies.
+- **Text.** Plain text, 1–2000 characters, trimmed (ADR 0004). The web shows it
+  as a text node with `white-space: pre-wrap`; nothing parses it.
+- **Edit and delete.** The author only. Delete is soft: the body is emptied and
+  the row stays, so replies keep their thread. A deleted (or, for others,
+  hidden) top-level comment is listed only while it has replies to show.
+- **Access.** Every comment endpoint first checks that the caller can read the
+  lesson (6.10), with the same 404. So a private lesson's comments exist only
+  for its owner. An API token can comment (pi may), but never reaches the
+  admin routes.
+- **Hidden.** The lesson's owner can hide comments on their lesson; an admin can
+  hide any comment, and an admin's hide replaces an owner's, so the owner
+  cannot undo it. A hidden comment is shown, marked hidden, to its author, the
+  lesson's owner and admins. Everyone else gets no body and no author, and
+  cannot reply to it or report it.
+- **Reports.** Any signed-in user reports a lesson or comment they can see:
+  reason `spam | abuse | wrong | other` and an optional note (≤ 500). A second
+  open report of the same target by the same user writes nothing. Only admins
+  list them (`/admin/reports` in the web). Resolving or dismissing one closes
+  every open report of the same target.
+- **Admins.** `ADMIN_USER_IDS`, a Worker secret (comma-separated user ids). The
+  `Admin` middleware checks the session cookie against it on every request and
+  provides `CurrentAdmin`, which the moderation service methods require in
+  their Effect type. Non-admins, anonymous callers and API tokens get the same
+  empty 404 as an unknown path. `GET /api/me` returns `is_admin` so the web can
+  show the page; the server never trusts it back. A database role was not
+  needed for one or two moderators, and a secret needs no migration.
+- **Writes** spend the user's write budget (30 per minute), like likes.
 
 ## 7. Stack: template vs this project
 
@@ -706,8 +882,12 @@ Source: `docs/linear-DESIGN.md`. Tokens go into `packages/ui` as Tailwind v4
   canvas (equal lightness in OKLCH so no color shouts). The palette is based on
   Linear's product label colors (teal, red, mustard, yellow, orange, purple,
   blue, green). One color = one meaning, as the pi session agreed.
-- **Light mode:** Linear doesn't define one. Ship dark first. Add light later
-  with the inverse tokens and a second, darker role palette.
+- **Light mode:** Linear doesn't define one. Tokens are `light-dark()` pairs
+  (`packages/ui/src/tokens.css`, `roles.css`): the light theme inverts the
+  surface ladder and uses a second, darker role palette (OKLCH L 0.53, at least
+  4.5:1 on cards). The reader picks System / Light / Dark and a lesson text size
+  in the sidebar tool bar; the choice lives in localStorage, and
+  `apps/web/public/prefs.js` applies it before first paint.
 
 ---
 
@@ -731,6 +911,9 @@ Source: `docs/linear-DESIGN.md`. Tokens go into `packages/ui` as Tailwind v4
 
 Answered while building (2026-10-07):
 
+- **How pi authenticates to publish:** API tokens with bearer auth (6.9,
+  ADR 0008).
+
 - **drizzle-kit layout vs `wrangler d1 migrations apply`:** they don't match.
   drizzle-kit keeps writing folders in `packages/db/drizzle/`, and
   `packages/db/scripts/flatten-migrations.ts` copies them to flat
@@ -748,5 +931,3 @@ Still open:
 
 - Are unlisted lessons enough for "share with a friend", or do we need invite links?
 - License for shared lessons (suggest CC BY-SA, with forks credited).
-- How pi authenticates to publish: API tokens are planned (`api_token` table)
-  but not built (6.8).

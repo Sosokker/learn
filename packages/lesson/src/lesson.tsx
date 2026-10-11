@@ -9,6 +9,7 @@
 
 import type { ConceptSpec, LessonLang, LessonSpec } from "@app/domain"
 import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { anchorOf } from "./anchors.ts"
 import { AskBar, type AskPayload } from "./ask.tsx"
 import {
   LessonContext,
@@ -35,6 +36,13 @@ import { graphEdgeId } from "./widgets/diagrams.tsx"
 // Same layout effect on the client, no warning on the server.
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
 
+/** Reading progress: the sections that came into view, and the last one. */
+export interface LessonProgress {
+  readonly seen: ReadonlyArray<string>
+  readonly last: string | null
+  readonly total: number
+}
+
 export interface LessonProps {
   readonly spec: LessonSpec
   /** Shared concepts the lesson's `{ concept }` cards point at (any language; the lesson's wins). */
@@ -49,6 +57,18 @@ export interface LessonProps {
   readonly onAskPrompt?: ((payload: AskPayload) => void) | undefined
   /** Link to another lesson, for `units` entries with a `lessonSlug`. */
   readonly lessonHref?: ((slug: string) => string) | undefined
+  /** Sections already seen (saved progress), counted from the start. Ids not in the spec are dropped. */
+  readonly seen?: ReadonlyArray<string> | undefined
+  /**
+   * Called when a section comes into view for the first time, or another section becomes the
+   * last one seen. Only then does the toolbar show how much was read. The host throttles saving.
+   */
+  readonly onProgress?: ((progress: LessonProgress) => void) | undefined
+  /**
+   * Open the host's comments on a piece: called with its anchor (see anchors.ts) from the pinned
+   * inspector card and the ask bar's chips. Without it, no comment buttons show.
+   */
+  readonly onDiscuss?: ((anchor: string) => void) | undefined
   /** Hide the title / summary header (when the host page renders its own). */
   readonly hideHeader?: boolean | undefined
   readonly className?: string | undefined
@@ -140,6 +160,11 @@ export function Lesson(props: LessonProps) {
   const [refs, setRefs] = useState<ReadonlyArray<Target>>([])
   const [mode, setMode] = useState<Mode>("show")
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set())
+  const sectionIds = useMemo(() => spec.sections.map((s) => s.id), [spec.sections])
+  const [reading, setReading] = useState<{
+    readonly seen: ReadonlySet<string>
+    readonly last: string | null
+  }>(() => ({ seen: new Set(props.seen?.filter((id) => sectionIds.includes(id))), last: null }))
 
   // Latest state for the native listeners below (they are attached once).
   const latest = useRef({ hover, stack })
@@ -172,9 +197,21 @@ export function Lesson(props: LessonProps) {
 
   const preview = useCallback((target: Target | undefined) => setHover(target), [])
 
+  const onDiscuss = props.onDiscuss
+  const discuss = useMemo(
+    () =>
+      onDiscuss === undefined
+        ? undefined
+        : (target: Target) => {
+            const anchor = anchorOf(target)
+            if (anchor !== undefined) onDiscuss(anchor)
+          },
+    [onDiscuss],
+  )
+
   const ctx = useMemo<LessonContextValue>(
-    () => ({ model, t, actions: { pin, addRef, copy, preview }, lessonHref: props.lessonHref }),
-    [model, t, pin, addRef, copy, preview, props.lessonHref],
+    () => ({ model, t, actions: { pin, addRef, copy, preview, discuss }, lessonHref: props.lessonHref }),
+    [model, t, pin, addRef, copy, preview, discuss, props.lessonHref],
   )
 
   const modeCtx = useMemo<ModeContextValue>(
@@ -287,6 +324,47 @@ export function Lesson(props: LessonProps) {
     return () => document.removeEventListener("keydown", onKey)
   }, [addRef])
 
+  // Reading progress. A section counts as seen when half of it is in view, or, for a section
+  // taller than the screen, when it fills 40% of the screen.
+  const tracking = props.onProgress !== undefined
+  useEffect(() => {
+    const root = rootRef.current
+    if (!tracking || root === null || typeof IntersectionObserver === "undefined") return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const hits = entries
+          .filter(
+            (entry) =>
+              entry.isIntersecting &&
+              (entry.intersectionRatio >= 0.5 ||
+                entry.intersectionRect.height >= 0.4 * (entry.rootBounds?.height ?? window.innerHeight)),
+          )
+          .map((entry) => entry.target.getAttribute("data-ref")?.slice("section:".length))
+          .filter((id): id is string => id !== undefined && sectionIds.includes(id))
+        if (hits.length === 0) return
+        setReading((old) => {
+          const last = hits.toSorted((a, b) => sectionIds.indexOf(a) - sectionIds.indexOf(b)).at(-1) ?? null
+          const fresh = hits.filter((id) => !old.seen.has(id))
+          if (fresh.length === 0 && last === old.last) return old
+          return { seen: fresh.length === 0 ? old.seen : new Set([...old.seen, ...fresh]), last }
+        })
+      },
+      { threshold: [0, 0.25, 0.5, 0.75, 1] },
+    )
+    for (const el of root.querySelectorAll('.lsn-main [data-ref^="section:"]')) observer.observe(el)
+    return () => observer.disconnect()
+  }, [tracking, sectionIds])
+
+  const onProgress = props.onProgress
+  useEffect(() => {
+    if (onProgress === undefined || reading.last === null) return
+    onProgress({
+      seen: sectionIds.filter((id) => reading.seen.has(id)),
+      last: reading.last,
+      total: sectionIds.length,
+    })
+  }, [onProgress, reading, sectionIds])
+
   const pinned = stack[stack.length - 1]
   const shown = hover ?? pinned
   const showingPinned = pinned !== undefined && (hover === undefined || sameTarget(hover, pinned))
@@ -320,6 +398,14 @@ export function Lesson(props: LessonProps) {
             </header>
           )}
           <div className="lsn-toolbar">
+            {tracking && sectionIds.length > 0 && (
+              <span className="lsn-progress">
+                <span className="lsn-progress-bar" aria-hidden>
+                  <span style={{ width: `${(100 * reading.seen.size) / sectionIds.length}%` }} />
+                </span>
+                {t("progress.read", { seen: reading.seen.size, total: sectionIds.length })}
+              </span>
+            )}
             <fieldset className="lsn-mode" aria-label={t("mode.label")}>
               <legend className="lsn-sr-only">{t("mode.label")}</legend>
               <button

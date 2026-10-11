@@ -22,6 +22,15 @@ export async function createTestSession(
   return { user: created.user, cookie }
 }
 
+// A session for a user that already exists (one a test inserted with a fixed id, such as an admin
+// named in ADMIN_USER_IDS).
+export async function createTestSessionFor(auth: AuthInstance, userId: string) {
+  const context = await auth.$context
+  const session = await context.internalAdapter.createSession(userId)
+  const signature = await makeSignature(session.token, context.secret)
+  return `${context.authCookies.sessionToken.name}=${encodeURIComponent(`${session.token}.${signature}`)}`
+}
+
 // Better Auth's own schema check (off in the Worker; see auth.ts) against a migrated database:
 // resolves when every table, column and index Better Auth expects is there.
 export async function checkAuthSchema(d1: D1Database) {

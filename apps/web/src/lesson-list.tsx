@@ -1,4 +1,5 @@
 import type { LessonPage, LessonSummary } from "@app/api"
+import type { LessonLang } from "@app/domain"
 import { Badge, Button, EmptyState, Spinner, Tag, useI18n } from "@app/ui"
 import type { InfiniteData, UseInfiniteQueryResult } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
@@ -13,6 +14,10 @@ export function LessonRow(props: {
   readonly lesson: LessonSummary
   readonly showVisibility?: boolean
   readonly actions?: ReactNode
+  // Opens the lesson in this language (e.g. the one the reader was reading).
+  readonly lang?: LessonLang | undefined
+  // Shown under the summary (reading progress).
+  readonly extra?: ReactNode
 }) {
   const { t } = useI18n()
   const lesson = props.lesson
@@ -24,6 +29,7 @@ export function LessonRow(props: {
           <Link
             to="/@{$handle}/$slug"
             params={{ handle: lesson.owner_handle, slug: lesson.slug }}
+            search={props.lang === undefined ? {} : { lang: props.lang }}
             className="min-w-0 text-body-sm font-medium break-words text-ink no-underline hover:text-accent-hover"
           >
             {lesson.title}
@@ -31,6 +37,7 @@ export function LessonRow(props: {
           {lesson.summary === "" ? null : (
             <p className="line-clamp-2 text-dense text-ink-subtle">{lesson.summary}</p>
           )}
+          {props.extra}
         </div>
         {props.actions === undefined ? null : <div className="flex shrink-0 gap-1">{props.actions}</div>}
       </div>

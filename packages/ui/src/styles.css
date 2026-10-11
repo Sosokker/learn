@@ -8,8 +8,33 @@
 @source "./";
 
 @layer base {
+  /* The theme: tokens are light-dark() pairs, resolved by color-scheme. No data-theme follows
+     the system; preferences.ts sets it when the reader picks one. Native controls and
+     scrollbars follow too. */
   :root {
+    color-scheme: light dark;
+    /* Lesson text size (data-text-size, see preferences.ts); the lesson renderer scales its
+       reading text by this. */
+    --reading-scale: 1;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
     color-scheme: dark;
+  }
+  /* Set for two frames while the theme changes (preferences.ts), so colors swap at once. */
+  :root[data-theme-switching] *,
+  :root[data-theme-switching] *::before,
+  :root[data-theme-switching] *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: must beat every utility's transition */
+    transition: none !important;
+  }
+  :root[data-text-size="sm"] {
+    --reading-scale: 0.9;
+  }
+  :root[data-text-size="lg"] {
+    --reading-scale: 1.15;
   }
   html,
   body,
