@@ -13,7 +13,8 @@
   // runs in one Durable Object alarm, and pi-ai re-parses the whole tool-call JSON on every
   // streamed chunk, so writing a large lesson costs CPU that grows with the square of its size.
   // Waiting on the model is not CPU time. Requests that need less are not affected.
-  "limits": { "cpu_ms": 300000 },
+  // The account is on the Workers Free plan, which refuses `limits` (10 ms CPU per invocation).
+  // On Workers Paid, add: "limits": { "cpu_ms": 300000 },
   "routes": [{ "pattern": "learn.sirin.dev", "custom_domain": true }],
   // The web SPA (apps/web build). Only /api/* and /c/* run the Worker; every other path is an
   // asset, and unknown paths get index.html (client-side routes). Asset response headers (CSP)
