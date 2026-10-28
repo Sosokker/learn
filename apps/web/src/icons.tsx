@@ -57,12 +57,6 @@ export const MenuIcon = () => (
   </Icon>
 )
 
-export const UploadIcon = () => (
-  <Icon>
-    <path d="M8 10.5V2.5M5 5.5l3-3 3 3M2.5 10.5v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2" />
-  </Icon>
-)
-
 const heart = "M8 13.5S2.5 10.3 2.5 6.3A2.8 2.8 0 0 1 8 5a2.8 2.8 0 0 1 5.5 1.3c0 4-5.5 7.2-5.5 7.2z"
 
 export const HeartIcon = (props: { readonly filled?: boolean; readonly large?: boolean }) => (

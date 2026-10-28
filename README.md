@@ -59,33 +59,69 @@ Start from `apps/worker/.dev.vars.example`.
 | `BETTER_AUTH_TRUSTED_ORIGINS` | Optional. Extra origins, comma-separated. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | From your Google OAuth client |
 | `ADMIN_USER_IDS` | Optional. User ids that may moderate (reports, hiding comments), comma-separated. Empty: nobody. |
-| `GENERATION_MODELS` | The AI models `/create` offers, one JSON line. The example lists only the fake model (below). |
-| `GENERATION_DAILY_JOBS`, `GENERATION_MAX_TURNS`, `GENERATION_MAX_OUTPUT_TOKENS` | Optional limits: platform-paid jobs per user per UTC day (3), model requests per job (12), output tokens per job (60000). |
-| `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `DEEPSEEK_API_KEY` | Optional platform keys. Leave them empty locally. A provider without a key is offered with the user's own key only (BYOK), and `/create` shows no daily quota for it. |
-| `BYOK_KEK` | Encrypts users' own provider keys. The example value is public and is refused when deployed. Empty: users cannot store keys. |
 
-### AI lessons locally (fake provider)
+The Worker reads its settings when it gets its first request. If a required
+value is missing or wrong, it answers 503 and logs one cause.
 
-`/create` runs each job in a Durable Object (ADR 0009). Locally, use the fake
-model from `.dev.vars.example`: a scripted model inside the Worker
-(`packages/agent/src/fake-provider.ts`). It makes no network call. It searches
-concepts, sends a lesson with one problem to `validate_lesson`, fixes it, and
-saves a private draft.
+### Create lessons with your agent
 
-The example entry is `"provider": "anthropic", "fake": true`: it uses the
-Anthropic key slot, so without `ANTHROPIC_API_KEY` it is BYOK-only, as every
-model is at launch. To try the flow, open Settings and save any made-up key of
-the right shape (`sk-ant-api03-` and 20 or more letters or digits). The fake
-model ignores it. An entry with `"provider": "fake"` instead needs no key and
-runs on the platform quota. The Worker refuses both kinds when `APP_ENV` is
-deployed. Do not put real provider keys in `.dev.vars` unless you mean to pay
-for local runs.
+The platform does not run an LLM and does not store provider keys (ADR 0010).
+The learner's own harness — Claude Code, OpenCode, Codex or pi — writes the
+lesson, and Learn validates and publishes it.
 
-The Worker reads its settings when it gets its first request. If a value is
-missing or wrong, it answers 503 and logs one cause. The AI settings
-(`GENERATION_*`, `BYOK_KEK`) are the exception: when they are wrong, only AI
-generation is off (`/api/generations` answers 503 `GenerationUnavailable`), the
-cause is logged once, and the rest of the site works.
+1. Sign in, open **Create a lesson**, create an API token in Settings, and copy
+   it once.
+2. Download the CLI and write the skill into your harness:
+
+```sh
+curl -fsSL http://localhost:5187/agent/learn.mjs -o learn.mjs
+node learn.mjs init claude        # or opencode, codex, pi, generic
+export LEARN_TOKEN=lrn_...
+```
+
+`init` writes `.claude/skills/learn/SKILL.md`, `.opencode/skills/learn/SKILL.md`
+or `.learn/SKILL.md` (plus an `AGENTS.md` pointer for Codex and pi). The skill
+is public at `/agent/SKILL.md`; the LessonSpec JSON Schema is public at
+`/api/agent/lesson-schema`.
+3. Ask your agent to write the lesson. It writes `en.json` and `th.json`,
+   validates them, and publishes a private draft:
+
+```sh
+node learn.mjs guide > guide.en.json       # the canonical example
+node learn.mjs validate path/to/lesson/    # no writes
+node learn.mjs publish path/to/lesson/     # checks the set, writes it in one batch
+```
+
+The publish output gives the preview URL (`/@handle/slug`). Change visibility
+in Library. The raw API is `POST /api/me/lessons/<slug>/validate` for the dry
+run and `POST /api/me/lessons/<slug>/publish` for publish, both with
+`Authorization: Bearer <token>`. The publish body is
+`{ "specs": [en, th] }`; the server checks the whole set and writes every new
+version in one D1 batch, so a second language cannot leave a half-published
+lesson. `POST /api/me/lessons/<slug>/versions` remains as the old
+single-language adapter for downloaded clients.
+
+### Publish from the repo (pi)
+
+`scripts/publish.ts` is the repo-local path. It parses the files, then asks the
+server for the same whole-set check that publish runs, so `--dry-run` needs a
+token exactly like a real publish. Use it when you work inside this repository;
+external harnesses use the single-file CLI above.
+
+```sh
+export LEARN_TOKEN=lrn_...
+bun scripts/publish.ts path/to/lesson.json            # one language
+bun scripts/publish.ts path/to/lesson/                # en.json + th.json
+bun scripts/publish.ts path/to/lesson/ --dry-run      # validate only
+bun scripts/publish.ts lesson.json --slug my-lesson --url http://localhost:5187
+```
+
+The raw API is `POST /api/me/lessons/<slug>/publish` with
+`Authorization: Bearer <token>` and `{ "specs": [LessonSpec, ...] }` (1–2
+specs). It answers 201 with `{ lesson, versions, created: true }` when at least
+one version was written, or 200 (`created: false`) when every language is
+already current, which adds nothing. A token can read and change your lessons
+but cannot create, list or revoke tokens. Revoke a token on the Settings page.
 
 ## Commands
 
@@ -104,37 +140,6 @@ cause is logged once, and the rest of the site works.
 
 Run one package's tests with `bun run --cwd packages/domain test` (or
 `apps/worker`, `packages/lesson`).
-
-## Publish from the command line
-
-pi, or you, can publish a lesson without the browser. It uses an API token
-(ADR 0008).
-
-1. Sign in, open **Settings** (the gear next to your name), and create a token.
-   Copy it. It is shown only once.
-2. Run:
-
-```sh
-export LEARN_TOKEN=lrn_...
-bun scripts/publish.ts path/to/lesson.json            # one language
-bun scripts/publish.ts path/to/lesson/                # en.json + th.json
-bun scripts/publish.ts path/to/lesson/ --dry-run      # validate only
-bun scripts/publish.ts lesson.json --slug my-lesson --url http://localhost:5187
-```
-
-The script validates each file with `packages/domain` first (schema,
-references, expressions, en/th parity in a folder) and prints the problems. It
-then posts each language, `en.json` first. The slug defaults to the folder
-name (or the file name). `--url` defaults to `LEARN_URL`, then
-`https://learn.sirin.dev`. New lessons are private; change that in the
-Library.
-
-The raw API is `POST /api/me/lessons/<slug>/versions` with
-`Authorization: Bearer <token>` and one LessonSpec JSON as the body. It answers
-201 with the new version, or 200 (`created: false`) when the body is the same
-as the current version of its language, which adds nothing. A token
-can read and change your lessons but cannot create, list or revoke tokens.
-Revoke a token on the Settings page.
 
 ## Google sign-in
 
@@ -170,36 +175,9 @@ bunx wrangler r2 bucket create learn-content
    bunx wrangler secret put GOOGLE_CLIENT_SECRET
    # Moderators: user ids (the `user.id` column), comma-separated. Optional.
    bunx wrangler secret put ADMIN_USER_IDS
-   # AI lessons (ADR 0009). Required for launch: users pay with their own keys.
-   openssl rand -base64 32 | bunx wrangler secret put BYOK_KEK
-   # Optional, unset at launch. Setting one turns on the platform-paid daily quota
-   # (GENERATION_DAILY_JOBS) for that provider's models; deleting it turns it off.
-   bunx wrangler secret put ANTHROPIC_API_KEY
-   bunx wrangler secret put OPENAI_API_KEY
-   bunx wrangler secret put DEEPSEEK_API_KEY
    ```
 
-   Never change `BYOK_KEK` while keys are stored: they would no longer decrypt.
-   Each stored key records the KEK version that sealed it (`byok_key.kek_version`,
-   now always 1), so a rotation is possible later: add the new key as version 2
-   next to the old one, re-seal the version-1 rows with it (or delete them and ask
-   those users to save their keys again), then remove the old key. The code for
-   that is not written yet. Until then a key whose version the server does not
-   know fails its job with "set your key again".
-
-   The model list (`GENERATION_MODELS`) and the limits (`GENERATION_DAILY_JOBS`,
-   `GENERATION_MAX_TURNS`, `GENERATION_MAX_OUTPUT_TOKENS`) are vars in
-   `wrangler.jsonc`. Prices there are US dollars per million tokens, with a
-   separate `cache_write_1h` for Anthropic's 1-hour cache writes; check them
-   against the provider before a deploy. OpenAI reasoning models (GPT-6 Luna)
-   reason even though the job asks for none, and those tokens count as output:
-   toward `GENERATION_MAX_OUTPUT_TOKENS` and the cost.
-
-   `wrangler.jsonc` also sets `limits.cpu_ms` to 300000 (5 minutes, the Workers
-   Paid maximum). A job runs in one Durable Object alarm, and pi-ai re-parses
-   the whole tool-call JSON on every streamed chunk, so a large lesson costs CPU
-   time that grows with the square of its size. The Worker is built with
-   `minify` and uploads its source map.
+   No provider key is needed: the platform never runs a model (ADR 0010).
 
    `ADMIN_USER_IDS` is a secret, not a var, so a deploy does not reset it.
    Change it with the same command; the next isolate reads the new list.
@@ -237,15 +215,19 @@ does the same for local state.
 
 ### Deploy checklist
 
-1. Order: `bun run deploy` (build, then remote migrations, then
+1. **This release removes hosted generation (ADR 0010).** Migration `0013`
+   drops `byok_key`, `generation_job` and `generation_usage`, and the Wrangler
+   `v2` migration deletes the `GenerationAgent` Durable Object and its
+   transcripts. Back up anything you still need before `bun run deploy`.
+2. Order: `bun run deploy` (build, then remote migrations, then
    `wrangler deploy`). Run `bun run seed:remote` only after the new Worker is
    live, never before. Don't publish or change lesson settings while the
    deploy runs: the old Worker would write stale search rows that nothing
    repairs.
-2. Admins: `bunx wrangler secret put ADMIN_USER_IDS` (comma-separated user
+3. Admins: `bunx wrangler secret put ADMIN_USER_IDS` (comma-separated user
    ids) if the list changed. Admin powers need a session cookie; an API token
    never has them.
-3. Search rows. During the deploy the old Worker can still serve for a few
+4. Search rows. During the deploy the old Worker can still serve for a few
    seconds after the migrations ran. The cron (every 30 minutes) and every
    concept publish repair what it wrote. Both counts must reach 0:
 
@@ -263,10 +245,18 @@ does the same for local state.
      "select count(*) as todo from lesson_lang where search is null"
    ```
 
-4. Security headers: the Worker and the static assets each set a CSP.
+5. Security headers: the Worker and the static assets each set a CSP.
 
    ```bash
    curl -sI https://learn.sirin.dev/ | grep -i content-security-policy
    curl -sI https://learn.sirin.dev/explore | grep -i content-security-policy
    curl -sI https://learn.sirin.dev/api/health | grep -i content-security-policy
+   ```
+
+6. Agent assets: the skill and schema must be public and fresh.
+
+   ```bash
+   curl -fsS https://learn.sirin.dev/agent/SKILL.md | head -3
+   curl -fsS https://learn.sirin.dev/agent/learn.mjs | head -1
+   curl -fsS https://learn.sirin.dev/api/agent/lesson-schema | head -c 80
    ```

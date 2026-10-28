@@ -1,4 +1,3 @@
-import { lessonScript } from "@app/agent"
 import { CurrentUser, LessonId, LessonVersionId, platformUserId, UserId } from "@app/api"
 import { D1, Database } from "@app/db"
 import { Comments, Concepts, Engagement } from "@app/services"
@@ -770,98 +769,6 @@ layer(TestLayer, { excludeTestServices: true })("access control", (it) => {
       }
       const mine = yield* owner.client.lessons.mine({ query: {} })
       assert.strictEqual(mine.items.length, 0)
-    }),
-  )
-
-  // AI generation jobs (ADR 0009): owner only, like private lessons; the draft is private.
-  it.effect("another user's generation job is a 404 everywhere, and its draft is private", () =>
-    Effect.gen(function* () {
-      const env = yield* TestEnv
-      env.model.script = lessonScript
-      const owner = yield* signIn("Job Owner")
-      const stranger = yield* signIn("Job Stranger")
-      const started = yield* owner.client.generations.create({
-        payload: {
-          prompt: "Why does ice float on water?",
-          lang: "en",
-          model: "claude-test",
-          billing: "platform",
-        },
-      })
-      yield* Effect.promise(() => env.settle(started.id))
-      const job = yield* owner.client.generations.get({ params: { id: started.id } })
-      assert.strictEqual(job.status, "succeeded")
-
-      const get = yield* stranger.client.generations.get({ params: { id: job.id } }).pipe(Effect.flip)
-      assert.strictEqual(get._tag, "GenerationNotFound")
-      const cancel = yield* stranger.client.generations.cancel({ params: { id: job.id } }).pipe(Effect.flip)
-      assert.strictEqual(cancel._tag, "GenerationNotFound")
-      const events = yield* rawFetch(`/api/generations/${job.id}/events`, {
-        headers: { cookie: stranger.cookie },
-      })
-      assert.strictEqual(events.status, 404)
-      const missing = yield* rawFetch(`/api/generations/${crypto.randomUUID()}`, {
-        headers: { cookie: owner.cookie },
-      })
-      assert.strictEqual(missing.status, 404)
-      const nobody = yield* anonymous()
-      assert.strictEqual(
-        (yield* nobody.generations.get({ params: { id: job.id } }).pipe(Effect.flip))._tag,
-        "Unauthenticated",
-      )
-      assert.strictEqual((yield* rawFetch(`/api/generations/${job.id}/events`)).status, 401)
-
-      const draft = job.draft
-      assert.isNotNull(draft)
-      if (draft === null) return
-      assert.strictEqual(
-        yield* outcome(stranger.client.lessons.get({ params: { id: draft.lesson_id } })),
-        "404",
-      )
-      assert.strictEqual(yield* outcome(nobody.lessons.get({ params: { id: draft.lesson_id } })), "404")
-      assert.strictEqual(
-        (yield* owner.client.lessons.get({ params: { id: draft.lesson_id } })).visibility,
-        "private",
-      )
-    }),
-  )
-
-  it.effect("an API token can read generation jobs but never start or cancel one", () =>
-    Effect.gen(function* () {
-      const env = yield* TestEnv
-      env.model.script = lessonScript
-      const owner = yield* signIn("Token Spender")
-      const token = yield* owner.client.tokens.create({ payload: { name: "pi" } })
-      const viaToken = yield* clientWith({ authorization: `Bearer ${token.secret}` })
-      const payload = {
-        prompt: "Why does ice float on water?",
-        lang: "en",
-        model: "claude-test",
-        billing: "platform",
-      } as const
-
-      // A job spends money: a leaked token must not start one, on any billing.
-      const created = yield* viaToken.generations.create({ payload }).pipe(Effect.flip)
-      assert.strictEqual(created._tag, "Unauthenticated")
-      const byok = yield* viaToken.generations
-        .create({ payload: { ...payload, model: "deepseek-test", billing: "byok" } })
-        .pipe(Effect.flip)
-      assert.strictEqual(byok._tag, "Unauthenticated")
-      assert.strictEqual((yield* owner.client.generations.list({ query: {} })).items.length, 0)
-
-      // The owner's session starts one; the token can read it but not cancel it.
-      const started = yield* owner.client.generations.create({ payload })
-      yield* Effect.promise(() => env.settle(started.id))
-      assert.strictEqual(
-        (yield* viaToken.generations.get({ params: { id: started.id } })).status,
-        "succeeded",
-      )
-      assert.deepStrictEqual(
-        (yield* viaToken.generations.list({ query: {} })).items.map((item) => item.id),
-        [started.id],
-      )
-      const canceled = yield* viaToken.generations.cancel({ params: { id: started.id } }).pipe(Effect.flip)
-      assert.strictEqual(canceled._tag, "Unauthenticated")
     }),
   )
 })

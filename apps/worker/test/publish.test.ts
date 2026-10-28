@@ -33,7 +33,14 @@ layer(TestLayer, { excludeTestServices: true })("publish rules", (it) => {
         .publish({ params: { slug: "untitled" }, payload: jsonBytes(untitled) })
         .pipe(Effect.flip)
       assert.strictEqual(offSchema._tag, "InvalidLesson")
-      if (offSchema._tag === "InvalidLesson") assert.deepStrictEqual(issueCodes(offSchema), ["schema"])
+      if (offSchema._tag === "InvalidLesson") {
+        assert.deepStrictEqual(issueCodes(offSchema), ["schema"])
+        // The old adapter keeps the old issue paths; only the bundle prefixes them.
+        assert.deepStrictEqual(
+          offSchema.issues.map((issue) => issue.path),
+          ["$"],
+        )
+      }
 
       // Strict decoding: a misspelled key is an error, not silently dropped.
       const typo = yield* author.client.lessons
@@ -158,6 +165,173 @@ layer(TestLayer, { excludeTestServices: true })("publish rules", (it) => {
       // A refused publish adds nothing.
       const after = yield* author.client.lessons.versions({ params: { id: lesson.id }, query: {} })
       assert.strictEqual(after.length, 5)
+    }),
+  )
+
+  it.effect("publishes a lesson's languages as one unit", () =>
+    Effect.gen(function* () {
+      const author = yield* signIn("Bundle Author")
+      const env = yield* TestEnv
+      const bodiesBefore = (yield* Effect.promise(() => env.bucket.list())).objects.length
+      const bundle = (specs: ReadonlyArray<unknown>) =>
+        author.client.lessons.publishBundle({ params: { slug: "bundle" }, payload: jsonBytes({ specs }) })
+
+      const en = tinyLesson("en", "Bundle one")
+      const th = tinyLesson("th", "ชุดหนึ่ง")
+      const first = yield* bundle([en, th])
+      assert.isTrue(first.created)
+      assert.deepStrictEqual(
+        first.versions.map((entry) => `${entry.version.lang}${entry.version.n}`),
+        ["en1", "th1"],
+      )
+      assert.deepStrictEqual(
+        first.versions.map((entry) => entry.created),
+        [true, true],
+      )
+      assert.strictEqual(first.lesson.default_lang, "en")
+      assert.deepStrictEqual(
+        first.lesson.langs.map((lang) => lang.lang),
+        ["en", "th"],
+      )
+
+      // 201 for a write; 200 when every language is already current.
+      const raw = yield* rawFetch("/api/me/lessons/bundle/publish", {
+        method: "POST",
+        headers: { cookie: author.cookie, "content-type": "application/json" },
+        body: JSON.stringify({ specs: [en, th] }),
+      })
+      assert.strictEqual(raw.status, 200)
+      const again = yield* bundle([en, th])
+      assert.isFalse(again.created)
+      assert.deepStrictEqual(
+        again.versions.map((entry) => entry.created),
+        [false, false],
+      )
+      assert.deepStrictEqual(
+        again.versions.map((entry) => entry.version.id),
+        first.versions.map((entry) => entry.version.id),
+      )
+
+      // One language of a new lesson is enough; a second can be added later in one call.
+      const single = yield* author.client.lessons.publishBundle({
+        params: { slug: "one-language" },
+        payload: jsonBytes({ specs: [tinyLesson("en", "One language")] }),
+      })
+      assert.strictEqual(single.lesson.langs.length, 1)
+      const second = yield* author.client.lessons.publishBundle({
+        params: { slug: "one-language" },
+        payload: jsonBytes({
+          specs: [tinyLesson("en", "One language"), tinyLesson("th", "ภาษาหนึ่ง")],
+        }),
+      })
+      assert.deepStrictEqual(
+        second.versions.map((entry) => `${entry.version.lang}${entry.version.n}:${entry.created}`),
+        ["en1:false", "th1:true"],
+      )
+
+      // Both languages join the feed and FTS together when the lesson goes public.
+      const anon = yield* anonymous()
+      yield* author.client.lessons.update({
+        params: { id: first.lesson.id },
+        payload: { visibility: "public", category_id: "math.algebra", tags: ["bundle"] },
+      })
+      const enHits = yield* anon.lessons.search({ query: { q: "Bundle one", lang: "en" } })
+      const thHits = yield* anon.lessons.search({ query: { q: "ชุดหนึ่ง", lang: "th" } })
+      assert.deepStrictEqual(
+        enHits.items.map((item) => item.slug),
+        ["bundle"],
+      )
+      assert.deepStrictEqual(
+        thHits.items.map((item) => item.slug),
+        ["bundle"],
+      )
+      yield* author.client.lessons.update({
+        params: { id: first.lesson.id },
+        payload: { visibility: "private" },
+      })
+
+      // One body per distinct language; the unchanged bundle added none.
+      assert.strictEqual((yield* Effect.promise(() => env.bucket.list())).objects.length, bodiesBefore + 4)
+
+      // The lesson-level endpoint is owner-only like the rest of the authoring surface.
+      const refusal = yield* anon.lessons
+        .publishBundle({
+          params: { slug: "anonymous-bundle" },
+          payload: jsonBytes({ specs: [tinyLesson("en", "anonymous")] }),
+        })
+        .pipe(Effect.flip)
+      assert.strictEqual(refusal._tag, "Unauthenticated")
+    }),
+  )
+
+  it.effect("refuses the whole bundle when one language is invalid", () =>
+    Effect.gen(function* () {
+      const author = yield* signIn("Atomic Author")
+      const env = yield* TestEnv
+      const bodiesBefore = (yield* Effect.promise(() => env.bucket.list())).objects.length
+      const failed = yield* author.client.lessons
+        .publishBundle({
+          params: { slug: "atomic" },
+          payload: jsonBytes({
+            specs: [
+              tinyLesson("en", "Atomic"),
+              tinyLesson("th", "ปรมาณู", {
+                sections: [{ id: "other", type: "text", body: "ดู [x:$x$]" }],
+              }),
+            ],
+          }),
+        })
+        .pipe(Effect.flip)
+      assert.strictEqual(failed._tag, "InvalidLesson")
+      if (failed._tag === "InvalidLesson") assert.include(issueCodes(failed), "parity")
+
+      // Nothing was written: no lesson row and no R2 body.
+      assert.strictEqual((yield* author.client.lessons.mine({ query: {} })).items.length, 0)
+      assert.strictEqual((yield* Effect.promise(() => env.bucket.list())).objects.length, bodiesBefore)
+
+      // The old single-language endpoint still works for downloaded clients.
+      const one = yield* author.client.lessons.publish({
+        params: { slug: "atomic" },
+        payload: jsonBytes(tinyLesson("en", "Atomic")),
+      })
+      assert.isTrue(one.created)
+    }),
+  )
+
+  it.effect("parity checks the bundle against the languages it does not replace", () =>
+    Effect.gen(function* () {
+      const author = yield* signIn("Parity Author")
+      yield* author.client.lessons.publish({
+        params: { slug: "existing" },
+        payload: jsonBytes(tinyLesson("en", "Existing")),
+      })
+      const drifted = yield* author.client.lessons
+        .publishBundle({
+          params: { slug: "existing" },
+          payload: jsonBytes({
+            specs: [
+              tinyLesson("th", "ที่มีอยู่", {
+                sections: [{ id: "other", type: "text", body: "ดู [x:$x$]" }],
+              }),
+            ],
+          }),
+        })
+        .pipe(Effect.flip)
+      assert.strictEqual(drifted._tag, "InvalidLesson")
+      if (drifted._tag === "InvalidLesson") assert.include(issueCodes(drifted), "parity")
+
+      // A valid pair replaces both languages and is written together.
+      const pair = yield* author.client.lessons.publishBundle({
+        params: { slug: "existing" },
+        payload: jsonBytes({
+          specs: [tinyLesson("en", "Existing two"), tinyLesson("th", "ที่มีอยู่สอง")],
+        }),
+      })
+      assert.deepStrictEqual(
+        pair.versions.map((entry) => `${entry.version.lang}${entry.version.n}`),
+        ["en2", "th1"],
+      )
+      assert.strictEqual(pair.lesson.title, "Tiny Existing two")
     }),
   )
 

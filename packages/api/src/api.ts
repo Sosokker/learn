@@ -7,28 +7,18 @@ import {
   ApiTokenNotFound,
   Authenticated,
   BodyLimit,
-  ByokKeyMissing,
-  ByokKeyNotFound,
-  ByokUnavailable,
   CategoryNotFound,
   CommentNotFound,
   ConceptForbidden,
   ConceptNotFound,
-  GenerationBusy,
-  GenerationNotFound,
-  GenerationQuotaExceeded,
-  GenerationUnavailable,
   HandleTaken,
-  InvalidByokKey,
   InvalidComment,
   InvalidConcept,
-  InvalidGeneration,
   InvalidHandle,
   InvalidLesson,
   InvalidSettings,
   LessonNotFound,
   PayloadTooLarge,
-  PlatformBillingUnavailable,
   ReportNotFound,
   SessionAuthenticated,
   UnsupportedFilter,
@@ -40,9 +30,6 @@ import {
   ApiTokenCreate,
   ApiTokenCreated,
   ApiTokenId,
-  ByokKey,
-  ByokKeySet,
-  ByokProvider,
   Category,
   CategoryId,
   Comment,
@@ -59,11 +46,6 @@ import {
   ConceptUnchanged,
   FeedCursor,
   FeedSort,
-  Generation,
-  GenerationCreate,
-  GenerationId,
-  GenerationOptions,
-  GenerationPage,
   Handle,
   HandleUpdate,
   Lesson,
@@ -73,6 +55,7 @@ import {
   LessonSearchText,
   LessonSlug,
   LessonUpdate,
+  LessonValidation,
   LessonVersion,
   LessonVersionId,
   LikeState,
@@ -81,6 +64,8 @@ import {
   ProgressPage,
   ProgressUpdate,
   Published,
+  PublishedLesson,
+  PublishLessonUnchanged,
   PublishUnchanged,
   ReportCreate,
   ReportId,
@@ -212,6 +197,37 @@ export class LessonsApi extends HttpApiGroup.make("lessons").add(
   })
     .middleware(BodyLimit)
     .middleware(Authenticated),
+  // The lesson-level publish: the body is `{ "specs": [en, th] }` with one or two LessonSpecs of
+  // the same lesson. All checks run against the whole set, then every new version is written in
+  // one D1 batch, so a second language cannot leave a half-published lesson. `created` is true
+  // when at least one version was written.
+  HttpApiEndpoint.post("publishBundle", "/me/lessons/:slug/publish", {
+    params: { slug: LessonSlug },
+    payload: JsonBytes,
+    success: [PublishedLesson.pipe(HttpApiSchema.status(201)), PublishLessonUnchanged],
+    error: [InvalidLesson, PayloadTooLarge],
+  })
+    .middleware(BodyLimit)
+    .middleware(Authenticated),
+  // The external agent's dry run: the same checks as publish, nothing written. The body is
+  // `{ "specs": [LessonSpec, ...] }` with the en and th bodies of one lesson (1–2). The answer is
+  // 200 even when the lesson is invalid.
+  HttpApiEndpoint.post("validate", "/me/lessons/:slug/validate", {
+    params: { slug: LessonSlug },
+    payload: JsonBytes,
+    success: LessonValidation,
+    error: PayloadTooLarge,
+  })
+    .middleware(BodyLimit)
+    .middleware(Authenticated),
+) {}
+
+// The public contract for external agents (Claude Code, OpenCode, Codex, pi). The LessonSpec JSON
+// Schema is the same bytes for everyone and changes only when the server deploys.
+export class AgentApi extends HttpApiGroup.make("agent").add(
+  HttpApiEndpoint.get("lessonSchema", "/agent/lesson-schema", {
+    success: Schema.String.pipe(HttpApiSchema.asText({ contentType: "application/schema+json" })),
+  }),
 ) {}
 
 // The signed-in user's likes, bookmarks and reading progress. Each write is idempotent (a second
@@ -407,88 +423,9 @@ export class AdminApi extends HttpApiGroup.make("admin")
   )
   .middleware(Admin) {}
 
-// The user's own provider keys for AI generation (BYOK). Session cookie only, like tokens: a leaked
-// API token cannot read which keys exist or replace them. No endpoint returns a key.
-export class KeysApi extends HttpApiGroup.make("keys")
-  .add(HttpApiEndpoint.get("list", "/me/keys", { success: Schema.Array(ByokKey) }))
-  // Sets or replaces the key of one provider.
-  .add(
-    HttpApiEndpoint.put("set", "/me/keys/:provider", {
-      params: { provider: ByokProvider },
-      payload: ByokKeySet,
-      success: ByokKey,
-      error: [InvalidByokKey, ByokUnavailable],
-    }),
-  )
-  .add(
-    HttpApiEndpoint.delete("remove", "/me/keys/:provider", {
-      params: { provider: ByokProvider },
-      success: HttpApiSchema.NoContent,
-      error: ByokKeyNotFound,
-    }),
-  )
-  .middleware(SessionAuthenticated) {}
-
-// AI lesson generation (ADR 0009). A job runs in its own Durable Object and saves its result as a
-// private lesson of the user. Another user's job is the same 404 as a missing one. Starting and
-// canceling a job need the session cookie: a job spends money (the platform's or the user's own
-// key), so a leaked API token cannot start one. Reads also accept a token.
-export class GenerationsApi extends HttpApiGroup.make("generations")
-  // Models, today's platform quota, and the user's stored keys (provider + last4).
-  .add(
-    HttpApiEndpoint.get("options", "/generations/options", {
-      success: GenerationOptions,
-      error: GenerationUnavailable,
-    }).middleware(Authenticated),
-  )
-  // Checks the quota (platform) or the stored key (BYOK), then starts the job.
-  .add(
-    HttpApiEndpoint.post("create", "/generations", {
-      payload: GenerationCreate,
-      success: Generation.pipe(HttpApiSchema.status(201)),
-      error: [
-        InvalidGeneration,
-        PlatformBillingUnavailable,
-        GenerationQuotaExceeded,
-        GenerationBusy,
-        ByokKeyMissing,
-        GenerationUnavailable,
-      ],
-    }).middleware(SessionAuthenticated),
-  )
-  // The user's jobs, newest first.
-  .add(
-    HttpApiEndpoint.get("list", "/generations", { query: pageQuery, success: GenerationPage }).middleware(
-      Authenticated,
-    ),
-  )
-  .add(
-    HttpApiEndpoint.get("get", "/generations/:id", {
-      params: { id: GenerationId },
-      success: Generation,
-      error: GenerationNotFound,
-    }).middleware(Authenticated),
-  )
-  // Progress as Server-Sent Events (`text/event-stream`, each `data:` a GenerationEvent). Replays
-  // from the start, or after `Last-Event-ID` when the browser reconnects; ends after `done`.
-  .add(
-    HttpApiEndpoint.get("events", "/generations/:id/events", {
-      params: { id: GenerationId },
-      success: Schema.String.pipe(HttpApiSchema.asText({ contentType: "text/event-stream" })),
-      error: GenerationNotFound,
-    }).middleware(Authenticated),
-  )
-  // Stops a queued or running job. A finished job is returned as it is.
-  .add(
-    HttpApiEndpoint.post("cancel", "/generations/:id/cancel", {
-      params: { id: GenerationId },
-      success: Generation,
-      error: GenerationNotFound,
-    }).middleware(SessionAuthenticated),
-  ) {}
-
 export class Api extends HttpApi.make("learn")
   .add(SystemApi)
+  .add(AgentApi)
   .add(MeApi)
   .add(TokensApi)
   .add(CategoriesApi)
@@ -499,7 +436,5 @@ export class Api extends HttpApi.make("learn")
   .add(CommentsApi)
   .add(ReportsApi)
   .add(AdminApi)
-  .add(KeysApi)
-  .add(GenerationsApi)
   .prefix("/api")
   .annotateMerge(OpenApi.annotations({ title: "Learn API" })) {}

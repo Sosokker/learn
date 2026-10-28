@@ -1,5 +1,5 @@
-import { type ApiToken, type ApiTokenCreated, type ByokKey, type ByokProvider, maxApiTokens } from "@app/api"
-import { Button, Card, Dialog, EmptyState, Input, Select, Spinner, TextField, useI18n } from "@app/ui"
+import { type ApiToken, type ApiTokenCreated, maxApiTokens } from "@app/api"
+import { Button, Card, Dialog, EmptyState, Spinner, TextField, useI18n } from "@app/ui"
 import {
   queryOptions,
   type UseQueryResult,
@@ -7,13 +7,13 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import { useEffect, useId, useRef, useState } from "react"
 import { callApi, errorTag } from "../api.ts"
 import { signInWithGoogle } from "../auth.ts"
 import { formatDate } from "../format.ts"
-import { generationOptionsKey, generationOptionsQuery } from "../generation.tsx"
 import { PageSpinner } from "../lesson-view.tsx"
+import { ProfilePanel } from "../profile-panel.tsx"
 import { useViewer } from "../session.ts"
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage })
@@ -47,13 +47,8 @@ function SettingsPage() {
         />
       ) : (
         <>
+          <ProfilePanel userId={viewer.user.id} />
           <TokensPanel userId={viewer.user.id} />
-          <KeysPanel userId={viewer.user.id} />
-          <p className="text-body-sm text-ink-subtle">
-            <Link to="/library" className="text-ink-muted underline underline-offset-2 hover:text-ink">
-              {t("account.profileHint")}
-            </Link>
-          </p>
         </>
       )}
     </div>
@@ -334,185 +329,5 @@ function RevokeDialog(props: {
         </p>
       )}
     </Dialog>
-  )
-}
-
-const keysQuery = (userId: string) =>
-  queryOptions({
-    queryKey: ["byok-keys", userId] as const,
-    queryFn: (context) => callApi((client) => client.keys.list(), context.signal),
-  })
-
-const keyProviders: ReadonlyArray<ByokProvider> = ["anthropic", "openai", "deepseek"]
-
-// The user's own provider keys for AI lessons (BYOK). The key is sent once and never comes back:
-// the list shows the provider and the last 4 characters only.
-function KeysPanel(props: { readonly userId: string }) {
-  const { t, locale } = useI18n()
-  const queryClient = useQueryClient()
-  const keys = useQuery(keysQuery(props.userId))
-  const [provider, setProvider] = useState<ByokProvider>("anthropic")
-  // Which models each key serves, and whether a free quota exists at all (not at launch).
-  const options = useQuery(generationOptionsQuery(props.userId))
-  const models = options.data?.models ?? []
-  const quota = models.some((model) => model.platform)
-  const usedBy = models.filter((model) => model.provider === provider).map((model) => model.label)
-  const [key, setKey] = useState("")
-  const [message, setMessage] = useState<{ readonly ok: boolean; readonly text: string } | null>(null)
-  const keyId = useId()
-  const providerName = (value: ByokProvider) => t(`provider.${value}`)
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: keysQuery(props.userId).queryKey })
-    void queryClient.invalidateQueries({ queryKey: generationOptionsKey })
-  }
-  const errorText = (error: unknown, value: ByokProvider) => {
-    const tag = errorTag(error)
-    if (tag === "InvalidByokKey") return t("keys.error.InvalidByokKey", { provider: providerName(value) })
-    if (tag === "ByokUnavailable") return t("keys.unavailable")
-    if (tag === "Unauthenticated" || tag === "CrossSiteRequest" || tag === "RateLimited")
-      return t(`error.${tag}`)
-    return t("common.error")
-  }
-
-  const save = useMutation({
-    mutationFn: (input: { readonly provider: ByokProvider; readonly key: string }) =>
-      callApi((client) =>
-        client.keys.set({ params: { provider: input.provider }, payload: { key: input.key } }),
-      ),
-    onSuccess: (stored) => {
-      setKey("")
-      setMessage({ ok: true, text: t("keys.saved", { provider: providerName(stored.provider) }) })
-      refresh()
-    },
-    onError: (error, input) => setMessage({ ok: false, text: errorText(error, input.provider) }),
-  })
-  const remove = useMutation({
-    mutationFn: (value: ByokProvider) =>
-      callApi((client) => client.keys.remove({ params: { provider: value } })),
-    onSuccess: (_, value) => {
-      setMessage({ ok: true, text: t("keys.removed", { provider: providerName(value) }) })
-      refresh()
-    },
-    onError: (error, value) => {
-      if (errorTag(error) === "ByokKeyNotFound") return refresh()
-      setMessage({ ok: false, text: errorText(error, value) })
-    },
-  })
-
-  return (
-    <Card id="ai-keys" className="scroll-mt-20">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-body font-semibold text-ink">{t("keys.title")}</h2>
-        <p className="text-body-sm text-ink-subtle">
-          {t(quota ? "keys.description.quota" : "keys.description")}
-        </p>
-      </div>
-      <form
-        className="flex flex-col gap-3"
-        onSubmit={(event) => {
-          event.preventDefault()
-          const trimmed = key.trim()
-          if (trimmed === "") return setMessage({ ok: false, text: t("keys.keyRequired") })
-          setMessage(null)
-          save.mutate({ provider, key: trimmed })
-        }}
-      >
-        <div className="grid gap-3 sm:grid-cols-[12rem_1fr]">
-          <Select
-            label={t("keys.provider")}
-            value={provider}
-            onValueChange={(next) => {
-              setProvider(next)
-              setMessage(null)
-            }}
-            options={keyProviders.map((value) => ({ value, label: providerName(value) }))}
-          />
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <label htmlFor={keyId} className="text-dense font-medium text-ink-muted">
-              {t("keys.key")}
-            </label>
-            <Input
-              id={keyId}
-              type="password"
-              name="api-key"
-              value={key}
-              autoComplete="off"
-              spellCheck={false}
-              onValueChange={(next) => {
-                setKey(next)
-                setMessage(null)
-              }}
-              className="font-mono"
-            />
-          </div>
-        </div>
-        <p className="text-caption text-ink-subtle">
-          {options.isSuccess ? (
-            <>
-              {usedBy.length > 0
-                ? t("keys.usedBy", { models: usedBy.join(", ") })
-                : t("keys.usedByNone", { provider: providerName(provider) })}{" "}
-            </>
-          ) : null}
-          {t("keys.keyHint")} {t("keys.replaceHint")}
-        </p>
-        <div>
-          <Button type="submit" variant="secondary" disabled={save.isPending}>
-            {save.isPending ? <Spinner size="sm" label={t("common.loading")} /> : null}
-            {t("keys.save")}
-          </Button>
-        </div>
-      </form>
-      <div aria-live="polite">
-        {message === null ? null : (
-          <p className={`text-body-sm ${message.ok ? "text-success" : "text-danger"}`}>{message.text}</p>
-        )}
-      </div>
-      {keys.isPending ? (
-        <Spinner size="sm" label={t("common.loading")} />
-      ) : keys.isError ? (
-        <div className="flex items-center gap-3">
-          <p className="text-body-sm text-danger">{t("keys.loadError")}</p>
-          <Button size="sm" onClick={() => void keys.refetch()}>
-            {t("common.retry")}
-          </Button>
-        </div>
-      ) : keys.data.length === 0 ? (
-        <p className="text-body-sm text-ink-subtle">{t("keys.empty")}</p>
-      ) : (
-        <ul
-          aria-label={t("keys.listLabel")}
-          className="flex flex-col divide-y divide-hairline border-t border-hairline"
-        >
-          {keys.data.map((stored: ByokKey) => (
-            <li key={stored.provider} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3">
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                  <span className="text-body-sm font-medium text-ink">{providerName(stored.provider)}</span>
-                  <code className="font-mono text-caption text-ink-tertiary">
-                    {t("keys.ending", { last4: stored.last4 })}
-                  </code>
-                </span>
-                <span className="text-caption text-ink-subtle">
-                  {t("keys.added", { date: formatDate(stored.created_at, locale) })}
-                </span>
-              </div>
-              <Button
-                variant="danger"
-                size="sm"
-                disabled={remove.isPending}
-                aria-label={`${t("keys.remove")}: ${providerName(stored.provider)}`}
-                onClick={() => {
-                  setMessage(null)
-                  remove.mutate(stored.provider)
-                }}
-              >
-                {t("keys.remove")}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Card>
   )
 }

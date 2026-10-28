@@ -3,13 +3,10 @@ import { HotScore, LessonSearch, repairConceptFts } from "@app/services"
 import { Effect, Exit, Layer, ManagedRuntime } from "effect"
 import { HttpRouter, HttpServer } from "effect/http"
 import type { Env } from "./env.ts"
-import { GenerationRunnerDO } from "./generation-runner.ts"
 import { ApiLive, HandlersLive } from "./http.ts"
 import { storageLayer, writeLimitLayer } from "./platform.ts"
 
 export type { Env } from "./env.ts"
-// The Durable Object class of AI generation jobs (wrangler.jsonc `durable_objects`).
-export { GenerationAgent } from "./generation-agent.ts"
 
 // Static assets (the web SPA) are served before the Worker runs; only /api/* and /c/* reach
 // `fetch` (assets.run_worker_first).
@@ -134,11 +131,7 @@ export function isShareable(response: Response) {
 }
 
 function makeApp(env: Env) {
-  const platform = Layer.mergeAll(
-    storageLayer(env),
-    writeLimitLayer(env),
-    GenerationRunnerDO(env.GENERATION_AGENT),
-  )
+  const platform = Layer.mergeAll(storageLayer(env), writeLimitLayer(env))
   // Every layer that reads Config (auth) is built here, on the first event, before anything is
   // served: a missing secret fails at once with one logged cause. The HTTP handler reuses these
   // layers through the shared MemoMap; the cron runs on this runtime directly.

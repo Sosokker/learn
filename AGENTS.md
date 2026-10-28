@@ -34,7 +34,7 @@ OAuth and Cloudflare setup: `README.md`.
 | `bun run test` | All package tests (Vitest; the Worker's run on Miniflare) |
 | `bun run test:e2e` | Playwright |
 | `bun run build` | SPA build + Worker dry-run bundle |
-| `bun scripts/publish.ts <file\|dir>` | Validate locally, then publish a lesson with `LEARN_TOKEN` (`--dry-run`, `--slug`, `--url`) |
+| `bun scripts/publish.ts <file\|dir>` | Validate against the server, then publish a lesson with `LEARN_TOKEN` (`--dry-run`, `--slug`, `--url`) |
 | `bun run deploy` | Build, remote migrations, `wrangler deploy` (ask the user first) |
 
 Run `bun run typecheck` and `bun run lint` after every change, and the tests of
@@ -44,21 +44,18 @@ the packages you touched.
 
 ```
 apps/web           React SPA                                   -> api, domain, lesson, ui
+                   public/agent/{SKILL.md,learn.mjs}: the external agent's contract and CLI
 apps/worker        Worker entry (worker.ts), HTTP handlers (http.ts), session middleware
-                   (session.ts), R2 layer, the AI job Durable Object (generation-agent.ts);
-                   wrangler.jsonc; scripts/seed-local.ts; tests
-                                                               -> agent, api, auth, db, domain, services
+                   (session.ts), R2 layer; wrangler.jsonc; scripts/seed-local.ts; tests
+                                                               -> api, auth, db, domain, services
 packages/domain    LessonSpec/ConceptSpec schemas, Rich parser, expression parser, validator,
                    codec + JSON Schema export. Pure: no IO.
 packages/api       HttpApi definition (api.ts), models, errors, middleware tags   -> domain
 packages/db        Drizzle sqlite schema, auth schema, migrations, Database layer  -> domain
 packages/auth      Better Auth (Google only, native D1), profile hook, secret rules -> api, db, domain
 packages/services  Lessons, Engagement (likes, bookmarks, progress), Concepts, Feeds,
-                   Categories, Profiles, ContentAccess, HotScore, Generations, ByokKeys,
-                   GenerationSettings; Storage and GenerationRunner seams
+                   Categories, Profiles, ContentAccess, HotScore; Storage seam
                                                                -> api, db, domain
-packages/agent     AI lesson agent (ADR 0009): pi loop, fixed tools, static prompt,
-                   fake provider                               -> api, domain, services
 packages/ui        Linear tokens, fonts, role colors, Base UI wrappers, app i18n
 packages/lesson    The lesson renderer (sections, widgets, inspector, KaTeX, @ref prompts)
                                                                -> domain, ui
@@ -72,10 +69,17 @@ Imports go one way only. `apps/web` never imports `db`, `auth` or
 ## Where the contract lives
 
 - **Lesson and concept format:** `packages/domain/src/lesson.ts` (Effect
-  Schema). This is the contract between pi, the server and the renderer.
+  Schema). This is the contract between an agent, the server and the renderer.
   `codec.ts` decodes strictly and exports JSON Schema. `validate.ts` checks
   references, ranges, expressions and translation parity. Change all three
   together, and update `content/` and the renderer in the same change.
+- **External agent contract:** `apps/web/public/agent/SKILL.md` (the authoring
+  workflow) and `learn.mjs` (the CLI), served at `/agent/*`; the schema at
+  `GET /api/agent/lesson-schema`; the dry run at
+  `POST /api/me/lessons/:slug/validate`. `Lessons.checkBundle` in
+  `packages/services/src/lessons.ts` is the read-only half of
+  `Lessons.publishBundle`; never write a second validator. See ADR 0010 and
+  ADR 0011.
 - **HTTP API:** `packages/api/src/api.ts` (routes), `models.ts` (payloads),
   `errors.ts` (errors with their HTTP status). The handlers are in
   `apps/worker/src/http.ts`. The web client is derived from `Api`.
@@ -156,14 +160,19 @@ Imports go one way only. `apps/web` never imports `db`, `auth` or
 - Workers runtime types come from `@cloudflare/workers-types`, listed in each
   package that uses `D1Database` or `R2Bucket`.
 
-### AI generation
+### Agent publishing
 
-- The prompt prefix (tools in `packages/agent/src/tools.ts`, `systemPrompt` in
-  `prompt.ts`) must be the same bytes for every job: no dates, users or ids.
-  A change is a cache miss for every user until it warms again.
-- Tools never take a user or lesson id. The job's user comes from its row.
-- Provider keys (platform or BYOK) are passed to pi explicitly. Tests use the
-  fake provider: never a real key or a network call to a provider.
+- The platform does not run an LLM and stores no provider key (ADR 0010). The
+  user's harness writes the lesson; the Worker validates and stores it.
+- Keep `SKILL.md`, `learn.mjs` and the schema endpoint in step with
+  `packages/domain`. The dry run must call the same `Lessons.checkBundle` as
+  `Lessons.publishBundle`; do not duplicate validation in the CLI.
+- The CLI is dependency-free Node 18+ (fetch, fs). It reads files from disk and
+  calls the API, so a large LessonSpec never travels through tool arguments.
+- An agent uses the existing `lrn_…` API token. Do not add a provider key or a
+  service-account secret for it.
+- Tests never call a real model: `apps/worker/test/agent.test.ts` covers the
+  dry run with the real validator and stub layers.
 
 ## Code standards
 
@@ -212,16 +221,17 @@ template (`~/work/parich/projects/projects-template/.claude/skills/effect-v4/SKI
 - `apps/worker`: integration tests run the Worker's own layers against
   Miniflare's in-memory D1 and R2, migrated with the same SQL files wrangler
   applies (`test/support.ts`). They cover access control (owner, other user,
-  anonymous, unlisted), publish rules, concept pinning, auth, and Thai
-  segmentation in workerd.
+  anonymous, unlisted), publish rules, concept pinning, auth, the agent dry run,
+  and Thai segmentation in workerd.
+- `e2e`: Playwright. `agent.spec.ts` checks the public skill/CLI/schema and the
+  `/create` setup page (with a stubbed Better Auth session).
 - No mocks. Provide a stub Layer when a boundary needs isolating. No network
   and no real keys in tests.
 - New access rules need a test in `apps/worker/test/access.test.ts`.
 
 ## Not built yet
 
-pi's `/publish` extension (API tokens and `scripts/publish.ts` exist); fork; the
+pi's `/publish` extension (API tokens and `scripts/publish.ts` exist); an MCP
+wrapper for the validate/publish API; a publish-only token scope; fork; the
 `problem_hash` reuse check; hot feeds by language or category; anonymous feed
-caching; e2e audit port; for AI jobs: cheaper sub-task models, Batch APIs, a
-daily cost cap, a real-provider smoke test.
-See `docs/design.md` §6.8.
+caching; the e2e audit port. See `docs/design.md` §6.8.

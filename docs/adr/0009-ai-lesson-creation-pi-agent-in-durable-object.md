@@ -1,6 +1,8 @@
 # 0009. AI lesson creation: pi's agent loop in a Durable Object
 
-- Status: accepted (built 2026-10-11; see "As built")
+- Status: superseded by [ADR 0010](0010-bring-your-own-harness.md) on 2026-10-29.
+  The hosted generation and BYOK stack described here was removed; the agent loop
+  now runs in the user's own harness. Kept as history.
 - Date: 2026-10-11
 
 ## Context

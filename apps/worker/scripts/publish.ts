@@ -3,22 +3,27 @@
 //   LEARN_TOKEN=lrn_… bun scripts/publish.ts <file.json | dir> [--slug <slug>] [--url <origin>] [--dry-run]
 //
 // A file is one LessonSpec (one language). A directory holds one file per language (en.json,
-// th.json); they are checked against each other for en/th parity and published in that order.
-// Everything is validated locally with @app/domain first, so most mistakes never reach the
-// server; the server still validates (concept references, parity with what is already
-// published). `--dry-run` validates only. The slug defaults to the directory name, or the file
-// name without `.json` and a trailing `.en` / `.th` (`<dir>/en.json` takes the folder's name).
-// New lessons start private.
+// th.json). The server checks the whole set together (schema, concepts, links, kind, en/th parity)
+// and writes every new version in one batch; `--dry-run` asks for that same check without a write.
+// The slug defaults to the directory name, or the file name without `.json` and a trailing `.en` /
+// `.th` (`<dir>/en.json` takes the folder's name). New lessons start private.
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { basename, dirname, join, resolve } from "node:path"
-import { apiTokenPattern, Issue, LessonSlug, Published, PublishUnchanged } from "@app/api"
-import { checkLesson, compareTranslations, type LessonSpec } from "@app/domain"
+import {
+  apiTokenPattern,
+  Issue,
+  LessonSlug,
+  LessonValidation,
+  PublishedLesson,
+  PublishLessonUnchanged,
+} from "@app/api"
 import { Option, Schema } from "effect"
 import { publishOrigin } from "./publish-origin.ts"
 
 // Error bodies worth reading: InvalidLesson (422) and RateLimited (429).
 const InvalidBody = Schema.Struct({ issues: Schema.Array(Issue) })
 const LimitedBody = Schema.Struct({ retry_after_seconds: Schema.Int })
+const PublishedBody = Schema.Union([PublishedLesson, PublishLessonUnchanged])
 
 const usage =
   "usage: LEARN_TOKEN=lrn_… bun scripts/publish.ts <file.json | dir> [--slug <slug>] [--url <origin>] [--dry-run]"
@@ -41,12 +46,12 @@ if (!server.ok) fail(server.reason)
 const origin = server.origin
 const path = resolve(target)
 
-type Body = { readonly file: string; readonly bytes: Uint8Array; readonly spec: LessonSpec }
+type Body = { readonly file: string; readonly json: unknown }
 
 const files = statSync(path).isDirectory()
   ? readdirSync(path)
       .filter((name) => name.endsWith(".json"))
-      .sort(byLanguage)
+      .sort()
       .map((name) => join(path, name))
   : [path]
 if (files.length === 0) fail(`no .json files in ${path}`)
@@ -56,71 +61,68 @@ if (!Schema.is(LessonSlug)(slug)) {
   fail(`slug "${slug}" is not valid: lowercase letters, digits and dashes, 1-80 characters (use --slug)`)
 }
 
-// Local checks: schema + validator for each file, then parity between languages.
+// Local JSON check only: the server owns the schema, references and parity for the whole set.
 let problems = 0
 const bodies: Array<Body> = []
 for (const file of files) {
-  const bytes = new Uint8Array(readFileSync(file))
-  let json: unknown
   try {
-    json = JSON.parse(new TextDecoder().decode(bytes))
+    bodies.push({ file, json: JSON.parse(new TextDecoder().decode(readFileSync(file))) })
   } catch (error) {
     report(file, [{ path: "$", code: "json", message: String(error) }])
-    continue
   }
-  const checked = checkLesson(json)
-  report(file, checked.issues)
-  if (checked.spec !== undefined && checked.issues.length === 0)
-    bodies.push({ file, bytes, spec: checked.spec })
-}
-const langs = bodies.map((body) => body.spec.lang)
-const duplicate = langs.find((lang, index) => langs.indexOf(lang) !== index)
-if (duplicate !== undefined)
-  report(path, [{ path: "lang", code: "duplicate", message: `two files are ${duplicate}` }])
-const [base, ...others] = bodies
-if (base !== undefined) {
-  for (const other of others)
-    report(`${basename(base.file)} vs ${basename(other.file)}`, compareTranslations(base.spec, other.spec))
 }
 if (problems > 0) fail(`not published: ${problems} problem${problems === 1 ? "" : "s"}`)
-console.log(
-  `ok: ${bodies.map((body) => `${basename(body.file)} (${body.spec.lang})`).join(", ")} → slug "${slug}"`,
-)
-if (dryRun) process.exit(0)
+console.log(`lesson: ${bodies.map((body) => basename(body.file)).join(", ")} → slug "${slug}"`)
 
 const token = process.env.LEARN_TOKEN
 if (token === undefined || token === "") fail("set LEARN_TOKEN (create a token at <url>/settings)")
 if (!apiTokenPattern.test(token)) fail("LEARN_TOKEN does not look like an API token (lrn_ + 43 characters)")
 
-for (const body of bodies) {
-  const response = await fetch(`${origin}/api/me/lessons/${slug}/versions`, {
-    method: "POST",
-    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-    body: body.bytes,
-  })
-  const text = await response.text()
-  // 201: a new version. 200: the body is the language's current version already; nothing changed.
-  if (response.status === 201 || response.status === 200) {
-    const published = Schema.decodeUnknownSync(Schema.Union([Published, PublishUnchanged]))(JSON.parse(text))
-    const { lesson, version } = published
-    console.log(
-      `${published.created ? "published" : "unchanged"} ${basename(body.file)}: version ${version.n} (${version.lang}), ${lesson.visibility} → ${origin}/@${lesson.owner_handle}/${lesson.slug}`,
-    )
-    continue
-  }
-  const issues = decodeJson(text, InvalidBody)
-  if (issues !== undefined) {
-    report(`${basename(body.file)} (server)`, issues.issues)
-  } else if (response.status === 401) {
-    console.error("refused: the token is unknown or revoked (401)")
-  } else if (response.status === 429) {
-    const limited = decodeJson(text, LimitedBody)
-    console.error(`rate limited: try again in ${limited?.retry_after_seconds ?? 60} s`)
-  } else {
-    console.error(`HTTP ${response.status}: ${text.slice(0, 500)}`)
-  }
-  fail(`stopped at ${basename(body.file)}`)
+const endpoint = dryRun ? "validate" : "publish"
+const response = await fetch(`${origin}/api/me/lessons/${slug}/${endpoint}`, {
+  method: "POST",
+  headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+  body: JSON.stringify({ specs: bodies.map((body) => body.json) }),
+})
+const text = await response.text()
+
+if (response.status === 401) fail("refused: the token is unknown or revoked (401)")
+if (response.status === 429) {
+  const limited = decodeJson(text, LimitedBody)
+  fail(`rate limited: try again in ${limited?.retry_after_seconds ?? 60} s`)
 }
+if (response.status === 413) fail("the lesson bundle is over the 512 KB limit")
+
+if (dryRun) {
+  if (response.status !== 200) fail(`HTTP ${response.status}: ${text.slice(0, 500)}`)
+  const validation = decodeJson(text, LessonValidation)
+  if (validation === undefined) fail(`HTTP 200 with an unreadable answer: ${text.slice(0, 500)}`)
+  if (!validation.valid) {
+    report(`lesson "${slug}"`, validation.issues)
+    fail(`invalid: ${problems} problem${problems === 1 ? "" : "s"}`)
+  }
+  console.log("valid")
+  process.exit(0)
+}
+
+if (response.status === 422) {
+  const issues = decodeJson(text, InvalidBody)
+  if (issues !== undefined) report(`lesson "${slug}"`, issues.issues)
+  else console.error(`HTTP 422: ${text.slice(0, 500)}`)
+  fail(`not published: ${problems} problem${problems === 1 ? "" : "s"}`)
+}
+if (response.status !== 200 && response.status !== 201) fail(`HTTP ${response.status}: ${text.slice(0, 500)}`)
+
+const published = decodeJson(text, PublishedBody)
+if (published === undefined) fail(`HTTP ${response.status} with an unreadable answer: ${text.slice(0, 500)}`)
+const url = `${origin}/@${published.lesson.owner_handle}/${published.lesson.slug}`
+// 201: at least one new version; 200: every language was already current.
+for (const entry of published.versions) {
+  console.log(
+    `${entry.created ? "published" : "unchanged"} ${entry.version.lang} version ${entry.version.n} → ${url}`,
+  )
+}
+console.log(`open ${url} to preview; change visibility in Library.`)
 
 function report(
   label: string,
@@ -129,18 +131,22 @@ function report(
   if (issues.length === 0) return
   problems += issues.length
   console.error(`${label}:`)
-  for (const issue of issues) console.error(`  ${issue.path}  [${issue.code}]  ${issue.message}`)
+  for (const issue of issues) console.error(`  ${fileLabel(issue.path)}  [${issue.code}]  ${issue.message}`)
+}
+
+// A server issue path is `specs[i].<field>`; show the file it belongs to, as learn.mjs does.
+function fileLabel(path: string) {
+  const match = /^specs\[(\d+)\]\.?(.*)$/u.exec(path)
+  if (match === null) return path
+  const index = Number(match[1])
+  const name = bodies[index]?.file
+  const rest = match[2] ?? ""
+  return `${name === undefined ? `specs[${index}]` : basename(name)}${rest === "" ? "" : `: ${rest}`}`
 }
 
 function fail(message: string): never {
   console.error(message)
   process.exit(1)
-}
-
-// en first: the default language goes up before its translations.
-function byLanguage(a: string, b: string) {
-  const rank = (name: string) => (name === "en.json" ? 0 : 1)
-  return rank(a) - rank(b) || a.localeCompare(b)
 }
 
 function slugFrom(file: string) {

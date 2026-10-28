@@ -1,5 +1,11 @@
 # Handoff — 2026-10-07
 
+> **Status update (2026-10-29):** hosted AI generation and BYOK were removed.
+> Lesson creation is now bring-your-own-harness (ADR 0010): the user's Claude
+> Code, OpenCode, Codex or pi writes the lesson, and `learn` validates and
+> publishes it. The rest of this file is the 2026-10-07 handoff, kept as history;
+> `README.md`, `AGENTS.md`, `docs/design.md` and `docs/adr/` are current.
+
 > **Status update (2026-10-07, later):** the scaffold below is built, reviewed and deployed to
 > https://learn.sirin.dev (D1 + R2 created, migrations applied, guide seeded with `bun run seed:remote`).
 > The current docs are README.md, AGENTS.md, docs/design.md and docs/adr/. Still not built: pi `/publish`

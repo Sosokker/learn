@@ -32,7 +32,7 @@ the OpenRouter models API.
 | Auth | Better Auth, **Google sign-in only**, no passwords | No email service to pay for, and no password hashing on Worker CPU |
 | Lesson format | A typed **LessonSpec** JSON (Effect Schema). No user HTML or JS. | Safe to share in public. Every lesson gets the same hover, link and card behavior. pi can't break it. |
 | Visuals | A fixed **widget catalog** with parameters | A shared lesson can't run code |
-| Who pays for the LLM | **The learner, not the platform** (phase 1: local pi, phase 2: bring your own key) | The LLM is the only cost that grows quickly. Infra stays near $5/month. |
+| Who pays for the LLM | **The learner's own harness** (Claude Code, OpenCode, Codex, pi); the platform never runs a model | The LLM is the only cost that grows quickly. Infra stays near $5/month. |
 | UI | Linear: dark, dense, hairline borders, one lavender accent | Lesson role colors appear only inside lesson content, never in the app UI |
 
 Expected cost: **$5/month** (Workers Paid) up to about 20k monthly users. The
@@ -67,7 +67,8 @@ Assume 20k monthly users, 2M page views a month, about 5 API calls per view,
 | R2 | 1.2 GB, a few million reads | free tier |
 | **Total infra** | | **≈ $5/mo** |
 
-LLM cost for one full lesson (about 4k input tokens, 12–15k output tokens):
+For reference, if the platform ever did run a model, one full lesson (about 4k
+input tokens, 12–15k output tokens) would cost:
 
 | Model (OpenRouter, $/M in / out) | Per lesson |
 |---|---|
@@ -81,19 +82,19 @@ real cost question is **who runs the LLM**, not the hosting.
 
 ### 2.3 Cost rules
 
-1. **The platform does not pay for generation in v1.** Lessons are made by
-   your local pi (your own subscription or key) and published with
-   `/publish`. Phase 2 adds web generation with the learner's own OpenRouter
-   key. The browser calls OpenRouter directly, so no Worker CPU is used and the
-   key never reaches our server. Hosted generation with a free quota waits until
-   there is a reason to pay for it.
-2. **Reuse before you generate.** When a learner pastes a problem, search the
+1. **The platform does not run a model.** Lessons are made by the learner's
+   own harness (Claude Code, OpenCode, Codex, pi) with their own subscription
+   or key, then validated and published with the `learn` CLI. The platform
+   stores the LessonSpec, validates it with `packages/domain`, renders it and
+   serves the community. No provider key reaches our server, no Durable Object
+   runs an agent loop, and there is no generation quota (ADR 0010).
+2. **Reuse before you generate.** When a learner starts a lesson, search the
    community first (exact match on the normalized problem text, then
    full-text search). "Fork this lesson" costs nothing. Generating again costs
-   money.
-3. **Generate lazily.** First the skeleton (chunks, plan, chain). Drill-down
-   cards are made when someone clicks them, then saved into the lesson so the
-   next reader gets them free.
+   the learner's tokens and time.
+3. **Keep lessons small first.** Start with the skeleton (chunks, plan, chain).
+   Drill-down cards are added when they are needed and published as a new
+   version, so a first lesson does not pay for detail nobody read.
 4. **Immutable content gets cached at the edge.** A published version lives at
    `/c/<sha256>.json` with `Cache-Control: public, max-age=31536000, immutable`.
    After the first read in a region, the Worker answers it from the edge cache
@@ -120,10 +121,11 @@ real cost question is **who runs the LLM**, not the hosting.
 ## 3. Architecture
 
 ```
-  local pi (tutor)                         browser (learn.sirin.dev)
-  ─ learn skill writes lesson.json          ─ React SPA: reader, library, explore
-  ─ /publish extension ──── API token ──┐   ─ KaTeX + widget renderer (client side)
-                                        ▼   ─ phase 2: BYOK generation → OpenRouter
+  user's harness (Claude Code, OpenCode,   browser (learn.sirin.dev)
+  Codex, pi)                               ─ React SPA: reader, library, explore
+  ─ learn skill writes lesson.json         ─ KaTeX + widget renderer (client side)
+  ─ learn CLI validate/publish ── token ─┐ ─ /create: connect your agent
+                                        ▼
                          ┌──────── Worker "learn" ────────┐
                          │ HttpApi /api/*   static assets │
                          │ Better Auth      Cache API     │
@@ -138,26 +140,26 @@ real cost question is **who runs the LLM**, not the hosting.
 
 - The Worker never renders lessons. The browser fetches the JSON and renders
   it, so CPU cost stays on the client.
-- pi and the web app share one contract: the LessonSpec JSON Schema, made from
-  the Effect Schema in `packages/domain` (`JSONSchema.make`). pi's skill
-  validates against it before it publishes.
+- An agent and the web app share one contract: the LessonSpec JSON Schema, made
+  from the Effect Schema in `packages/domain` (`lessonJsonSchema()`). The skill
+  fetches it from `/api/agent/lesson-schema` and validates before publishing.
 
 ---
 
 ## 4. Lesson content model (LessonSpec)
 
-The contract between pi, the server and the renderer is the Effect Schema in
-`packages/domain/src/lesson.ts`. This section is a summary. When it disagrees
+The contract between an agent, the server and the renderer is the Effect Schema
+in `packages/domain/src/lesson.ts`. This section is a summary. When it disagrees
 with that file, the file wins.
 
 - `decodeLesson` / `decodeConcept` (`codec.ts`) decode strictly: an unknown key
   is an error, so a typo such as `whynot` fails instead of losing the field.
 - `lessonJsonSchema()` / `conceptJsonSchema()` export JSON Schema (draft
-  2020-12) for pi. It covers shapes, enums, id patterns and length caps.
+  2020-12) for an agent. It covers shapes, enums, id patterns and length caps.
   References and expressions are checked only by the validator.
 - `validateLesson` (`validate.ts`) checks what the schema cannot say. The
-  server runs it on publish, pi can run it offline, and the content test runs it
-  on `content/**`.
+  server runs it on publish, the skill's dry run runs it through the server, and
+  the content test runs it on `content/**`.
 
 ### 4.1 Shape
 
@@ -529,35 +531,44 @@ Better Auth owns `/api/auth/*`. Google is the only provider.
    Google account is refused. The platform user `learn` can never get a
    session or an account (auth hooks).
 
-### 6.2 Publish a lesson version
+### 6.2 Publish a lesson
 
-`POST /api/me/lessons/:slug/versions`, body = one LessonSpec JSON, signed in
-with the session cookie or an API token (6.9).
+`POST /api/me/lessons/:slug/publish`, body = `{ "specs": [LessonSpec, ...] }`
+(1–2 specs of one lesson, en and/or th), signed in with the session cookie or
+an API token (6.9). The lesson, not one language, is the unit: the checks and
+the write cover the whole set.
 
-1. `BodyLimit` refuses a body over 512 KB (413).
-2. The body must be UTF-8 JSON, decode strictly, and pass `validateLesson` with
-   concept resolution. If the lesson exists, `kind` must match and the body
-   must pass `compareTranslations` against every other language. Any problem
-   is 422 `InvalidLesson` with the full issue list.
-3. The decoded spec is serialized again (`canonicalJson`), so formatting
+1. `BodyLimit` refuses a request over 512 KB (413).
+2. Each spec must be UTF-8 JSON, decode strictly, and pass `validateLesson` with
+   concept resolution. The set must have no duplicate language. If the lesson
+   exists, every spec's `kind` must match, and the new set is compared with
+   every stored language it does not replace, plus every pair inside the set,
+   with `compareTranslations`. Any problem is 422 `InvalidLesson` with the full
+   issue list, before anything is written.
+3. Each decoded spec is serialized again (`canonicalJson`), so formatting
    differences don't make a new body. Its sha256 is the R2 key `c/<hash>.json`.
    The put is skipped if the object exists.
 4. One D1 batch: insert `lesson` on the first publish (private, `default_lang` =
-   this language), insert `lesson_version` with the next `n` of this language,
-   upsert `lesson_lang`, update the lesson's title and summary if this is the
-   default language, and insert one `lesson_version_concept` row per
-   `{ concept }` card. The batch ends with `syncLessonLangs` (feed copies and
-   `lesson_fts`), so a new language of a public lesson is listed and
-   searchable at once.
-5. 201 with `{ lesson, version, created: true }`.
+   en when present), insert each new `lesson_version` with the next `n` of its
+   language, upsert `lesson_lang`, insert the concept pins, update the lesson's
+   title and summary when the default language changed, and end with
+   `syncLessonLangs`. Every new body is in R2 before the batch, so a failure
+   leaves at most an orphaned content-addressed object and never a version row
+   without a body. A bundle cannot be half published.
+5. 201 with `{ lesson, versions, created: true }`, where each entry says whether
+   that language wrote a new version.
 
-A body whose canonical hash equals the language's current version, and whose
-`{ concept }` cards pin the same concept versions, writes nothing (no R2 put,
-no D1 batch): 200 with `{ lesson, version, created: false }`, where `version`
-is the current one. The pins are compared because an unpinned `slug` ref can
-resolve to a newer concept version than the current version pinned. An older
-body is still a new version. `POST /api/concepts` does the same (a concept body
-holds its card, aliases and needs, so the hash alone decides).
+A language whose canonical hash equals its current version, and whose
+`{ concept }` cards pin the same concept versions, writes nothing. If every
+language is current the answer is 200 with `created: false` and the current
+versions. The pins are compared because an unpinned ref can resolve to a newer
+concept version. An older body is still a new version. `POST /api/concepts`
+does the same (a concept body holds its card, aliases and needs, so the hash
+alone decides).
+
+The old per-language `POST /api/me/lessons/:slug/versions` remains as an
+adapter for downloaded clients: it takes one LessonSpec and calls the same
+authoring module with a one-spec set (ADR 0011).
 
 pi (and `scripts/publish.ts`) call it with `Authorization: Bearer lrn_…`
 (6.9).
@@ -678,7 +689,10 @@ is at `/api/openapi.json`.
 | `PATCH /lessons/:id` | owner | Visibility, category, tags |
 | `DELETE /lessons/:id` | owner | Soft delete |
 | `GET /me/lessons` | signed in | The user's library, all visibilities, by `updated_at` |
-| `POST /me/lessons/:slug/versions` | signed in | Publish (6.2): 201 new version, 200 unchanged |
+| `POST /me/lessons/:slug/publish` | signed in | Publish a lesson-level set (6.2): 201 any new version, 200 unchanged |
+| `POST /me/lessons/:slug/versions` | signed in | Old single-language publish adapter (6.2) |
+| `POST /me/lessons/:slug/validate` | signed in | An agent's dry run: `{ specs: [en, th] }`, 200 with `{ valid, issues }`, writes nothing |
+| `GET /agent/lesson-schema` | anyone | The strict LessonSpec JSON Schema (draft 2020-12), for an agent's skill |
 | `PUT`/`DELETE /lessons/:id/like` | signed in, can read | Like / unlike (idempotent); answers `{ liked, like_count }` |
 | `PUT`/`DELETE /lessons/:id/bookmark` | signed in, can read | Bookmark / remove (idempotent), 204 |
 | `PUT /lessons/:id/progress` | signed in, can read | Replace the reading progress (6.10), 204 |
@@ -700,16 +714,11 @@ is at `/api/openapi.json`.
 | `GET /admin/reports` | admin | Open reports, newest first |
 | `POST /admin/reports/:id/resolve` | admin | Resolve or dismiss; closes every open report of the target |
 | `PUT`/`DELETE /admin/comments/:id/hidden` | admin | Hide / unhide any comment |
-| `GET /me/keys` | session only | The user's stored provider keys: provider and last 4 only |
-| `PUT /me/keys/:provider` | session only | Set or replace a key (422 `InvalidByokKey`, 503 `ByokUnavailable`) |
-| `DELETE /me/keys/:provider` | session only | Remove a key (404 `ByokKeyNotFound`) |
-| `GET /generations/options` | signed in | Models, today's platform quota, stored keys (503 `GenerationUnavailable` when the AI settings are broken) |
-| `POST /generations` | session only | Start an AI job (201; 429 `GenerationQuotaExceeded`, 409 `GenerationBusy`, 422 `ByokKeyMissing` / `PlatformBillingUnavailable` / `InvalidGeneration`, 503 `GenerationUnavailable`) |
-| `GET /generations?cursor=&limit=` | signed in | The user's jobs, newest first |
-| `GET /generations/:id` | owner | One job (404 `GenerationNotFound` for anyone else's) |
-| `GET /generations/:id/events` | owner | Progress as Server-Sent Events (6.12) |
-| `POST /generations/:id/cancel` | owner, session only | Stop a queued or running job |
 | `* /auth/*` | Better Auth | Google sign-in, callback, session, sign-out |
+
+The agent-facing static assets are outside `/api`: `/agent/SKILL.md` (the
+authoring workflow) and `/agent/learn.mjs` (the CLI). They are public; the CLI
+uses the user's API token for the write routes.
 
 "signed in" and "viewer" accept a session cookie or an API token; "session
 only" refuses a token. "admin" is a session cookie of a user in
@@ -750,9 +759,9 @@ How pi publishes without a browser (ADR 0008).
 5. `/api/me/tokens` takes the session cookie only, so a leaked token cannot
    mint, list or revoke tokens. Revoking sets `revoked_at`; the token stops
    working on the next request.
-6. `bun scripts/publish.ts <file.json | dir>` validates locally with
-   `packages/domain` (schema, validator, en/th parity in a dir), then posts
-   each language with `LEARN_TOKEN`.
+6. `bun scripts/publish.ts <file.json | dir>` parses the files locally, then
+   asks the server to validate the whole set (`--dry-run`) or publish it in one
+   call with `LEARN_TOKEN`.
 
 ---
 
@@ -816,69 +825,42 @@ How pi publishes without a browser (ADR 0008).
   needed for one or two moderators, and a secret needs no migration.
 - **Writes** spend the user's write budget (30 per minute), like likes.
 
-### 6.12 AI lesson creation
+### 6.12 Lesson creation: bring your own harness
 
-A signed-in user describes a topic or a problem on `/create`; an LLM agent
-writes a lesson and saves it as the user's private lesson (ADR 0009).
+The platform does not run a model. A learner connects their own agent (Claude
+Code, OpenCode, Codex, pi) with an API token, and the agent writes the
+LessonSpec on disk (ADR 0010).
 
-1. **Start.** `POST /api/generations` with prompt, language, model and billing,
-   with the session cookie (an API token cannot start or cancel a job: a job
-   spends money). The model must be in `GENERATION_MODELS` (server config).
-   Platform billing needs a platform key for the model's provider
-   (`PlatformBillingUnavailable` otherwise); BYOK billing needs the user's
-   stored key. At launch no provider has a platform key, so every job is BYOK
-   and `/create` shows no quota; setting a provider's key secret turns the
-   quota on for its models. One D1 batch inserts the job only while the user has no
-   active job and, for platform billing, quota left today, and moves the
-   day's counter (`generation_usage`) only if the job went in. The Worker then
-   POSTs `/start` to the job's Durable Object (`GenerationAgent`, named by the
-   job id), which sets an alarm.
-2. **Run.** The alarm handler runs `runGeneration` (`packages/agent`): pi's
-   agent loop with four fixed tools. `search_concepts` and `get_concept` read
-   public concepts; `validate_lesson` runs `checkLesson` plus this job's rules
-   (language, no `guide` kind); `save_draft` calls `Lessons.publish` with the
-   job's user as `CurrentUser`, under a slug fixed per job, so a draft never
-   lands in another lesson. The model does not choose a user or a lesson:
-   tool parameters refuse unknown keys.
-3. **Limits.** `GENERATION_MAX_TURNS` model requests, `GENERATION_MAX_OUTPUT_TOKENS`
-   output tokens (each request's `max_tokens` is the budget left, at most
-   32k), 10 minutes of wall clock (past it the job fails as timed out), one
-   active job per user, and `GENERATION_DAILY_JOBS` platform jobs per user per
-   UTC day. A platform job that fails or is canceled before the provider
-   charged anything gives its count back; once any tokens were used it never
-   does, even when our side fails. Usage (input, output, cache read, cache
-   write, cost) is written to the job row after every request, and the day's
-   spend to the counter row when the job ends. A cancel is one conditional
-   UPDATE and signals the running object; a job that saved its draft ends as
-   done even if a cancel landed meanwhile.
-4. **Progress.** Each event (status, turn, tool step, short model text, usage,
-   done) goes to the object's SQLite and to open streams. The browser reads
-   `GET /api/generations/:id/events` (SSE through the Worker, cookie auth,
-   `connect-src 'self'`); a reconnect resumes after `Last-Event-ID`. The
-   transcript is deleted 24 hours after the job ends.
-5. **Eviction.** If the object dies mid-run (a deploy restarts Durable
-   Objects), the alarm runs again, sees "running", and fails the job with
-   what it recorded. A deploy during a job fails that job.
-6. **Cache.** Every job sends the same prefix: the four tools, then one
-   system prompt (rules, the LessonSpec JSON Schema, the English guide lesson
-   as the example). The topic and language go in the user message. Platform
-   jobs ask for the 1-hour cache on the prefix (Anthropic), so all users share
-   one warm prefix per provider account; the conversation tail always gets the
-   5-minute cache. The cost uses the model's own `cache_write_1h` price for
-   1-hour writes. A test asserts the prefix is byte-identical across users.
-   OpenAI gets one shared `prompt_cache_key`; DeepSeek caches on its own and
-   gets no cache fields.
-7. **BYOK.** `PUT /api/me/keys/:provider` stores the key AES-GCM encrypted with
-   `BYOK_KEK`, the additional data `<user_id>:<provider>`. Only the job runner
-   decrypts it (`openByokKey`, inside the Durable Object). No response
-   contains a key; lists show the provider and the last 4 characters.
-8. **Local dev.** A fake model (`"provider": "fake"`, or a real provider's
-   entry with `"fake": true` to try BYOK) answers from a script inside the
-   Worker, so the whole flow runs with no real key and no network. Both are
-   refused when `APP_ENV` is deployed.
-9. **Broken settings.** A bad `BYOK_KEK`, `GENERATION_MODELS` or limit turns
-   generation off (503 `GenerationUnavailable` on its routes, logged once);
-   every other route keeps working.
+1. **Connect.** `/create` shows the setup: create an `lrn_…` token in Settings,
+   download `/agent/learn.mjs`, run `node learn.mjs init claude|opencode|codex|pi`,
+   and export `LEARN_TOKEN`. `init` writes `/agent/SKILL.md` into the harness's
+   project instructions (`.claude/skills/learn/`, `.opencode/skills/learn/`,
+   `.learn/` plus an `AGENTS.md` pointer).
+2. **Author.** The skill tells the agent to read the guide (`learn guide`),
+   search shared concepts (`learn search`, `learn concept`), and write
+   `en.json` + `th.json`. The public `GET /api/agent/lesson-schema` gives the
+   exact schema; `learn schema` prints it. The body stays a file on disk, so a
+   30–150 KB lesson does not travel through tool arguments.
+3. **Validate.** `node learn.mjs validate <dir>` posts
+   `{ "specs": [en, th] }` to `POST /api/me/lessons/:slug/validate` with the
+   user's token. The endpoint runs the same read-only checks as publish
+   (schema, concept references, links, kind, en/th parity) and writes nothing.
+   Invalid input is a 200 with `issues`; the CLI prints them with the file name
+   and exits non-zero.
+4. **Publish.** `node learn.mjs publish <dir>` validates again, then sends the
+   whole set to `POST /api/me/lessons/:slug/publish`. The server checks the set
+   and writes every new version in one D1 batch. The first publish creates a
+   private lesson; later publishes add versions. The answer gives the preview
+   URL (`/@handle/slug`); the user changes visibility in Library.
+5. **Idempotence.** Publishing the current set again returns 200 with the same
+   versions and writes nothing. A refused bundle writes nothing at all, so
+   there is no half-published state to repair.
+6. **Token.** The agent uses the existing API token (ADR 0008): it acts as its
+   user everywhere `Authenticated` is accepted, but cannot manage tokens. Every
+   write spends the user's write budget.
+7. **No server key, no quota.** There is no BYOK key store, no `BYOK_KEK`, no
+   generation job, no Durable Object, no SSE stream and no platform quota. The
+   Worker only validates and stores.
 
 ## 7. Stack: template vs this project
 
@@ -978,11 +960,12 @@ Source: `docs/linear-DESIGN.md`. Tokens go into `packages/ui` as Tailwind v4
 4. **Community:** public/unlisted, categories, tags, explore feeds, likes,
    bookmarks, fork, search, profiles.
 5. **Comments on `@refs`**, reports, rate limits.
-6. **Phase 2:** in-browser generation with your own key, lazy drill-down cards,
-   "found an existing lesson" check before generating.
-7. **Later, only when needed:** hosted generation (Queues/Workflows + AI
-   Gateway caching), Vectorize for "similar lessons", Durable Objects for live
-   study rooms.
+6. **Phase 2 (done 2026-10-29):** bring your own harness — the agent skill,
+   the `learn` CLI, the public schema, and the dry-run endpoint (ADR 0010).
+   Lazy drill-down cards and a "found an existing lesson" check are still open.
+7. **Later, only when needed:** Vectorize for "similar lessons", Durable
+   Objects for live study rooms. A hosted model path is not planned; it would
+   be a new decision, not an extension of the BYOK stack.
 
 ## 10. Open questions
 

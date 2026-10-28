@@ -11,14 +11,10 @@ import {
 } from "@app/api"
 import { type Compilable, D1, Database } from "@app/db"
 import {
-  ByokKeys,
   Comments,
   Concepts,
   Engagement,
   Feeds,
-  GenerationJobs,
-  GenerationRunner,
-  Generations,
   HotScore,
   LessonSearch,
   Lessons,
@@ -731,77 +727,6 @@ layer(TestLayer, { excludeTestServices: true })("cost and headers", (it) => {
       assert.isAtLeast(all, 20)
       assert.isAtMost(last, 2)
       yield* Effect.promise(() => env.db.prepare("delete from concept_fts where concept_id = 'filler'").run())
-    }),
-  )
-
-  it.effect("reads and writes generation jobs, the quota and BYOK keys through indexes", () =>
-    Effect.gen(function* () {
-      const env = yield* TestEnv
-      const owner = yield* signIn("Plan Generator")
-      const user = { id: UserId.make(owner.user.id), email: "", name: "", image: null, viaToken: false }
-      const recorded: Array<Recorded> = []
-      const database = recordingDatabase(env.db, recorded)
-      // The runner is a boundary here: a stub that starts nothing.
-      const runner = Layer.succeed(
-        GenerationRunner,
-        GenerationRunner.of({
-          start: () => Effect.succeed(true),
-          cancel: () => Effect.void,
-          events: () => Effect.succeed(new Response("")),
-        }),
-      )
-      const jobsLayer = Layer.fresh(GenerationJobs.layer).pipe(Layer.provide(database))
-      const keysLayer = Layer.fresh(ByokKeys.layer).pipe(Layer.provide(database))
-      const recorder = Layer.mergeAll(
-        Layer.fresh(Generations.layer).pipe(
-          Layer.provide(Layer.mergeAll(database, runner, jobsLayer, keysLayer)),
-        ),
-        jobsLayer,
-        keysLayer,
-      )
-      yield* Effect.gen(function* () {
-        const generations = yield* Generations
-        const jobs = yield* GenerationJobs
-        const keys = yield* ByokKeys
-        yield* keys.set("deepseek", `sk-${"k".repeat(30)}`)
-        yield* keys.list
-        yield* keys.has(user.id, "deepseek")
-        yield* generations.options
-        const job = yield* generations.create({
-          prompt: "plans of the job queries",
-          lang: "en",
-          model: "claude-test",
-          billing: "platform",
-        })
-        yield* generations.list({})
-        yield* generations.list({ cursor: { at: Date.now(), id: job.id }, limit: 2 })
-        yield* generations.get(job.id)
-        yield* jobs.load(job.id)
-        yield* jobs.markRunning(job.id)
-        yield* jobs.sealedKey(user.id, "deepseek")
-        yield* jobs.isCanceled(job.id)
-        yield* jobs.progress(job.id, {
-          turns: 1,
-          usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, cost: 0.001 },
-        })
-        yield* generations.cancel(job.id)
-        yield* jobs.finish(job.id, { status: "canceled", error: null, turns: 1 })
-        yield* keys.remove("deepseek")
-      }).pipe(Effect.provide(recorder), Effect.provideService(CurrentUser, user))
-
-      const statements = recorded.filter((statement) => /generation_|byok_key/.test(statement.sql))
-      assert.isAtLeast(statements.length, 15)
-      for (const statement of statements) {
-        const details = yield* plan(env.db, statement)
-        assert.isFalse(details.some(costly), `${statement.sql}\n${details.join("\n")}`)
-      }
-      const list = recorded.find((statement) => statement.sql.includes("order by j.created_at desc"))
-      assert.isDefined(list)
-      if (list !== undefined) {
-        assert.isTrue(
-          (yield* plan(env.db, list)).some((detail) => detail.includes("generation_job_user_idx")),
-        )
-      }
     }),
   )
 
