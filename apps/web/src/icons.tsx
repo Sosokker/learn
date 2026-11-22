@@ -57,12 +57,6 @@ export const MenuIcon = () => (
   </Icon>
 )
 
-export const UploadIcon = () => (
-  <Icon>
-    <path d="M8 10.5V2.5M5 5.5l3-3 3 3M2.5 10.5v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2" />
-  </Icon>
-)
-
 const heart = "M8 13.5S2.5 10.3 2.5 6.3A2.8 2.8 0 0 1 8 5a2.8 2.8 0 0 1 5.5 1.3c0 4-5.5 7.2-5.5 7.2z"
 
 export const HeartIcon = (props: { readonly filled?: boolean; readonly large?: boolean }) => (
@@ -99,5 +93,25 @@ export const CommentIcon = () => (
 export const ShieldIcon = () => (
   <Icon>
     <path d="M8 2 3 4v4c0 3 2.2 5.2 5 6 2.8-.8 5-3 5-6V4z" />
+  </Icon>
+)
+
+export const SparkIcon = () => (
+  <Icon>
+    <path d="M8 2v3M8 11v3M2 8h3M11 8h3M4.2 4.2l1.6 1.6M10.2 10.2l1.6 1.6M4.2 11.8l1.6-1.6M10.2 5.8l1.6-1.6" />
+  </Icon>
+)
+
+export const CheckCircleIcon = () => (
+  <Icon>
+    <circle cx="8" cy="8" r="5.75" />
+    <path d="m5.5 8.2 1.7 1.7 3.3-3.6" />
+  </Icon>
+)
+
+export const AlertIcon = () => (
+  <Icon>
+    <path d="M8 2.5 14 13H2z" />
+    <path d="M8 6.5v3M8 11.25v.01" />
   </Icon>
 )

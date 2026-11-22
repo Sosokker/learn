@@ -299,6 +299,29 @@ export const PublishUnchanged = Schema.Struct({
 })
 export type PublishUnchanged = typeof PublishUnchanged.Type
 
+// The answer to a lesson-level publish: one entry per language the caller sent, each saying
+// whether it wrote a new version. `created` is true when at least one version was written, so
+// the status is 201; when every version was already current it is 200.
+export const PublishedVersion = Schema.Struct({
+  version: LessonVersion,
+  created: Schema.Boolean,
+})
+export type PublishedVersion = typeof PublishedVersion.Type
+
+export const PublishedLesson = Schema.Struct({
+  lesson: Lesson,
+  versions: Schema.Array(PublishedVersion),
+  created: Schema.Literal(true),
+})
+export type PublishedLesson = typeof PublishedLesson.Type
+
+export const PublishLessonUnchanged = Schema.Struct({
+  lesson: Lesson,
+  versions: Schema.Array(PublishedVersion),
+  created: Schema.Literal(false),
+})
+export type PublishLessonUnchanged = typeof PublishLessonUnchanged.Type
+
 // ── Keyset pages. The cursor is the last row's sort key, opaque on the wire (base64url JSON).
 
 // `at` is the sort value: a time in milliseconds, or a hot score (a float) for the hot feeds.
@@ -546,3 +569,17 @@ export type ReportResolve = typeof ReportResolve.Type
 // A validator finding, as returned by @app/domain's checkLesson / checkConcept.
 export const Issue = Schema.Struct({ path: Schema.String, code: Schema.String, message: Schema.String })
 export type Issue = typeof Issue.Type
+
+// The bodies of one lesson to check without writing (an external agent sends en and th together,
+// so cross-language parity is checked before the first publish). The service enforces 1–2 specs
+// and the 512 KB body cap; the whole request shares the publish body limit.
+export const LessonValidate = Schema.Struct({ specs: Schema.Array(Schema.Unknown) })
+export type LessonValidate = typeof LessonValidate.Type
+
+// The result of a dry run: `valid` is true only when there are no issues. Invalid input is a 200,
+// not an error: the agent reads the issues and repairs the lesson.
+export const LessonValidation = Schema.Struct({
+  valid: Schema.Boolean,
+  issues: Schema.Array(Issue),
+})
+export type LessonValidation = typeof LessonValidation.Type

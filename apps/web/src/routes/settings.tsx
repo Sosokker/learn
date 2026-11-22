@@ -7,12 +7,13 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import { useEffect, useId, useRef, useState } from "react"
 import { callApi, errorTag } from "../api.ts"
 import { signInWithGoogle } from "../auth.ts"
 import { formatDate } from "../format.ts"
 import { PageSpinner } from "../lesson-view.tsx"
+import { ProfilePanel } from "../profile-panel.tsx"
 import { useViewer } from "../session.ts"
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage })
@@ -46,12 +47,8 @@ function SettingsPage() {
         />
       ) : (
         <>
+          <ProfilePanel userId={viewer.user.id} />
           <TokensPanel userId={viewer.user.id} />
-          <p className="text-body-sm text-ink-subtle">
-            <Link to="/library" className="text-ink-muted underline underline-offset-2 hover:text-ink">
-              {t("account.profileHint")}
-            </Link>
-          </p>
         </>
       )}
     </div>

@@ -55,6 +55,7 @@ import {
   LessonSearchText,
   LessonSlug,
   LessonUpdate,
+  LessonValidation,
   LessonVersion,
   LessonVersionId,
   LikeState,
@@ -63,6 +64,8 @@ import {
   ProgressPage,
   ProgressUpdate,
   Published,
+  PublishedLesson,
+  PublishLessonUnchanged,
   PublishUnchanged,
   ReportCreate,
   ReportId,
@@ -194,6 +197,37 @@ export class LessonsApi extends HttpApiGroup.make("lessons").add(
   })
     .middleware(BodyLimit)
     .middleware(Authenticated),
+  // The lesson-level publish: the body is `{ "specs": [en, th] }` with one or two LessonSpecs of
+  // the same lesson. All checks run against the whole set, then every new version is written in
+  // one D1 batch, so a second language cannot leave a half-published lesson. `created` is true
+  // when at least one version was written.
+  HttpApiEndpoint.post("publishBundle", "/me/lessons/:slug/publish", {
+    params: { slug: LessonSlug },
+    payload: JsonBytes,
+    success: [PublishedLesson.pipe(HttpApiSchema.status(201)), PublishLessonUnchanged],
+    error: [InvalidLesson, PayloadTooLarge],
+  })
+    .middleware(BodyLimit)
+    .middleware(Authenticated),
+  // The external agent's dry run: the same checks as publish, nothing written. The body is
+  // `{ "specs": [LessonSpec, ...] }` with the en and th bodies of one lesson (1–2). The answer is
+  // 200 even when the lesson is invalid.
+  HttpApiEndpoint.post("validate", "/me/lessons/:slug/validate", {
+    params: { slug: LessonSlug },
+    payload: JsonBytes,
+    success: LessonValidation,
+    error: PayloadTooLarge,
+  })
+    .middleware(BodyLimit)
+    .middleware(Authenticated),
+) {}
+
+// The public contract for external agents (Claude Code, OpenCode, Codex, pi). The LessonSpec JSON
+// Schema is the same bytes for everyone and changes only when the server deploys.
+export class AgentApi extends HttpApiGroup.make("agent").add(
+  HttpApiEndpoint.get("lessonSchema", "/agent/lesson-schema", {
+    success: Schema.String.pipe(HttpApiSchema.asText({ contentType: "application/schema+json" })),
+  }),
 ) {}
 
 // The signed-in user's likes, bookmarks and reading progress. Each write is idempotent (a second
@@ -391,6 +425,7 @@ export class AdminApi extends HttpApiGroup.make("admin")
 
 export class Api extends HttpApi.make("learn")
   .add(SystemApi)
+  .add(AgentApi)
   .add(MeApi)
   .add(TokensApi)
   .add(CategoriesApi)

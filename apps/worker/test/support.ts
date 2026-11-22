@@ -4,7 +4,8 @@ import { Api } from "@app/api"
 import { Auth } from "@app/auth"
 import { createTestSession, createTestSessionFor } from "@app/auth/testing"
 import { D1 } from "@app/db"
-import { ConfigProvider, Context, Effect, Layer } from "effect"
+import type { Storage } from "@app/services"
+import { type Config, ConfigProvider, Context, Effect, Layer } from "effect"
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpRouter, HttpServer } from "effect/http"
 import { HttpApiClient } from "effect/http-api"
 import { convertV4MiniflareOptions, Miniflare } from "miniflare"
@@ -20,7 +21,7 @@ const migrationsDir = join(import.meta.dirname, "../../../packages/db/migrations
 export const contentDir = join(import.meta.dirname, "../../../content")
 
 // testAuthSecret in packages/auth/src/secret.ts: public, refused when APP_ENV is deployed.
-const testConfig = {
+export const testConfig: Readonly<Record<string, string>> = {
   APP_ENV: "test",
   BETTER_AUTH_SECRET: "f/PV4CMPZKwdOG1J+AWa1m2H+XYmlFZpwIlptI9GGVg=",
   BETTER_AUTH_URL: origin,
@@ -43,6 +44,7 @@ export class TestEnv extends Context.Service<
     // requests. Users without a budget are not limited.
     readonly limitWrites: (userId: string, writes: number) => void
     readonly writeLimit: Layer.Layer<WriteLimit>
+    readonly platform: Layer.Layer<D1 | Storage | WriteLimit, Config.ConfigError>
   }
 >()("test/TestEnv") {}
 
@@ -65,6 +67,8 @@ const migrate = async (db: D1Database) => {
     for (const statement of statements) await db.prepare(statement).run()
   }
 }
+
+const config = ConfigProvider.layer(ConfigProvider.fromUnknown(testConfig))
 
 const Local = Layer.effect(
   TestEnv,
@@ -103,12 +107,7 @@ const Local = Layer.effect(
         periodSeconds: 60,
       }),
     )
-    const platform = Layer.mergeAll(
-      Layer.succeed(D1, db),
-      StorageR2(bucket),
-      writeLimit,
-      ConfigProvider.layer(ConfigProvider.fromUnknown(testConfig)),
-    )
+    const platform = Layer.mergeAll(Layer.succeed(D1, db), StorageR2(bucket), config, writeLimit)
     const web = yield* Effect.acquireRelease(
       Effect.sync(() =>
         HttpRouter.toWebHandler(
@@ -123,6 +122,7 @@ const Local = Layer.effect(
       fetch: (request) => web.handler(request),
       limitWrites: (userId, writes) => budgets.set(userId, writes),
       writeLimit,
+      platform,
     })
   }),
 )
@@ -131,16 +131,7 @@ const Local = Layer.effect(
 export const TestLayer = Layer.unwrap(
   Effect.gen(function* () {
     const env = yield* TestEnv
-    return Layer.mergeAll(HandlersLive, HttpServer.layerServices).pipe(
-      Layer.provide(
-        Layer.mergeAll(
-          Layer.succeed(D1, env.db),
-          StorageR2(env.bucket),
-          env.writeLimit,
-          ConfigProvider.layer(ConfigProvider.fromUnknown(testConfig)),
-        ),
-      ),
-    )
+    return Layer.mergeAll(HandlersLive, HttpServer.layerServices).pipe(Layer.provide(env.platform))
   }),
 ).pipe(Layer.provideMerge(Local))
 

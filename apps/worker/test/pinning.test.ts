@@ -52,6 +52,25 @@ layer(TestLayer, { excludeTestServices: true })("concept pinning", (it) => {
       })
       assert.isTrue(thBundle.items.every((item) => item.lang === "th"))
 
+      // A lesson-level publish pins each language's concepts in the same batch.
+      const both = yield* author.client.lessons.publishBundle({
+        params: { slug: "start-here-bundle" },
+        payload: jsonBytes({
+          specs: [readContent("guide/en.json"), readContent("guide/th.json")],
+        }),
+      })
+      assert.deepStrictEqual(
+        both.versions.map((entry) => entry.version.lang),
+        ["en", "th"],
+      )
+      for (const entry of both.versions) {
+        const pinnedBundle = yield* author.client.lessons.concepts({
+          params: { id: both.lesson.id, versionId: entry.version.id },
+        })
+        assert.isTrue(pinnedBundle.items.length > 0)
+        assert.isTrue(pinnedBundle.items.every((item) => item.lang === entry.version.lang))
+      }
+
       // A new concept version does not change what an existing lesson version shows…
       const v2 = yield* curator.client.concepts.publish({
         payload: jsonBytes({

@@ -1,6 +1,7 @@
 import {
   type ConceptBundle,
   ConceptBundleItem,
+  ConceptVersionId,
   CurrentUser,
   defaultPageLimit,
   type FeedCursor,
@@ -12,11 +13,15 @@ import {
   LessonNotFound,
   type LessonPage,
   type LessonUpdate,
+  LessonValidate,
+  type LessonValidation,
   type LessonVersion,
   LessonVersionId,
   maxTags,
   PayloadTooLarge,
   type Published,
+  type PublishedLesson,
+  type PublishLessonUnchanged,
   type PublishUnchanged,
   platformPrefix,
   platformUserId,
@@ -29,7 +34,8 @@ import {
   decodeConcept,
   decodeLesson,
   isConceptCardRef,
-  type LessonLang,
+  LessonLang,
+  type LessonSpec,
   lessonSchemaVersion,
   maxLessonBytes,
   parseConceptRef,
@@ -43,7 +49,6 @@ import { forgetLesson, viewerStateOf } from "./engagement.ts"
 import { lessonSearchText, nextLessonFtsRowid, syncLessonLangs } from "./lesson-search.ts"
 import {
   after,
-  HashRow,
   inList,
   LessonRow,
   langsAndTags,
@@ -55,6 +60,42 @@ import {
 } from "./rows.ts"
 import { Storage } from "./storage.ts"
 import { normalizeTag } from "./tags.ts"
+
+// A spec and its position in the request, so an issue can point at `specs[i]`. Publish, validate
+// and the single-language adapter all hand the same shape to the authoring checks.
+interface IndexedSpec {
+  readonly index: number
+  readonly spec: LessonSpec
+}
+
+interface PlannedIssue {
+  readonly index: number | null
+  readonly issue: Issue
+}
+
+interface PlannedSpec extends IndexedSpec {
+  readonly pins: ReadonlyArray<{ readonly card_id: string; readonly concept_version_id: ConceptVersionId }>
+}
+
+// English is the default language, so it is published first. The old per-language endpoint kept
+// this order in the CLI; the server now owns it.
+const langRank = (lang: LessonLang): number => (lang === "en" ? 0 : 1)
+
+const samePinSet = (
+  a: ReadonlyArray<{ readonly card_id: string; readonly concept_version_id: ConceptVersionId }>,
+  b: ReadonlyArray<{ readonly card_id: string; readonly concept_version_id: ConceptVersionId }>,
+): boolean =>
+  a.length === b.length &&
+  a.every((pin) =>
+    b.some((other) => other.card_id === pin.card_id && other.concept_version_id === pin.concept_version_id),
+  )
+
+const bundlePath = (index: number) => `specs[${index}].`
+
+const issueWithPath = (planned: PlannedIssue, pathPrefix: (index: number) => string): Issue =>
+  planned.index === null
+    ? planned.issue
+    : { ...planned.issue, path: `${pathPrefix(planned.index)}${planned.issue.path}` }
 
 // Reads of one lesson. `R` is what reading needs: `never` for anonymous readers, who see public
 // and unlisted lessons only, and `CurrentUser` for signed-in readers, who also see their own
@@ -106,6 +147,20 @@ export class Lessons extends Context.Service<
       slug: string,
       body: Uint8Array,
     ) => Effect.Effect<Published | PublishUnchanged, InvalidLesson | PayloadTooLarge, CurrentUser>
+    // The lesson-level publish: one or two languages, checked together and written in one batch.
+    // A partly published lesson cannot be produced by a bundle; the old single-language endpoint
+    // remains as an adapter for clients that have not moved yet.
+    readonly publishBundle: (
+      slug: string,
+      body: Uint8Array,
+    ) => Effect.Effect<PublishedLesson | PublishLessonUnchanged, InvalidLesson | PayloadTooLarge, CurrentUser>
+    // Read-only: the same checks as publish (schema, concepts, links, kind, en/th parity), nothing
+    // written. The body is `{ "specs": [LessonSpec, ...] }` with the en and th bodies of one
+    // lesson (1–2).
+    readonly validate: (
+      slug: string,
+      body: Uint8Array,
+    ) => Effect.Effect<LessonValidation, PayloadTooLarge, CurrentUser>
   }
 >()("@app/services/Lessons") {
   // Database, storage and decoding failures are unexpected here; they become defects (HTTP 500).
@@ -380,164 +435,80 @@ export class Lessons extends Context.Service<
         return yield* toLessonPage(db, rows, limit, (row) => row.updated_at).pipe(Effect.orDie)
       })
 
-      const publish = Effect.fn("Lessons.publish")(function* (slug: string, body: Uint8Array) {
-        const user = yield* CurrentUser
+      // ── Authoring
+
+      // Parse `{ "specs": [LessonSpec, ...] }`: the shape both the dry run and the lesson-level
+      // publish accept. Schema failures stay issues (the caller can repair them), not defects.
+      const parseBundle = Effect.fn("Lessons.parseBundle")(function* (body: Uint8Array) {
         if (body.byteLength > maxLessonBytes) return yield* new PayloadTooLarge({ max_bytes: maxLessonBytes })
-        const json = yield* parseJson(body).pipe(Effect.mapError((issues) => new InvalidLesson({ issues })))
-        const decoded = decodeLesson(json)
+        const parsed = yield* Effect.result(parseJson(body))
+        if (Result.isFailure(parsed)) {
+          const issue = parsed.failure[0]
+          return {
+            specs: [] as ReadonlyArray<IndexedSpec>,
+            issues: [
+              { index: null, issue: issue ?? { path: "$", code: "json", message: "not JSON" } },
+            ] as ReadonlyArray<PlannedIssue>,
+          }
+        }
+        const payload = Schema.decodeUnknownResult(LessonValidate, { onExcessProperty: "error" })(
+          parsed.success,
+        )
+        if (Result.isFailure(payload)) {
+          return {
+            specs: [] as ReadonlyArray<IndexedSpec>,
+            issues: [
+              { index: null, issue: { path: "$", code: "schema", message: payload.failure.message } },
+            ] as ReadonlyArray<PlannedIssue>,
+          }
+        }
+        const rawSpecs = payload.success.specs
+        if (rawSpecs.length < 1 || rawSpecs.length > 2) {
+          return {
+            specs: [] as ReadonlyArray<IndexedSpec>,
+            issues: [
+              {
+                index: null,
+                issue: { path: "specs", code: "count", message: "send one or two LessonSpecs" },
+              },
+            ] as ReadonlyArray<PlannedIssue>,
+          }
+        }
+        const specs: Array<IndexedSpec> = []
+        const issues: Array<PlannedIssue> = []
+        for (const [index, json] of rawSpecs.entries()) {
+          const decoded = decodeLesson(json)
+          if (Result.isFailure(decoded)) {
+            issues.push({ index, issue: { path: "$", code: "schema", message: decoded.failure.message } })
+          } else {
+            specs.push({ index, spec: decoded.success })
+          }
+        }
+        return { specs, issues }
+      })
+
+      // The old per-language endpoint still sends one LessonSpec as the whole body.
+      const parseSingle = Effect.fn("Lessons.parseSingle")(function* (body: Uint8Array) {
+        if (body.byteLength > maxLessonBytes) return yield* new PayloadTooLarge({ max_bytes: maxLessonBytes })
+        const parsed = yield* Effect.result(parseJson(body))
+        if (Result.isFailure(parsed)) {
+          const issue = parsed.failure[0]
+          return {
+            spec: undefined,
+            issues: [issue ?? { path: "$", code: "json", message: "not JSON" }] as ReadonlyArray<Issue>,
+          }
+        }
+        const decoded = decodeLesson(parsed.success)
         if (Result.isFailure(decoded)) {
-          return yield* new InvalidLesson({
-            issues: [{ path: "$", code: "schema", message: decoded.failure.message }],
-          })
-        }
-        const spec = decoded.success
-
-        const refs = Object.entries(spec.cards).flatMap(([cardId, entry]) =>
-          isConceptCardRef(entry) ? [{ cardId, ...parseConceptRef(entry.concept) }] : [],
-        )
-        const concepts = yield* resolveConcepts(
-          refs.map((ref) => ref.slug),
-          spec.lang,
-        )
-        const pinOf = (slug: string, n: number | undefined) =>
-          concepts.find((row) => row.slug === slug && (n === undefined ? row.is_current === 1 : row.n === n))
-        const issues: Array<Issue> = [
-          ...validateLesson(spec, { resolveConcept: (slug, n) => pinOf(slug, n) !== undefined }),
-        ]
-
-        const existing = yield* loadRow(
-          sql`l.owner_id = ${user.id} and l.slug = ${slug} and l.deleted_at is null`,
-        )
-        if (Option.isSome(existing) && existing.value.kind !== spec.kind) {
-          issues.push({
-            path: "kind",
-            code: "parity",
-            message: `lesson "${slug}" is a ${existing.value.kind} lesson; this body is ${spec.kind}`,
-          })
-        }
-        // Every language of a lesson has the same structure (ids, links, widgets); check this body
-        // against the current version of each other language.
-        if (Option.isSome(existing)) {
-          const others = yield* db
-            .query(
-              raw(sql`select v.body_hash from lesson_lang ll join lesson_version v on v.id = ll.version_id
-                where ll.lesson_id = ${existing.value.id} and ll.lang <> ${spec.lang}`),
-              HashRow,
-            )
-            .pipe(Effect.orDie)
-          for (const other of others) {
-            const otherSpec = yield* readBody(other.body_hash).pipe(
-              Effect.flatMap((bytes) => decodeStored(bytes, decodeLesson)),
-            )
-            issues.push(...compareTranslations(otherSpec, spec))
+          return {
+            spec: undefined,
+            issues: [{ path: "$", code: "schema", message: decoded.failure.message }] as ReadonlyArray<Issue>,
           }
         }
-        if (issues.length > 0) return yield* new InvalidLesson({ issues })
-
-        const canonical = canonicalJson(spec)
-        const hash = yield* Effect.promise(() => sha256Hex(canonical))
-        const pins = refs.flatMap((ref) => {
-          const pin = pinOf(ref.slug, ref.version)
-          return pin === undefined ? [] : [{ card_id: ref.cardId, concept_version_id: pin.version_id }]
-        })
-
-        // Republishing the current body is a no-op. An unpinned `{ concept }` ref may resolve to a
-        // newer concept version than the current version pinned, so the pins must match too.
-        if (Option.isSome(existing)) {
-          const current = yield* db
-            .query(
-              raw(sql`select v.id, v.body_hash from lesson_lang ll join lesson_version v on v.id = ll.version_id
-                where ll.lesson_id = ${existing.value.id} and ll.lang = ${spec.lang}`),
-              CurrentRow,
-            )
-            .pipe(Effect.orDie)
-          const same = current[0]
-          if (same !== undefined && same.body_hash === hash) {
-            const pinned = yield* db
-              .query(
-                raw(sql`select card_id, concept_version_id from lesson_version_concept
-                  where lesson_version_id = ${same.id}`),
-                PinRow,
-              )
-              .pipe(Effect.orDie)
-            const key = (pin: typeof PinRow.Type) => `${pin.card_id}=${pin.concept_version_id}`
-            const samePins =
-              pinned.length === pins.length &&
-              pins.every((pin) => pinned.some((other) => key(other) === key(pin)))
-            if (samePins) {
-              const unchanged: PublishUnchanged = {
-                lesson: yield* asUser.get(existing.value.id).pipe(Effect.orDie),
-                version: yield* version(existing.value.id, same.id).pipe(Effect.orDie),
-                created: false,
-              }
-              return unchanged
-            }
-          }
+        return {
+          spec: { index: 0, spec: decoded.success } satisfies IndexedSpec,
+          issues: [] as ReadonlyArray<Issue>,
         }
-
-        const key = contentKey(hash)
-        if (!(yield* storage.exists(key).pipe(Effect.orDie))) {
-          yield* storage.put(key, { body: canonical, contentType: "application/json" }).pipe(Effect.orDie)
-        }
-
-        const now = Date.now()
-        const lessonId = Option.match(existing, {
-          onNone: () => LessonId.make(uuidv7(now)),
-          onSome: (row) => row.id,
-        })
-        const versionId = uuidv7(now)
-        const search = lessonSearchText(spec.title, spec.summary)
-        yield* db
-          .batch([
-            ...(Option.isNone(existing)
-              ? [
-                  sqlBuilder.insert(lesson).values({
-                    id: lessonId,
-                    owner_id: user.id,
-                    slug,
-                    kind: spec.kind,
-                    default_lang: spec.lang,
-                    title: spec.title,
-                    summary: spec.summary,
-                    visibility: "private",
-                    created_at: now,
-                    updated_at: now,
-                  }),
-                ]
-              : []),
-            // Next number of this language; the unique (lesson_id, lang, n) refuses a racing twin.
-            raw(sql`insert into lesson_version (id, lesson_id, lang, n, body_hash, body_bytes, schema, note, created_at)
-              select ${versionId}, ${lessonId}, ${spec.lang}, coalesce(max(n), 0) + 1, ${hash}, ${canonical.byteLength},
-                ${lessonSchemaVersion}, null, ${now}
-              from lesson_version where lesson_id = ${lessonId} and lang = ${spec.lang}`),
-            // A new row takes the next FTS rowid (nextLessonFtsRowid); an existing row keeps its
-            // own. is_public and published_at are set by syncLessonLangs.
-            raw(sql`insert into lesson_lang (lesson_id, lang, version_id, title, summary, search, fts_rowid, updated_at)
-              values (${lessonId}, ${spec.lang}, ${versionId}, ${spec.title}, ${spec.summary}, ${search},
-                ${nextLessonFtsRowid}, ${now})
-              on conflict (lesson_id, lang) do update set version_id = excluded.version_id, title = excluded.title,
-                summary = excluded.summary, search = excluded.search,
-                fts_rowid = coalesce(lesson_lang.fts_rowid, excluded.fts_rowid), updated_at = excluded.updated_at`),
-            raw(sql`update lesson set updated_at = ${now},
-              title = case when default_lang = ${spec.lang} then ${spec.title} else title end,
-              summary = case when default_lang = ${spec.lang} then ${spec.summary} else summary end
-              where id = ${lessonId}`),
-            // Pin the concept version each `{ concept }` card resolved to now.
-            ...pins.map((pin) =>
-              raw(sql`insert into lesson_version_concept (lesson_version_id, card_id, concept_version_id)
-                values (${versionId}, ${pin.card_id}, ${pin.concept_version_id})`),
-            ),
-            // A new language of a public lesson joins its feed and search here.
-            ...syncLessonLangs(lessonId),
-          ])
-          .pipe(Effect.orDie)
-
-        const published: Published = {
-          lesson: yield* asUser.get(lessonId).pipe(Effect.orDie),
-          version: yield* version(lessonId, LessonVersionId.make(versionId)).pipe(Effect.orDie),
-          created: true,
-        }
-        return published
       })
 
       // Every version of the given concepts in one language, with which one is current.
@@ -559,18 +530,349 @@ export class Lessons extends Context.Service<
           .pipe(Effect.orDie)
       })
 
-      return Lessons.of({ anonymous, asUser, update, remove, mine, publish })
+      // The read-only half of publish: every rule that depends on the lesson, not one language.
+      // `specs` is the whole set the caller sent; stored languages fill in the rest.
+      const checkBundle = Effect.fn("Lessons.checkBundle")(function* (
+        userId: UserId,
+        slug: string,
+        specs: ReadonlyArray<IndexedSpec>,
+      ) {
+        const issues: Array<PlannedIssue> = []
+        if (specs.length === 0) {
+          issues.push({
+            index: null,
+            issue: { path: "specs", code: "count", message: "send one or two LessonSpecs" },
+          })
+          return { existing: Option.none<LessonRow>(), plans: [], issues }
+        }
+        const langs = specs.map((entry) => entry.spec.lang)
+        const duplicate = langs.find((lang, index) => langs.indexOf(lang) !== index)
+        if (duplicate !== undefined) {
+          issues.push({
+            index: null,
+            issue: { path: "specs", code: "duplicate", message: `two specs are ${duplicate}` },
+          })
+        }
+
+        const existing = yield* loadRow(
+          sql`l.owner_id = ${userId} and l.slug = ${slug} and l.deleted_at is null`,
+        )
+        if (Option.isSome(existing)) {
+          for (const entry of specs) {
+            if (existing.value.kind !== entry.spec.kind) {
+              issues.push({
+                index: entry.index,
+                issue: {
+                  path: "kind",
+                  code: "parity",
+                  message: `lesson "${slug}" is a ${existing.value.kind} lesson; this body is ${entry.spec.kind}`,
+                },
+              })
+            }
+          }
+        }
+
+        // Concepts resolve per language: an unpinned `{ concept }` card pins the current version
+        // in this lesson's language, an explicit `slug@n` pins that one.
+        const slugsByLang = new Map<LessonLang, Array<string>>()
+        for (const { spec } of specs) {
+          const slugs = slugsByLang.get(spec.lang) ?? []
+          for (const entry of Object.values(spec.cards)) {
+            if (isConceptCardRef(entry)) slugs.push(parseConceptRef(entry.concept).slug)
+          }
+          slugsByLang.set(spec.lang, slugs)
+        }
+        const conceptsByLang = new Map<LessonLang, ReadonlyArray<typeof ConceptPinRow.Type>>()
+        for (const [lang, slugs] of slugsByLang) {
+          conceptsByLang.set(lang, yield* resolveConcepts(slugs, lang))
+        }
+
+        const planByIndex = new Map<number, PlannedSpec>()
+        for (const entry of specs) {
+          const concepts = conceptsByLang.get(entry.spec.lang) ?? []
+          const pinOf = (conceptSlug: string, n: number | undefined) =>
+            concepts.find(
+              (row) => row.slug === conceptSlug && (n === undefined ? row.is_current === 1 : row.n === n),
+            )
+          issues.push(
+            ...validateLesson(entry.spec, {
+              resolveConcept: (conceptSlug, n) => pinOf(conceptSlug, n) !== undefined,
+            }).map((issue) => ({ index: entry.index, issue })),
+          )
+          const pins = Object.entries(entry.spec.cards).flatMap(([cardId, card]) => {
+            if (!isConceptCardRef(card)) return []
+            const ref = parseConceptRef(card.concept)
+            const pin = pinOf(ref.slug, ref.version)
+            return pin === undefined ? [] : [{ card_id: cardId, concept_version_id: pin.version_id }]
+          })
+          planByIndex.set(entry.index, { ...entry, pins })
+        }
+
+        // English first. Parity compares the new set against every stored language that is not
+        // being replaced, and against the other specs in the same bundle.
+        const ordered = [...specs].sort((a, b) => langRank(a.spec.lang) - langRank(b.spec.lang))
+        const plans = ordered.flatMap((entry) => {
+          const plan = planByIndex.get(entry.index)
+          return plan === undefined ? [] : [plan]
+        })
+        const bundleLangs = new Set(langs)
+        if (Option.isSome(existing)) {
+          const stored = yield* db
+            .query(
+              raw(sql`select ll.lang, v.body_hash from lesson_lang ll
+                join lesson_version v on v.id = ll.version_id
+                where ll.lesson_id = ${existing.value.id}`),
+              StoredLangRow,
+            )
+            .pipe(Effect.orDie)
+          for (const row of stored) {
+            if (bundleLangs.has(row.lang)) continue
+            const storedSpec = yield* readBody(row.body_hash).pipe(
+              Effect.flatMap((bytes) => decodeStored(bytes, decodeLesson)),
+            )
+            for (const plan of plans) {
+              issues.push(
+                ...compareTranslations(storedSpec, plan.spec).map((issue) => ({ index: plan.index, issue })),
+              )
+            }
+          }
+        }
+        const [base, ...others] = ordered
+        if (base !== undefined) {
+          for (const other of others) {
+            issues.push(
+              ...compareTranslations(base.spec, other.spec).map((issue) => ({ index: other.index, issue })),
+            )
+          }
+        }
+        return { existing, plans, issues }
+      })
+
+      // The write: prepare every version, put the bodies in R2, then one D1 batch. A failure before
+      // the batch leaves at most an orphaned content-addressed object, never a half-published lesson.
+      const publishSpecs = Effect.fn("Lessons.publishSpecs")(function* (
+        userId: UserId,
+        slug: string,
+        specs: ReadonlyArray<IndexedSpec>,
+        pathPrefix: (index: number) => string,
+      ) {
+        const checked = yield* checkBundle(userId, slug, specs)
+        if (checked.issues.length > 0) {
+          return yield* new InvalidLesson({
+            issues: checked.issues.map((planned) => issueWithPath(planned, pathPrefix)),
+          })
+        }
+
+        const prepared = yield* Effect.forEach(
+          checked.plans,
+          (plan) =>
+            Effect.gen(function* () {
+              const canonical = canonicalJson(plan.spec)
+              const hash = yield* Effect.promise(() => sha256Hex(canonical))
+              return { ...plan, canonical, hash }
+            }),
+          { concurrency: 2 },
+        )
+
+        const existing = checked.existing
+        const lessonId = Option.match(existing, {
+          onNone: () => LessonId.make(uuidv7()),
+          onSome: (row) => row.id,
+        })
+        const langs = prepared.map((plan) => plan.spec.lang)
+        const currentRows =
+          Option.isSome(existing) && langs.length > 0
+            ? yield* db
+                .query(
+                  raw(sql`select ll.lang, v.id, v.body_hash from lesson_lang ll
+                    join lesson_version v on v.id = ll.version_id
+                    where ll.lesson_id = ${lessonId} and ll.lang in ${inList(langs)}`),
+                  CurrentLangRow,
+                )
+                .pipe(Effect.orDie)
+            : []
+        const currentByLang = new Map(currentRows.map((row) => [row.lang, row]))
+        const currentVersionIds = currentRows.map((row) => row.id)
+        const currentPins =
+          currentVersionIds.length === 0
+            ? []
+            : yield* db
+                .query(
+                  raw(sql`select lesson_version_id, card_id, concept_version_id
+                    from lesson_version_concept
+                    where lesson_version_id in ${inList(currentVersionIds)}`),
+                  CurrentPinRow,
+                )
+                .pipe(Effect.orDie)
+
+        const rows = prepared.map((plan) => {
+          const current = currentByLang.get(plan.spec.lang)
+          const unchanged =
+            current !== undefined &&
+            current.body_hash === plan.hash &&
+            samePinSet(
+              currentPins.filter((pin) => pin.lesson_version_id === current.id),
+              plan.pins,
+            )
+          return {
+            ...plan,
+            created: !unchanged,
+            versionId: unchanged && current !== undefined ? current.id : LessonVersionId.make(uuidv7()),
+          }
+        })
+
+        // Bodies first: immutable, content-addressed, and safe to orphan if the batch fails.
+        for (const row of rows) {
+          if (!row.created) continue
+          const key = contentKey(row.hash)
+          if (!(yield* storage.exists(key).pipe(Effect.orDie))) {
+            yield* storage
+              .put(key, { body: row.canonical, contentType: "application/json" })
+              .pipe(Effect.orDie)
+          }
+        }
+
+        if (!rows.some((row) => row.created)) {
+          return {
+            lesson: yield* asUser.get(lessonId).pipe(Effect.orDie),
+            versions: yield* Effect.forEach(rows, (row) =>
+              version(lessonId, row.versionId).pipe(
+                Effect.orDie,
+                Effect.map((found) => ({ version: found, created: false })),
+              ),
+            ),
+            created: false,
+          } satisfies PublishLessonUnchanged
+        }
+
+        const now = Date.now()
+        const first = rows[0]
+        if (first === undefined) return yield* Effect.die(new Error("publish prepared no specs"))
+        const defaultLang = Option.isSome(existing) ? existing.value.default_lang : first.spec.lang
+        const titleRow = rows.find((row) => row.created && row.spec.lang === defaultLang)
+
+        yield* db
+          .batch([
+            ...(Option.isNone(existing)
+              ? [
+                  // Two first publishes of one slug can race: the loser's insert hits the unique
+                  // (owner_id, slug) and its batch fails; a retry finds the lesson and adds a
+                  // version. Either way, a bundle never leaves a half-published lesson.
+                  sqlBuilder.insert(lesson).values({
+                    id: lessonId,
+                    owner_id: userId,
+                    slug,
+                    kind: first.spec.kind,
+                    default_lang: first.spec.lang,
+                    title: first.spec.title,
+                    summary: first.spec.summary,
+                    visibility: "private",
+                    created_at: now,
+                    updated_at: now,
+                  }),
+                ]
+              : []),
+            ...rows
+              .filter((row) => row.created)
+              .flatMap((row, index) => {
+                const bodyBytes = row.canonical.byteLength
+                return [
+                  raw(sql`insert into lesson_version
+                    (id, lesson_id, lang, n, body_hash, body_bytes, schema, note, created_at)
+                    select ${row.versionId}, ${lessonId}, ${row.spec.lang}, coalesce(max(n), 0) + 1,
+                      ${row.hash}, ${bodyBytes}, ${lessonSchemaVersion}, null, ${now}
+                    from lesson_version where lesson_id = ${lessonId} and lang = ${row.spec.lang}`),
+                  raw(sql`insert into lesson_lang
+                    (lesson_id, lang, version_id, title, summary, search, fts_rowid, updated_at)
+                    values (${lessonId}, ${row.spec.lang}, ${row.versionId}, ${row.spec.title},
+                      ${row.spec.summary}, ${lessonSearchText(row.spec.title, row.spec.summary)},
+                      ${nextLessonFtsRowid} + ${index}, ${now})
+                    on conflict (lesson_id, lang) do update set version_id = excluded.version_id,
+                      title = excluded.title, summary = excluded.summary, search = excluded.search,
+                      fts_rowid = coalesce(lesson_lang.fts_rowid, excluded.fts_rowid),
+                      updated_at = excluded.updated_at`),
+                  ...row.pins.map((pin) =>
+                    raw(sql`insert into lesson_version_concept
+                      (lesson_version_id, card_id, concept_version_id)
+                      values (${row.versionId}, ${pin.card_id}, ${pin.concept_version_id})`),
+                  ),
+                ]
+              }),
+            raw(sql`update lesson set updated_at = ${now},
+              title = case when ${titleRow?.spec.title ?? null} is null then title
+                else ${titleRow?.spec.title ?? null} end,
+              summary = case when ${titleRow?.spec.summary ?? null} is null then summary
+                else ${titleRow?.spec.summary ?? null} end
+              where id = ${lessonId}`),
+            ...syncLessonLangs(lessonId),
+          ])
+          .pipe(Effect.orDie)
+
+        return {
+          lesson: yield* asUser.get(lessonId).pipe(Effect.orDie),
+          versions: yield* Effect.forEach(rows, (row) =>
+            version(lessonId, row.versionId).pipe(
+              Effect.orDie,
+              Effect.map((found) => ({ version: found, created: row.created })),
+            ),
+          ),
+          created: true,
+        } satisfies PublishedLesson
+      })
+
+      // The old endpoint: one language per request. Kept for downloaded CLIs; the lesson-level
+      // endpoint is the contract new clients use.
+      const publish = Effect.fn("Lessons.publish")(function* (slug: string, body: Uint8Array) {
+        const user = yield* CurrentUser
+        const parsed = yield* parseSingle(body)
+        if (parsed.spec === undefined) return yield* new InvalidLesson({ issues: parsed.issues })
+        const published = yield* publishSpecs(user.id, slug, [parsed.spec], () => "")
+        const first = published.versions[0]
+        if (first === undefined) return yield* Effect.die(new Error("publish returned no version"))
+        return first.created
+          ? ({ lesson: published.lesson, version: first.version, created: true } satisfies Published)
+          : ({ lesson: published.lesson, version: first.version, created: false } satisfies PublishUnchanged)
+      })
+
+      const publishBundle = Effect.fn("Lessons.publishBundle")(function* (slug: string, body: Uint8Array) {
+        const user = yield* CurrentUser
+        const parsed = yield* parseBundle(body)
+        if (parsed.issues.length > 0) {
+          return yield* new InvalidLesson({
+            issues: parsed.issues.map((planned) => issueWithPath(planned, bundlePath)),
+          })
+        }
+        return yield* publishSpecs(user.id, slug, parsed.specs, bundlePath)
+      })
+
+      const validate = Effect.fn("Lessons.validate")(function* (slug: string, body: Uint8Array) {
+        const user = yield* CurrentUser
+        const parsed = yield* parseBundle(body)
+        const issues =
+          parsed.issues.length > 0 ? parsed.issues : (yield* checkBundle(user.id, slug, parsed.specs)).issues
+        return {
+          valid: issues.length === 0,
+          issues: issues.map((planned) => issueWithPath(planned, bundlePath)),
+        }
+      })
+
+      return Lessons.of({ anonymous, asUser, update, remove, mine, publish, publishBundle, validate })
     }),
   )
 }
 
 const IdRow = Schema.Struct({ id: Schema.String })
-const CurrentRow = Schema.Struct({ id: LessonVersionId, body_hash: Schema.String })
-const PinRow = Schema.Struct({ card_id: Schema.String, concept_version_id: Schema.String })
+const StoredLangRow = Schema.Struct({ lang: LessonLang, body_hash: Schema.String })
+const CurrentLangRow = Schema.Struct({ lang: LessonLang, id: LessonVersionId, body_hash: Schema.String })
+const CurrentPinRow = Schema.Struct({
+  lesson_version_id: LessonVersionId,
+  card_id: Schema.String,
+  concept_version_id: ConceptVersionId,
+})
 const ConceptPinRow = Schema.Struct({
   slug: Schema.String,
   n: Schema.Int,
-  version_id: Schema.String,
+  version_id: ConceptVersionId,
   is_current: Schema.Int,
 })
 const PinnedRow = ConceptBundleItem.mapFields(({ spec: _spec, ...fields }) => fields)

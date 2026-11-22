@@ -5,6 +5,12 @@
   "compatibility_date": "2026-09-30",
   // Better Auth needs node:async_hooks (AsyncLocalStorage).
   "compatibility_flags": ["nodejs_compat"],
+  // Smaller upload and faster cold start. The source map goes up too, so stack traces in the logs
+  // still name our files and lines.
+  "minify": true,
+  "upload_source_maps": true,
+  // The account is on the Workers Free plan, which refuses `limits` (10 ms CPU per invocation).
+  // On Workers Paid, a CPU limit can be added here if a route needs more.
   "routes": [{ "pattern": "learn.sirin.dev", "custom_domain": true }],
   // The web SPA (apps/web build). Only /api/* and /c/* run the Worker; every other path is an
   // asset, and unknown paths get index.html (client-side routes). Asset response headers (CSP)
@@ -29,10 +35,19 @@
   // keyed by user id in the Authenticated middleware (apps/worker/src/rate-limit.ts). The period
   // must match `periodSeconds` there. namespace_id is any account-unique integer.
   "ratelimits": [{ "name": "WRITE_LIMIT", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } }],
+  // The hosted generation Durable Object was removed (ADR 0010). v1 is history, so a fresh
+  // local state and a deployed state both reach v2; v2 deletes the class and its transcript
+  // storage. The D1 job rows are dropped by migration 0013.
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GenerationAgent"] },
+    { "tag": "v2", "deleted_classes": ["GenerationAgent"] }
+  ],
   // Hot score recompute.
   "triggers": { "crons": ["*/30 * * * *"] },
   "observability": { "enabled": true },
-  "vars": { "BETTER_AUTH_URL": "https://learn.sirin.dev" }
+  "vars": {
+    "BETTER_AUTH_URL": "https://learn.sirin.dev"
+  }
   // Secrets (wrangler secret put): BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
   // ADMIN_USER_IDS (optional; moderators' user ids, comma-separated).
   // Locally they come from .dev.vars (see .dev.vars.example).

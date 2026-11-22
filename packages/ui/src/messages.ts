@@ -60,8 +60,7 @@ export const en = {
   "lesson.kind.concept": "Concept",
 
   "empty.library.title": "No lessons yet",
-  "empty.library.description":
-    "Lessons you upload show up here. Start with the guide to see what a lesson can do.",
+  "empty.library.description": "Lessons you publish show up here.",
   "empty.explore.title": "Nothing to explore yet",
   "empty.explore.description": "Public lessons from the community show up here.",
   "empty.tags.title": "No followed tags",
@@ -91,7 +90,7 @@ export const en = {
   "explore.category": "Category",
   "explore.allCategories": "All categories",
   "explore.tag": "Tag",
-  "explore.tagPlaceholder": "for example: physics",
+  "explore.tagPlaceholder": "Tag, e.g. physics",
   "explore.apply": "Apply",
   "explore.clear": "Clear filters",
   "explore.noMatch.title": "No lessons match",
@@ -118,7 +117,7 @@ export const en = {
   "library.title": "Library",
   "library.description": "Your lessons, your bookmarks, and what you are reading.",
   "library.signIn.title": "Sign in to use your library",
-  "library.signIn.description": "Your library keeps the lessons you upload. Only you see private lessons.",
+  "library.signIn.description": "Your library keeps the lessons you publish. Only you see private lessons.",
 
   "upload.title": "Upload a lesson",
   "upload.description":
@@ -170,10 +169,10 @@ export const en = {
 
   "account.settings": "Account settings",
   "account.title": "Settings",
-  "account.description": "Your account and the tokens that let pi publish for you.",
+  "account.description":
+    "Your account, your public name, and the tokens that let your agent publish for you.",
   "account.signIn.title": "Sign in to see your settings",
   "account.signIn.description": "Settings belong to your account.",
-  "account.profileHint": "Change your public name in the Library.",
 
   "tokens.title": "API tokens",
   "tokens.description":
@@ -311,6 +310,46 @@ export const en = {
   "admin.open": "Open lesson",
   "admin.loadError": "Reports could not be loaded.",
   "admin.closed": "Report closed.",
+
+  "nav.create": "Create a lesson",
+
+  "agent.title": "Create a lesson",
+  "agent.description":
+    "Learn renders typed lessons; it does not run an LLM. Write one with Claude Code, OpenCode, Codex or pi, or upload a lesson file. Learn validates and publishes it.",
+  "agent.signIn.title": "Sign in to connect your agent",
+  "agent.signIn.description": "Your lessons and tokens belong to your account.",
+  "agent.step.token.title": "1. Create an API token",
+  "agent.step.token.body":
+    "The token lets your agent validate and publish as you. It is shown once; keep it secret.",
+  "agent.step.token.action": "Open Settings",
+  "agent.step.install.title": "2. Install the Learn skill",
+  "agent.step.install.body":
+    "Download the helper once, then write the skill into your harness. It works in any project.",
+  "agent.step.install.harness": "Harness",
+  "agent.step.install.hint": "This writes {path} in the current project.",
+  "agent.step.export.title": "3. Give the agent the token",
+  "agent.step.export.body": "Export it in the shell where the agent runs. Do not commit it.",
+  "agent.step.ask.title": "4. Ask your agent",
+  "agent.step.ask.body":
+    "Describe the lesson. The agent writes en/th JSON, validates it, and publishes a private draft.",
+  "agent.step.ask.prompt":
+    "Write a Learn lesson about why average speed is not the mean of two speeds. Use the Learn skill, validate both languages, and publish it as a private draft.",
+  "agent.step.preview.title": "5. Preview and share",
+  "agent.step.preview.body":
+    "The draft is private in your Library. Read it, choose who can see it, or publish a new version with your agent.",
+  "agent.step.preview.action": "Open Library",
+  "agent.copy": "Copy",
+  "agent.copied": "Copied",
+  "agent.copyFailed": "Could not copy",
+  "agent.howItWorks": "How it works",
+  "agent.howItWorks.body":
+    "Learn never sees your model key and never runs a model. It only validates the LessonSpec JSON, stores it, and renders it.",
+  "agent.learnMore": "Read the guide",
+  "agent.harness.claude": "Claude Code",
+  "agent.harness.opencode": "OpenCode",
+  "agent.harness.codex": "Codex",
+  "agent.harness.pi": "pi",
+  "agent.harness.generic": "Other",
 } as const satisfies Record<string, Message>
 
 export type MessageKey = keyof typeof en
@@ -372,7 +411,7 @@ export const th: Record<MessageKey, Message> = {
   "lesson.kind.concept": "แนวคิด",
 
   "empty.library.title": "ยังไม่มีบทเรียน",
-  "empty.library.description": "บทเรียนที่คุณอัปโหลดจะแสดงที่นี่ เริ่มจากคู่มือเพื่อดูว่าบทเรียนทำอะไรได้บ้าง",
+  "empty.library.description": "บทเรียนที่คุณเผยแพร่จะแสดงที่นี่",
   "empty.explore.title": "ยังไม่มีอะไรให้สำรวจ",
   "empty.explore.description": "บทเรียนสาธารณะจากชุมชนจะแสดงที่นี่",
   "empty.tags.title": "ยังไม่ได้ติดตามแท็ก",
@@ -402,7 +441,7 @@ export const th: Record<MessageKey, Message> = {
   "explore.category": "หมวดหมู่",
   "explore.allCategories": "ทุกหมวดหมู่",
   "explore.tag": "แท็ก",
-  "explore.tagPlaceholder": "เช่น physics",
+  "explore.tagPlaceholder": "แท็ก เช่น physics",
   "explore.apply": "ใช้ตัวกรอง",
   "explore.clear": "ล้างตัวกรอง",
   "explore.noMatch.title": "ไม่มีบทเรียนที่ตรงกัน",
@@ -429,7 +468,7 @@ export const th: Record<MessageKey, Message> = {
   "library.title": "คลังบทเรียน",
   "library.description": "บทเรียนของคุณ บุ๊กมาร์ก และบทเรียนที่กำลังอ่าน",
   "library.signIn.title": "เข้าสู่ระบบเพื่อใช้คลังบทเรียน",
-  "library.signIn.description": "คลังเก็บบทเรียนที่คุณอัปโหลด บทเรียนส่วนตัวเห็นได้เฉพาะคุณ",
+  "library.signIn.description": "คลังเก็บบทเรียนที่คุณเผยแพร่ บทเรียนส่วนตัวเห็นได้เฉพาะคุณ",
 
   "upload.title": "อัปโหลดบทเรียน",
   "upload.description":
@@ -478,10 +517,9 @@ export const th: Record<MessageKey, Message> = {
 
   "account.settings": "ตั้งค่าบัญชี",
   "account.title": "ตั้งค่า",
-  "account.description": "บัญชีของคุณ และโทเค็นที่ให้ pi เผยแพร่บทเรียนแทนคุณ",
+  "account.description": "บัญชีของคุณ ชื่อสาธารณะ และโทเค็นที่ให้เอเจนต์เผยแพร่บทเรียนแทนคุณ",
   "account.signIn.title": "เข้าสู่ระบบเพื่อดูการตั้งค่า",
   "account.signIn.description": "การตั้งค่าเป็นของบัญชีคุณ",
-  "account.profileHint": "เปลี่ยนชื่อสาธารณะได้ที่หน้าคลังบทเรียน",
 
   "tokens.title": "โทเค็น API",
   "tokens.description":
@@ -618,4 +656,39 @@ export const th: Record<MessageKey, Message> = {
   "admin.open": "เปิดบทเรียน",
   "admin.loadError": "โหลดรายงานไม่ได้",
   "admin.closed": "ปิดรายงานแล้ว",
+
+  "nav.create": "สร้างบทเรียน",
+
+  "agent.title": "สร้างบทเรียน",
+  "agent.description":
+    "Learn แสดงผลบทเรียนแบบมีโครงสร้าง ไม่ได้รัน LLM เอง เขียนด้วย Claude Code, OpenCode, Codex หรือ pi หรืออัปโหลดไฟล์บทเรียน แล้ว Learn จะตรวจสอบและเผยแพร่ให้",
+  "agent.signIn.title": "เข้าสู่ระบบเพื่อเชื่อมเอเจนต์",
+  "agent.signIn.description": "บทเรียนและโทเค็นของคุณเป็นของบัญชีคุณ",
+  "agent.step.token.title": "1. สร้างโทเค็น API",
+  "agent.step.token.body": "โทเค็นนี้ให้เอเจนต์ตรวจสอบและเผยแพร่ในนามของคุณ แสดงครั้งเดียว เก็บเป็นความลับ",
+  "agent.step.token.action": "เปิดการตั้งค่า",
+  "agent.step.install.title": "2. ติดตั้งสกิล Learn",
+  "agent.step.install.body": "ดาวน์โหลดตัวช่วยครั้งเดียว แล้วเขียนสกิลลงในฮาร์เนสของคุณ ใช้ได้ทุกโปรเจกต์",
+  "agent.step.install.harness": "ฮาร์เนส",
+  "agent.step.install.hint": "คำสั่งนี้จะเขียน {path} ในโปรเจกต์ปัจจุบัน",
+  "agent.step.export.title": "3. ให้โทเค็นกับเอเจนต์",
+  "agent.step.export.body": "export ในเชลล์ที่เอเจนต์ทำงาน อย่าคอมมิต",
+  "agent.step.ask.title": "4. สั่งเอเจนต์",
+  "agent.step.ask.body": "อธิบายบทเรียนที่ต้องการ เอเจนต์จะเขียน JSON en/th ตรวจสอบ แล้วเผยแพร่เป็นฉบับร่างส่วนตัว",
+  "agent.step.ask.prompt":
+    "เขียนบทเรียน Learn เรื่องทำไมอัตราเร็วเฉลี่ยไม่ใช่ค่าเฉลี่ยของความเร็วสองช่วง ใช้สกิล Learn ตรวจทั้งสองภาษา แล้วเผยแพร่เป็นฉบับร่างส่วนตัว",
+  "agent.step.preview.title": "5. ดูตัวอย่างและแชร์",
+  "agent.step.preview.body": "ฉบับร่างเป็นส่วนตัวในคลังของคุณ อ่าน เลือกว่าใครเห็นได้ หรือให้เอเจนต์เผยแพร่เวอร์ชันใหม่",
+  "agent.step.preview.action": "เปิดคลัง",
+  "agent.copy": "คัดลอก",
+  "agent.copied": "คัดลอกแล้ว",
+  "agent.copyFailed": "คัดลอกไม่ได้",
+  "agent.howItWorks": "ทำงานอย่างไร",
+  "agent.howItWorks.body": "Learn ไม่เห็นคีย์โมเดลของคุณและไม่รันโมเดล ตรวจสอบ LessonSpec JSON เก็บ และแสดงผลเท่านั้น",
+  "agent.learnMore": "อ่านคู่มือ",
+  "agent.harness.claude": "Claude Code",
+  "agent.harness.opencode": "OpenCode",
+  "agent.harness.codex": "Codex",
+  "agent.harness.pi": "pi",
+  "agent.harness.generic": "อื่น ๆ",
 }

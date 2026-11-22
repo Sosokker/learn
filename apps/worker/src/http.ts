@@ -1,6 +1,7 @@
 import { Api, ConceptBundle, CurrentUser, CurrentViewer, NotReady } from "@app/api"
 import { ApiTokens, Auth } from "@app/auth"
 import { Database } from "@app/db"
+import { lessonJsonSchema } from "@app/domain"
 import {
   Admins,
   Categories,
@@ -85,6 +86,26 @@ const CategoriesHandlers = HttpApiBuilder.group(
   }),
 )
 
+const AgentHandlers = HttpApiBuilder.group(
+  Api,
+  "agent",
+  Effect.fn("AgentHandlers")(function* (handlers) {
+    // One string for the life of the isolate: the schema changes only when the Worker deploys.
+    // Effect keeps `$defs` outside the root; put it back for a standard draft-2020-12 document.
+    const document = lessonJsonSchema()
+    const schema = JSON.stringify({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      ...document.schema,
+      ...(Object.keys(document.definitions).length === 0 ? {} : { $defs: document.definitions }),
+    })
+    return handlers.handle("lessonSchema", () =>
+      HttpEffect.appendPreResponseHandler((_, response) =>
+        Effect.succeed(HttpServerResponse.setHeader(response, "cache-control", "public, max-age=3600")),
+      ).pipe(Effect.andThen(Effect.succeed(schema))),
+    )
+  }),
+)
+
 const LessonsHandlers = HttpApiBuilder.group(
   Api,
   "lessons",
@@ -149,6 +170,8 @@ const LessonsHandlers = HttpApiBuilder.group(
           lessons.mine({ cursor: request.query.cursor, limit: request.query.limit }),
         )
         .handle("publish", (request) => lessons.publish(request.params.slug, request.payload))
+        .handle("publishBundle", (request) => lessons.publishBundle(request.params.slug, request.payload))
+        .handle("validate", (request) => lessons.validate(request.params.slug, request.payload))
     )
   }),
 )
@@ -304,6 +327,7 @@ const immutableCache = "public, max-age=31536000, immutable"
 // the same layer on Miniflare's D1 and R2.
 export const HandlersLive = Layer.mergeAll(
   SystemHandlers,
+  AgentHandlers,
   MeHandlers,
   TokensHandlers,
   CategoriesHandlers,

@@ -1,6 +1,6 @@
 import type { FeedSort } from "@app/api"
 import { LessonKind, LessonLang } from "@app/domain"
-import { Button, cx, EmptyState, Input, Select, Tag, useI18n } from "@app/ui"
+import { Button, cx, EmptyState, Input, Select, useI18n } from "@app/ui"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Schema } from "effect"
@@ -124,46 +124,75 @@ function ExplorePage() {
       options={langOptions}
       value={search.lang ?? allLangs}
       onValueChange={(value) => setFilter(isLang(value) ? { lang: value } : {})}
+      hideLabel
+      className="w-36"
     />
   )
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">{t("explore.title")}</h1>
         <p className="text-body-sm text-ink-subtle">{t("explore.description")}</p>
       </header>
 
-      <form
-        className="flex flex-col gap-1.5"
-        onSubmit={(event) => {
-          event.preventDefault()
-          const q = queryDraft.trim()
-          void navigate({
-            search: q === "" ? {} : { q, ...(search.lang === undefined ? {} : { lang: search.lang }) },
-          })
-        }}
-      >
-        <label htmlFor={queryId} className="text-dense font-medium text-ink-muted">
-          {t("explore.search.label")}
-        </label>
-        <div className="flex gap-2">
-          <Input
-            id={queryId}
-            type="search"
-            value={queryDraft}
-            maxLength={100}
-            placeholder={t("explore.search.placeholder")}
-            onValueChange={(value) => setQueryDraft(value)}
-          />
-          <Button type="submit">{t("explore.search.submit")}</Button>
+      <div className="flex flex-col gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <form
+            className="flex grow basis-56 gap-2"
+            onSubmit={(event) => {
+              event.preventDefault()
+              const q = queryDraft.trim()
+              void navigate({
+                search: q === "" ? {} : { q, ...(search.lang === undefined ? {} : { lang: search.lang }) },
+              })
+            }}
+          >
+            <label htmlFor={queryId} className="sr-only">
+              {t("explore.search.label")}
+            </label>
+            <Input
+              id={queryId}
+              type="search"
+              value={queryDraft}
+              maxLength={100}
+              placeholder={t("explore.search.placeholder")}
+              onValueChange={(value) => setQueryDraft(value)}
+              className="flex-1"
+            />
+            <Button type="submit">{t("explore.search.submit")}</Button>
+          </form>
+          {searching ? null : (
+            <fieldset className="m-0 inline-flex h-8 shrink-0 items-center rounded-md border border-hairline p-0.5">
+              <legend className="sr-only">{t("explore.sort")}</legend>
+              {(["new", "hot"] as const).map((value) => {
+                const unavailable = value === "hot" && !hotAvailable
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={sort === value}
+                    aria-describedby={unavailable ? hotHintId : undefined}
+                    disabled={unavailable}
+                    onClick={() =>
+                      void navigate({ search: { ...search, sort: value === "hot" ? "hot" : undefined } })
+                    }
+                    className={cx(
+                      "h-full rounded px-2.5 text-dense font-medium transition-colors focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50",
+                      sort === value ? "bg-surface-4 text-ink" : "text-ink-subtle hover:text-ink",
+                    )}
+                  >
+                    {t(value === "hot" ? "explore.sort.hot" : "explore.sort.new")}
+                  </button>
+                )
+              })}
+            </fieldset>
+          )}
         </div>
-      </form>
 
-      {searching ? (
-        <section aria-label={t("explore.filters")} className="flex flex-col gap-3">
-          <div className="grid gap-3 sm:grid-cols-2">{langSelect}</div>
+        {searching ? (
           <div className="flex flex-wrap items-center gap-2">
+            {langSelect}
             <p className="text-body-sm text-ink-muted">
               {t("explore.search.results", { query: search.q ?? "" })}
             </p>
@@ -171,65 +200,37 @@ function ExplorePage() {
               {t("explore.search.clear")}
             </Button>
           </div>
-        </section>
-      ) : (
-        <section aria-label={t("explore.filters")} className="flex flex-col gap-3">
-          <fieldset className="flex flex-col gap-1.5">
-            <legend className="mb-1.5 text-dense font-medium text-ink-muted">{t("explore.sort")}</legend>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <div className="inline-flex w-fit rounded-md border border-hairline p-0.5">
-                {(["new", "hot"] as const).map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-pressed={sort === value}
-                    aria-describedby={value === "hot" && !hotAvailable ? hotHintId : undefined}
-                    disabled={value === "hot" && !hotAvailable}
-                    onClick={() =>
-                      void navigate({ search: { ...search, sort: value === "hot" ? "hot" : undefined } })
-                    }
-                    className={cx(
-                      "rounded px-3 py-1 text-body-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50",
-                      sort === value ? "bg-surface-4 text-ink" : "text-ink-subtle hover:text-ink",
-                    )}
-                  >
-                    {t(value === "hot" ? "explore.sort.hot" : "explore.sort.new")}
-                  </button>
-                ))}
-              </div>
-              {hotAvailable ? null : (
-                <p id={hotHintId} className="text-caption text-ink-tertiary">
-                  {t("explore.sort.hotUnavailable")}
-                </p>
-              )}
-            </div>
-          </fieldset>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Select
-              label={t("explore.category")}
-              options={categoryOptions}
-              value={search.category ?? allCategories}
-              onValueChange={(value) => setFilter(value === allCategories ? {} : { category: value })}
-            />
-            <Select
-              label={t("explore.kind")}
-              options={kindOptions}
-              value={search.kind ?? allKinds}
-              onValueChange={(value) => setFilter(isKind(value) ? { kind: value } : {})}
-            />
-            {langSelect}
-            <form
-              className="flex min-w-0 flex-col gap-1.5"
-              onSubmit={(event) => {
-                event.preventDefault()
-                const tag = tagDraft.trim()
-                setFilter(tag === "" ? {} : { tag })
-              }}
-            >
-              <label htmlFor={tagId} className="text-dense font-medium text-ink-muted">
-                {t("explore.tag")}
-              </label>
-              <div className="flex gap-2">
+        ) : (
+          <section aria-label={t("explore.filters")} className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                label={t("explore.category")}
+                options={categoryOptions}
+                value={search.category ?? allCategories}
+                onValueChange={(value) => setFilter(value === allCategories ? {} : { category: value })}
+                hideLabel
+                className="w-52"
+              />
+              <Select
+                label={t("explore.kind")}
+                options={kindOptions}
+                value={search.kind ?? allKinds}
+                onValueChange={(value) => setFilter(isKind(value) ? { kind: value } : {})}
+                hideLabel
+                className="w-32"
+              />
+              {langSelect}
+              <form
+                className="flex min-w-56 grow gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  const tag = tagDraft.trim()
+                  setFilter(tag === "" ? {} : { tag })
+                }}
+              >
+                <label htmlFor={tagId} className="sr-only">
+                  {t("explore.tag")}
+                </label>
                 <Input
                   id={tagId}
                   type="search"
@@ -237,28 +238,35 @@ function ExplorePage() {
                   maxLength={40}
                   placeholder={t("explore.tagPlaceholder")}
                   onValueChange={(value) => setTagDraft(value)}
+                  className="min-w-28 flex-1"
                 />
-                <Button type="submit">{t("explore.apply")}</Button>
-              </div>
-            </form>
-          </div>
-          <p className="text-caption text-ink-tertiary">{t("explore.oneFilter")}</p>
-          {filtered ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {search.tag === undefined ? null : <Tag>{search.tag}</Tag>}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() =>
-                  void navigate({ search: search.sort === undefined ? {} : { sort: search.sort } })
-                }
-              >
-                {t("explore.clear")}
-              </Button>
+                <Button type="submit" variant="secondary">
+                  {t("explore.apply")}
+                </Button>
+              </form>
             </div>
-          ) : null}
-        </section>
-      )}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <p className="text-caption text-ink-tertiary">{t("explore.oneFilter")}</p>
+              {hotAvailable ? null : (
+                <p id={hotHintId} className="text-caption text-ink-tertiary">
+                  {t("explore.sort.hotUnavailable")}
+                </p>
+              )}
+              {filtered ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    void navigate({ search: search.sort === undefined ? {} : { sort: search.sort } })
+                  }
+                >
+                  {t("explore.clear")}
+                </Button>
+              ) : null}
+            </div>
+          </section>
+        )}
+      </div>
 
       {searching ? (
         <LessonList
