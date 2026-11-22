@@ -17,7 +17,7 @@
     "typecheck": "bun run --filter '*' typecheck",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "test": "bun run --filter '*' test",
+    "test": "bun run --filter '*' --filter '!@app/e2e' test",
     "test:e2e": "bun run --cwd e2e test",
     "db:generate": "bun run --cwd packages/db generate",
     "db:migrate:local": "bun run --cwd apps/worker wrangler d1 migrations apply learn --local",
