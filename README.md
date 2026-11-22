@@ -1,5 +1,7 @@
 # Learn
 
+[![CI](https://github.com/Sosokker/learn/actions/workflows/ci.yml/badge.svg)](https://github.com/Sosokker/learn/actions/workflows/ci.yml)
+
 Interactive lessons you can explore, and a community to share them.
 Parts you can hover, cards you can drill into, steps with "why" and "why not",
 proofs line by line, live widgets, and `@ref`s you can ask about.
