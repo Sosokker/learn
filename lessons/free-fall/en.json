@@ -1,0 +1,354 @@
+{
+  "schema": 1,
+  "kind": "learn",
+  "lang": "en",
+  "title": "Free fall: vertical motion under gravity",
+  "summary": "Drop a stone or toss a ball straight up — once it leaves your hand without air drag, its acceleration is always g = 9.8 m/s² downward, even at the peak.",
+  "parts": {
+    "u": {
+      "label": "$u$",
+      "role": "given",
+      "color": "orange",
+      "meaning": "initial vertical velocity at launch (t = 0), in m/s",
+      "body": "Positive when thrown upward (if up is positive), zero when dropped from rest, and negative when thrown downward.",
+      "example": "Tossing a ball straight up at $u = +19.6\\text{ m/s}$.",
+      "analogy": "The launch kick your hand gives the ball right before letting go."
+    },
+    "g": {
+      "label": "$g$",
+      "role": "constant",
+      "color": "red",
+      "meaning": "gravitational acceleration near Earth, 9.8 m/s² downward",
+      "body": "Every object in {free_fall|free fall} shares this exact same downward acceleration regardless of mass. With upward chosen as positive, $a = -g = -9.8\\text{ m/s}^2$.",
+      "example": "Each second of flight shifts vertical velocity by $-9.8\\text{ m/s}$.",
+      "analogy": "An invisible hand pulling downward at the exact same pace on every flying object."
+    },
+    "v_top": {
+      "label": "$v_{\\text{top}} = 0$",
+      "role": "hidden_given",
+      "color": "teal",
+      "meaning": "instantaneous velocity at the highest point, in m/s",
+      "body": "At the peak, upward motion finishes and downward motion begins, so velocity passes through **zero** — while acceleration stays $g$ downward.",
+      "example": "Setting $v = 0$ in $v = u - gt$ immediately gives the climb time.",
+      "analogy": "The split-second pause of a swing at the top of its arc before swinging back."
+    },
+    "h_max": {
+      "label": "$h_{\\max}$",
+      "role": "goal",
+      "color": "blue",
+      "meaning": "maximum height reached above the launch point, in meters",
+      "body": "Equal to $u^2 / (2g)$. Doubling the launch speed quadruples the peak height!",
+      "example": "Launched at $u = 19.6\\text{ m/s}$ with $g = 9.8\\text{ m/s}^2$, the ball reaches $h_{\\max} = 19.6\\text{ m}$.",
+      "analogy": "The highest mark the ball paints on a tall measuring wall."
+    },
+    "t_up": {
+      "label": "$t_{\\text{up}}$",
+      "role": "derived",
+      "color": "purple",
+      "meaning": "time taken to climb from launch to the highest point, in seconds",
+      "body": "Found from $0 = u - g t_{\\text{up}}$, so $t_{\\text{up}} = u / g$.",
+      "example": "With $u = 19.6\\text{ m/s}$ and $g = 9.8\\text{ m/s}^2$, the climb takes $t_{\\text{up}} = 2\\text{ s}$.",
+      "analogy": "Half of a symmetrical round-trip flight."
+    },
+    "t_total": {
+      "label": "$T$",
+      "role": "goal",
+      "color": "green",
+      "meaning": "total flight time until returning to the launch height, in seconds",
+      "body": "Without air resistance, the trip down mirrors the trip up, so $T = 2t_{\\text{up}} = 2u/g$.",
+      "example": "Climbing for $2\\text{ s}$ and falling for $2\\text{ s}$ gives $T = 4\\text{ s}$.",
+      "analogy": "The total hang time between toss and catch at the same hand height."
+    },
+    "no_air": {
+      "label": "no air drag",
+      "role": "condition",
+      "color": "pink",
+      "meaning": "air resistance is negligible, so gravity is the only force",
+      "body": "Keeps vertical acceleration strictly constant at $g = 9.8\\text{ m/s}^2$, allowing all {suvat|uniform acceleration equations} and {symmetry|up-and-down symmetry} to hold.",
+      "example": "A dense stone tossed a few meters behaves almost identically to vacuum free fall; a sheet of paper does not.",
+      "analogy": "Dropping objects inside a vacuum tube."
+    }
+  },
+  "cards": {
+    "free_fall": {
+      "concept": "physics.free-fall"
+    },
+    "suvat": {
+      "concept": "physics.uniform-acceleration-equations"
+    },
+    "acceleration": {
+      "concept": "physics.acceleration"
+    },
+    "speed_vel": {
+      "concept": "physics.speed-and-velocity"
+    },
+    "disp": {
+      "concept": "physics.distance-and-displacement"
+    },
+    "weight": {
+      "concept": "physics.weight"
+    },
+    "top_trap": {
+      "kind": "lemma",
+      "title": "At the top: v = 0, but a ≠ 0",
+      "kicker": "common mistake",
+      "body": "Students often think [g:acceleration] drops to zero at the highest point because [v_top:velocity is zero]. If $a$ were zero when $v = 0$, the ball would hover in mid-air forever! Gravity pulls continuously, so $a = -9.8\\text{ m/s}^2$ even at the exact peak.",
+      "useWhen": "a question asks for velocity and acceleration at the highest point of a vertical throw.",
+      "example": "At $t = 2\\text{ s}$ in our problem: $v = 0\\text{ m/s}$, $a = 9.8\\text{ m/s}^2$ downward."
+    },
+    "symmetry": {
+      "kind": "thm",
+      "title": "Up-and-down symmetry",
+      "kicker": "free fall",
+      "body": "With [no_air:no air drag], a vertical throw is symmetric around its peak: the time to rise equals the time to fall back to the same height ($t_{\\text{down}} = t_{\\text{up}}$), and at any height the downward speed equals the upward speed ($v_{\\text{return}} = -u$).",
+      "useWhen": "an object returns to its launch height (or passes the same height twice).",
+      "example": "Thrown up at $+19.6\\text{ m/s}$, it returns to the hand $4\\text{ s}$ later at $-19.6\\text{ m/s}$."
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "text",
+      "title": "One acceleration for every falling body",
+      "body": "{free_fall|Free fall} does not mean *only* dropping something from rest. A ball thrown straight up, a coin dropped from a balcony, and a stone thrown downward are all in free fall the instant they leave your hand — as long as [no_air:air resistance is negligible].\n\nBecause {weight|weight} is proportional to mass, mass cancels out of Newton's second law and every object accelerates downward at the same constant [g:$g = 9.8\\text{ m/s}^2$]. That means free fall is simply {suvat|uniform acceleration} turned vertical."
+    },
+    {
+      "id": "key_ideas",
+      "type": "chunks",
+      "title": "Four rules of vertical free fall",
+      "note": "take upward as the positive y-direction throughout this lesson",
+      "rows": [
+        {
+          "id": "k_accel",
+          "text": "Acceleration is always [g:$a = -g = -9.8\\text{ m/s}^2$]",
+          "role": "constant",
+          "note": "points downward on the way up, at the peak, and on the way down"
+        },
+        {
+          "id": "k_top",
+          "text": "At the highest point, [v_top:$v_{\\text{top}} = 0$], not $a = 0$",
+          "role": "hidden_given",
+          "note": "watch out for {top_trap|the peak trap}: gravity never switches off"
+        },
+        {
+          "id": "k_sym",
+          "text": "Return to launch level: $y = 0$, $v = -u$, [t_total:$T = 2t_{\\text{up}}$]",
+          "role": "concept",
+          "note": "{symmetry|up-and-down symmetry} holds whenever [no_air:air drag is negligible]"
+        },
+        {
+          "id": "k_disp",
+          "text": "{disp|Displacement} $y$ is measured from launch, not total path length",
+          "role": "concept",
+          "note": "returning to your hand gives $y = 0$, even though total distance is $2h_{\\max}$"
+        }
+      ]
+    },
+    {
+      "id": "problem",
+      "type": "problem",
+      "title": "Worked problem",
+      "body": "A ball is thrown straight upward from ground level at [u:$u = 19.6\\text{ m/s}$]. Neglecting [no_air:air resistance] and using [g:$g = 9.8\\text{ m/s}^2$]:\n\nFind (1) the [t_up:time to reach the peak], (2) the [h_max:maximum height], (3) the [t_total:total flight time] before it returns to ground level, and (4) its velocity right as it lands."
+    },
+    {
+      "id": "plan",
+      "type": "plan",
+      "title": "Plan",
+      "note": "choose upward as positive so u = +19.6 m/s and a = -9.8 m/s²",
+      "routes": [
+        {
+          "id": "r_up_positive",
+          "title": "Route A: upward positive, use peak condition $v = 0$",
+          "path": "[v_top:$v_{\\text{top}} = 0$] → [t_up:$t_{\\text{up}}$] and [h_max:$h_{\\max}$] → [t_total:$T$] and $v_{\\text{return}}$",
+          "why": "One sign convention handles the entire trip smoothly: $y = ut - \\frac{1}{2}gt^2$ automatically tracks both climb and fall.",
+          "whyNot": "Nothing. Keep $a = -9.8\\text{ m/s}^2$ everywhere and the algebra does the bookkeeping.",
+          "picked": true
+        },
+        {
+          "id": "r_flip_g",
+          "title": "Route B: switch $g$ to $+9.8$ at the top and forget signs",
+          "path": "use $a = -9.8$ going up and $+9.8$ going down in one formula",
+          "why": "People think gravity slows the ball going up and speeds it up coming down, so $g$ must change sign.",
+          "whyNot": "Gravity always points **downward**; switching the sign of $a$ mid-problem breaks a single coordinate axis and causes sign errors.",
+          "picked": false
+        },
+        {
+          "id": "r_distance_zero",
+          "title": "Route C: set total distance equal to zero on landing",
+          "path": "treat distance $= 0$ instead of {disp|displacement} $y = 0$",
+          "why": "The ball starts and ends at ground level.",
+          "whyNot": "Distance travelled is $2h_{\\max} = 39.2\\text{ m}$; only the **displacement** $y$ returns to $0$.",
+          "picked": false
+        }
+      ],
+      "notUsed": "Not used: mass of the ball. In {free_fall|free fall}, mass cancels completely."
+    },
+    {
+      "id": "work",
+      "type": "chain",
+      "title": "Work it through",
+      "note": "upward is positive, so u = +19.6 m/s and a = -g = -9.8 m/s²",
+      "steps": [
+        {
+          "id": "s1",
+          "move": "Find the [t_up:climb time] by setting [v_top:velocity to zero] at the peak.",
+          "formula": "\\p{v_top}{v_{\\text{top}}} = \\p{u}{u} - \\p{g}{g}\\p{t_up}{t_{\\text{up}}} \\implies 0 = 19.6 - 9.8\\,\\p{t_up}{t_{\\text{up}}} \\implies \\p{t_up}{t_{\\text{up}}} = \\dfrac{19.6}{9.8} = 2\\text{ s}",
+          "why": "With {acceleration|acceleration} $-9.8\\text{ m/s}^2$, the ball loses $9.8\\text{ m/s}$ of upward speed each second, reaching $0$ after $2\\text{ s}$.",
+          "whyNot": "Do not stop here if the question asks for total flight time — $2\\text{ s}$ is only the climb.",
+          "uses": ["v_top", "u", "g", "t_up"]
+        },
+        {
+          "id": "s2",
+          "move": "Find the [h_max:maximum height] using $v^2 = u^2 - 2gh$.",
+          "formula": "\\p{v_top}{v_{\\text{top}}}^2 = \\p{u}{u}^2 - 2\\p{g}{g}\\p{h_max}{h_{\\max}} \\implies 0 = 19.6^2 - 2(9.8)\\p{h_max}{h_{\\max}} \\implies \\p{h_max}{h_{\\max}} = \\dfrac{384.16}{19.6} = 19.6\\text{ m}",
+          "why": "This uses only [u:$u$], [g:$g$], and [v_top:$v_{\\text{top}} = 0$]. Check with $y = ut - \\frac{1}{2}gt^2$: $19.6(2) - 4.9(4) = 39.2 - 19.6 = 19.6\\text{ m}$.",
+          "whyNot": "Do not compute $u \\times t_{\\text{up}} = 39.2\\text{ m}$: the ball is slowing down, so average upward speed is $19.6/2 = 9.8\\text{ m/s}$.",
+          "uses": ["v_top", "u", "g", "h_max"]
+        },
+        {
+          "id": "s3",
+          "move": "Find the [t_total:total flight time] by setting displacement $y = 0$ at ground level.",
+          "formula": "0 = \\p{u}{u}\\p{t_total}{T} - \\dfrac{1}{2}\\p{g}{g}\\p{t_total}{T}^2 = \\p{t_total}{T}(19.6 - 4.9\\p{t_total}{T}) \\implies \\p{t_total}{T} = \\dfrac{19.6}{4.9} = 4\\text{ s}",
+          "why": "The two roots are $t = 0\\text{ s}$ (launch) and $T = 4\\text{ s}$ (landing), confirming {symmetry|$T = 2t_{\\text{up}}$}.",
+          "whyNot": "Do not cancel $T$ blindly without noting that $T = 0$ is the launch instant.",
+          "uses": ["u", "g", "t_total"]
+        },
+        {
+          "id": "s4",
+          "move": "Find the landing {speed_vel|velocity} at [t_total:$T = 4\\text{ s}$].",
+          "formula": "v = \\p{u}{u} - \\p{g}{g}\\p{t_total}{T} = 19.6 - 9.8(4) = 19.6 - 39.2 = -19.6\\text{ m/s}",
+          "why": "The magnitude matches [u:$u = 19.6\\text{ m/s}$], and the minus sign shows it is moving **downward**.",
+          "whyNot": "Do not write $v = 0\\text{ m/s}$ for landing velocity: the ball reaches $0$ only *after* hitting the ground, which is no longer {free_fall|free fall}.",
+          "uses": ["u", "g", "t_total"]
+        }
+      ]
+    },
+    {
+      "id": "height_plot",
+      "type": "visual",
+      "title": "Height vs. time parabola",
+      "note": "drag the launch speed u and watch how the peak height grows as u² while flight time grows linearly with u (g = 9.8 m/s²)",
+      "widget": {
+        "kind": "plot",
+        "x": {
+          "min": 0,
+          "max": 6,
+          "label": "time $t$ (s)"
+        },
+        "y": {
+          "min": 0,
+          "max": 50,
+          "label": "height $y$ (m)"
+        },
+        "params": [
+          {
+            "id": "u",
+            "label": "[u:$u$] (m/s)",
+            "min": 4,
+            "max": 28,
+            "step": 0.2,
+            "value": 19.6,
+            "part": "u"
+          }
+        ],
+        "curves": [
+          {
+            "expr": "u * x - 0.5 * 9.8 * x^2",
+            "part": "h_max",
+            "label": "height $y(t) = ut - \\frac{1}{2}gt^2$"
+          }
+        ],
+        "points": [
+          {
+            "x": "u / 9.8",
+            "y": "u^2 / (2 * 9.8)",
+            "part": "h_max",
+            "label": "peak ([v_top:$v = 0$])"
+          },
+          {
+            "x": "2 * u / 9.8",
+            "y": "0",
+            "part": "t_total",
+            "label": "returns to ground ([t_total:$T$])"
+          }
+        ],
+        "readouts": [
+          {
+            "label": "[t_up:$t_{\\text{up}}$]",
+            "expr": "u / 9.8",
+            "unit": "s",
+            "part": "t_up"
+          },
+          {
+            "label": "[h_max:$h_{\\max}$]",
+            "expr": "u^2 / (2 * 9.8)",
+            "unit": "m",
+            "part": "h_max"
+          },
+          {
+            "label": "[t_total:$T$]",
+            "expr": "2 * u / 9.8",
+            "unit": "s",
+            "part": "t_total"
+          }
+        ]
+      }
+    },
+    {
+      "id": "check",
+      "type": "check",
+      "title": "Check yourself",
+      "items": [
+        "**Peak check**: at the highest point [v_top:$v_{\\text{top}} = 0$], yet [g:$a = 9.8\\text{ m/s}^2$] downward ({top_trap|never zero}).",
+        "**Mass independence**: with [no_air:no air drag], a $10\\text{ kg}$ rock and a $0.1\\text{ kg}$ pebble dropped together hit the ground at the same instant.",
+        "**Quadratic height**: doubling [u:$u$] doubles [t_total:$T$] but makes [h_max:$h_{\\max}$] **four times** larger (try $u = 9.8$ vs $19.6$ on the plot: $4.9\\text{ m}$ vs $19.6\\text{ m}$).",
+        "**Landing velocity**: in {free_fall|free fall} questions, *velocity when it hits the ground* means the velocity the instant **before** impact, not $0$.",
+        "**Symmetry**: returning to launch height takes [t_total:$T = 2t_{\\text{up}}$] and arrives with velocity of magnitude $u$ downward."
+      ]
+    },
+    {
+      "id": "recall",
+      "type": "recall",
+      "title": "Recall",
+      "note": "use g = 9.8 m/s² and neglect air resistance",
+      "questions": [
+        {
+          "id": "q1",
+          "q": "A ball is thrown straight upward and reaches its highest point. At that exact instant, what are its velocity $v$ and acceleration $a$?",
+          "options": [
+            "$v = 0\\text{ m/s}$ and $a = 0\\text{ m/s}^2$",
+            "$v = 9.8\\text{ m/s}$ downward and $a = 0\\text{ m/s}^2$",
+            "$v = 0\\text{ m/s}$ and $a = 9.8\\text{ m/s}^2$ downward"
+          ],
+          "answer": 2,
+          "why": "Velocity momentarily equals zero as direction reverses, but gravity stays on, so $a = 9.8\\text{ m/s}^2$ downward ({top_trap|peak trap})."
+        },
+        {
+          "id": "q2",
+          "q": "A stone is dropped from rest off a bridge ($g = 9.8\\text{ m/s}^2$). How far does it fall in $t = 3\\text{ s}$?",
+          "options": ["$44.1\\text{ m}$", "$29.4\\text{ m}$", "$88.2\\text{ m}$"],
+          "answer": 0,
+          "why": "With $u = 0$, $h = \\frac{1}{2}gt^2 = \\frac{1}{2}(9.8)(3^2) = 4.9 \\times 9 = 44.1\\text{ m}$. Note that $29.4\\text{ m/s}$ is the speed, and $88.2\\text{ m}$ forgets the $\\frac{1}{2}$."
+        },
+        {
+          "id": "q3",
+          "q": "Inside a vacuum tube, a $5\\text{ kg}$ iron ball and a $0.05\\text{ kg}$ rubber ball are released together from the same height. Which lands first?",
+          "options": [
+            "The $5\\text{ kg}$ ball, because Earth pulls $100$ times harder on it",
+            "Both land at the exact same instant, because both fall with acceleration $g$",
+            "The $0.05\\text{ kg}$ ball, because it has less inertia to overcome"
+          ],
+          "answer": 1,
+          "why": "The heavier ball has $100$ times more {weight|weight} and $100$ times more mass, so $a = mg/m = g$ is identical for both."
+        },
+        {
+          "id": "q4",
+          "q": "A ball is thrown straight up at $u = 14.7\\text{ m/s}$ ($g = 9.8\\text{ m/s}^2$). How long does it take to return to the thrower's hand?",
+          "options": ["$1.5\\text{ s}$", "$2.0\\text{ s}$", "$3.0\\text{ s}$"],
+          "answer": 2,
+          "why": "Climb time is $t_{\\text{up}} = 14.7 / 9.8 = 1.5\\text{ s}$. By {symmetry|up-and-down symmetry}, the return trip takes another $1.5\\text{ s}$, giving $T = 3.0\\text{ s}$."
+        }
+      ]
+    }
+  ]
+}

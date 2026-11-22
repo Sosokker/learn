@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "slug": "physics.distance-and-displacement",
+  "lang": "en",
+  "card": {
+    "kind": "def",
+    "title": "Distance and displacement",
+    "kicker": "definition",
+    "body": "**Distance** ($d$) is the total length of the path traveled — a non-negative scalar. **Displacement** ($\\Delta\\vec{x} = \\vec{x}_f - \\vec{x}_i$) is the straight-line vector from the starting position to the final position, so always $|\\Delta\\vec{x}| \\le d$.",
+    "says": "distance counts every step along the path; displacement only cares where you ended up relative to where you started.",
+    "from": "tracking an object's position on a coordinate axis or plane between an initial point and a final point.",
+    "useWhen": "deciding whether direction and backtracking matter — distance adds every segment, while displacement can cancel out or shrink to zero on a round trip.",
+    "units": "m, km",
+    "example": "Walk $30\\text{ m}$ east, then $40\\text{ m}$ north. Distance $d = 30 + 40 = 70\\text{ m}$. Displacement magnitude $|\\Delta\\vec{x}| = \\sqrt{30^2 + 40^2} = \\sqrt{900 + 1600} = 50\\text{ m}$ pointing $\\approx 53^\\circ$ north of east.",
+    "analogy": "Distance is what a car's odometer adds up; displacement is the straight arrow drawn on a map from your starting pin to your ending pin."
+  },
+  "needs": [
+    "physics.vectors-and-components"
+  ],
+  "aliases": [
+    "distance",
+    "displacement",
+    "path length",
+    "change in position",
+    "ระยะทาง",
+    "การกระจัด",
+    "ระยะทางและการกระจัด"
+  ]
+}

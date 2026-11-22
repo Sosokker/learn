@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "slug": "physics.elastic-potential-energy",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Elastic potential energy",
+    "kicker": "formula",
+    "body": "$E_{ps} = \\dfrac{1}{2} k x^2$",
+    "says": "the energy stored in an ideal spring of spring constant $k$ stretched or compressed by $x$ from its natural length. Because $x$ is squared, stretching and compressing by the same $|x|$ store the same positive energy.",
+    "from": "the triangular area under Hooke's law $F = k x$ from $0$ to $x$: $W = \\dfrac{1}{2}(\\text{base})(\\text{height}) = \\dfrac{1}{2}(x)(k x) = \\dfrac{1}{2} k x^2$.",
+    "useWhen": "a spring or elastic band is stretched or compressed within its elastic limit and you want the energy stored or released.",
+    "units": "J (joule), with $k$ in $\\text{N/m}$ and $x$ in $\\text{m}$",
+    "example": "Compressing a spring of $k = 200\\text{ N/m}$ by $x = 0.1\\text{ m}$ ($10\\text{ cm}$) → $E_{ps} = \\dfrac{1}{2}(200)(0.1^2) = 1\\text{ J}$.",
+    "analogy": "Drawing a bowstring back gets harder the farther you pull—pulling twice as far stores four times the energy ready to launch the arrow."
+  },
+  "needs": [
+    "physics.work"
+  ],
+  "aliases": [
+    "elastic potential energy",
+    "spring potential energy",
+    "spring constant",
+    "Hooke's law",
+    "Eps = 1/2 kx^2",
+    "พลังงานศักย์ยืดหยุ่น",
+    "ค่าคงตัวสปริง",
+    "กฎของฮุก"
+  ]
+}

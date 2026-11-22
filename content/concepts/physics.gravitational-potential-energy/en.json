@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "slug": "physics.gravitational-potential-energy",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Gravitational potential energy",
+    "kicker": "formula",
+    "body": "$E_p = m g h$",
+    "says": "the energy stored by lifting mass $m$ to height $h$ above a chosen **reference level** ($h = 0$), where $g$ is the gravitational field strength. Only changes $\\Delta E_p = m g \\Delta h$ affect the motion.",
+    "from": "the work needed to lift weight $m g$ steadily through vertical height $h$: $W = F h = m g h$.",
+    "useWhen": "an object changes height near Earth's surface (so $g$ is nearly constant)—choose any convenient zero-height line and stick to it throughout the problem.",
+    "units": "J (joule, $1\\text{ J} = 1\\text{ kg}\\cdot\\text{m}^2/\\text{s}^2$)",
+    "example": "Lifting a $5\\text{ kg}$ backpack onto a shelf $h = 2\\text{ m}$ above the floor (with $g = 9.8\\text{ m/s}^2$) → $E_p = 5 \\times 9.8 \\times 2 = 98\\text{ J}$.",
+    "analogy": "Water held behind a hydroelectric dam stores height like money in a savings account; letting it drop cashes that height out into kinetic energy."
+  },
+  "needs": [
+    "physics.work",
+    "physics.weight"
+  ],
+  "aliases": [
+    "gravitational potential energy",
+    "GPE",
+    "Ep = mgh",
+    "U = mgh",
+    "พลังงานศักย์โน้มถ่วง",
+    "ระดับอ้างอิง"
+  ]
+}

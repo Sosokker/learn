@@ -30,7 +30,7 @@ const proxy = await getPlatformProxy<{ DB: D1Database; CONTENT: R2Bucket }>({
   remoteBindings: false,
 })
 const target = bindingsTarget(proxy.env.DB, proxy.env.CONTENT)
-const plan = await planSeed(target, console.log)
+const plan = await planSeed(target, console.log, { includeLocalLessons: true })
 if (isEmptyPlan(plan)) {
   console.log("up to date: nothing to write")
 } else {

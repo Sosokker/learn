@@ -19,3 +19,5 @@ export {
 } from "./model.ts"
 export { buildPrompt, buildRef, copyText, refName, richToTex, targetTex } from "./refs.ts"
 export { renderTex, stripTexParts } from "./tex.ts"
+export type { DiagramEdge, DiagramNode, DiagramProps } from "./widgets/diagram-types.ts"
+export { LazyDiagram } from "./widgets/diagrams.tsx"

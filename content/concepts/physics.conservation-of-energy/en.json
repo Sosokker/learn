@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "slug": "physics.conservation-of-energy",
+  "lang": "en",
+  "card": {
+    "kind": "law",
+    "title": "Conservation of mechanical energy",
+    "kicker": "law",
+    "body": "$E_1 = E_2 \\quad \\Longleftrightarrow \\quad E_{k1} + E_{p1} + E_{ps1} = E_{k2} + E_{p2} + E_{ps2}$",
+    "says": "when only conservative forces (gravity and ideal springs) do work, total mechanical energy $E = E_k + E_p + E_{ps}$ stays **constant** and only changes form. If a non-conservative force such as friction does work $W_{\\text{nc}}$, then $E_1 + W_{\\text{nc}} = E_2$.",
+    "from": "the work-energy theorem, separating net work into conservative work ($-\\Delta E_p - \\Delta E_{ps}$) and non-conservative work ($W_{\\text{nc}} = 0$ when friction and air drag are absent).",
+    "useWhen": "you want a speed, height, or spring compression between two positions—especially on curved tracks or ramps where forces keep changing direction.",
+    "example": "Sliding from rest down a frictionless $h = 2.5\\text{ m}$ slide (with $g = 9.8\\text{ m/s}^2$): $m g h = \\dfrac{1}{2} m v^2 \\Rightarrow v = \\sqrt{2 \\times 9.8 \\times 2.5} = \\sqrt{49} = 7\\text{ m/s}$, regardless of mass.",
+    "analogy": "Pouring water back and forth between two cups without spilling: the amount in each cup changes, but the total water never does."
+  },
+  "needs": [
+    "physics.kinetic-energy",
+    "physics.gravitational-potential-energy",
+    "physics.elastic-potential-energy"
+  ],
+  "aliases": [
+    "conservation of mechanical energy",
+    "conservation of energy",
+    "E1 = E2",
+    "กฎการอนุรักษ์พลังงานกล",
+    "กฎอนุรักษ์พลังงาน"
+  ]
+}

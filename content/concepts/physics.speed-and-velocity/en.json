@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "slug": "physics.speed-and-velocity",
+  "lang": "en",
+  "card": {
+    "kind": "def",
+    "title": "Speed and velocity",
+    "kicker": "definition",
+    "body": "**Average speed** is distance divided by elapsed time, $v_{\\text{av}} = \\dfrac{d}{\\Delta t}$ (scalar). **Average velocity** is displacement divided by elapsed time, $\\vec{v}_{\\text{av}} = \\dfrac{\\Delta\\vec{x}}{\\Delta t}$ (vector in the direction of $\\Delta\\vec{x}$). At a single instant, the magnitude of instantaneous velocity equals instantaneous speed.",
+    "says": "speed tells you how fast you cover ground; velocity tells you how fast and in which direction your position changes.",
+    "from": "comparing how much distance or displacement happens in each second of elapsed time.",
+    "useWhen": "the problem distinguishes direction, reversals, or signs along an axis — velocity carries a sign or direction, whereas speed does not.",
+    "units": "m/s, km/h",
+    "example": "Run $80\\text{ m}$ east and then $20\\text{ m}$ west in $20\\text{ s}$. Distance $d = 80 + 20 = 100\\text{ m}$, so average speed $v_{\\text{av}} = 100 / 20 = 5\\text{ m/s}$. Displacement $\\Delta x = 80 - 20 = +60\\text{ m}$ east, so average velocity is $60 / 20 = 3\\text{ m/s}$ east.",
+    "analogy": "Speed is the number on a car's speedometer; velocity is the speedometer together with the compass showing which way you are heading."
+  },
+  "needs": [
+    "physics.distance-and-displacement",
+    "physics.total-time"
+  ],
+  "aliases": [
+    "speed",
+    "velocity",
+    "average velocity",
+    "instantaneous velocity",
+    "อัตราเร็ว",
+    "ความเร็ว",
+    "อัตราเร็วและความเร็ว"
+  ]
+}

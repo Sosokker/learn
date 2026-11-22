@@ -1,0 +1,451 @@
+{
+  "schema": 1,
+  "kind": "learn",
+  "lang": "en",
+  "title": "Conservation of mechanical energy: trading height, speed, and stretch",
+  "summary": "Without friction, total mechanical energy stays fixed as a body climbs, falls, or compresses a spring. Solve curved tracks and springs without tracking changing forces.",
+  "parts": {
+    "mass": {
+      "label": "$m$",
+      "role": "given",
+      "color": "orange",
+      "meaning": "mass of the sliding block, in kilograms (kg)",
+      "body": "Cancels out when converting gravitational potential energy to kinetic energy, but stays in the equation when a spring absorbs the energy.",
+      "example": "A $2\\text{ kg}$ block sliding down a smooth curved track.",
+      "analogy": "How heavy the sled is."
+    },
+    "height": {
+      "label": "$h_0$",
+      "role": "given",
+      "color": "blue",
+      "meaning": "starting height above the flat floor reference level, in meters (m)",
+      "body": "Measured straight up from the chosen {reference_level|reference level} ($h = 0$). Only vertical height matters for $E_p$, never the curve's length.",
+      "example": "A $10\\text{ m}$ tall curved ramp.",
+      "analogy": "How many floors up you start before stepping onto the slide."
+    },
+    "k_spring": {
+      "label": "$k$",
+      "role": "given",
+      "color": "mustard",
+      "meaning": "spring constant measuring stiffness, in N/m",
+      "body": "Larger $k$ means a stiffer spring that stores more energy for the same compression $x$.",
+      "example": "A bumper spring with $k = 800\\text{ N/m}$.",
+      "analogy": "The difference between a pen spring and a car suspension coil."
+    },
+    "grav": {
+      "label": "$g$",
+      "role": "constant",
+      "color": "grey",
+      "meaning": "gravitational acceleration near Earth's surface, $9.8\\text{ m/s}^2$",
+      "body": "Sets how much gravitational potential energy each meter of height stores per kilogram.",
+      "example": "$g = 9.8\\text{ m/s}^2$ gives $9.8\\text{ J}$ per kilogram per meter.",
+      "analogy": "Earth's steady pull converting height into speed."
+    },
+    "ep": {
+      "label": "$E_p$",
+      "role": "derived",
+      "color": "purple",
+      "meaning": "gravitational potential energy $mgh$, in joules (J)",
+      "body": "Energy stored by height above the {reference_level|reference level}. Computed with {gpe|$E_p = mgh$}.",
+      "example": "At $h_0 = 10\\text{ m}$ for $m = 2\\text{ kg}$, $E_p = 2 \\times 9.8 \\times 10 = 196\\text{ J}$.",
+      "analogy": "Savings stored in elevation."
+    },
+    "ek": {
+      "label": "$E_k$",
+      "role": "derived",
+      "color": "teal",
+      "meaning": "kinetic energy $\\frac{1}{2}mv^2$, in joules (J)",
+      "body": "Energy of motion, given by {kinetic_energy|$E_k = \\frac{1}{2}mv^2$}. Peaks at the lowest point of a frictionless track.",
+      "example": "At the bottom ($v = 14\\text{ m/s}$), $E_k = \\frac{1}{2}(2)(14^2) = 196\\text{ J}$.",
+      "analogy": "Cash in motion while the block speeds along the floor."
+    },
+    "eps": {
+      "label": "$E_{ps}$",
+      "role": "derived",
+      "color": "pink",
+      "meaning": "elastic potential energy $\\frac{1}{2}kx^2$ stored in the spring, in joules (J)",
+      "body": "Energy stored by compressing or stretching an ideal spring: {epe|$E_{ps} = \\frac{1}{2}kx^2$}.",
+      "example": "Compressing $k = 800\\text{ N/m}$ by $0.7\\text{ m}$ stores $\\frac{1}{2}(800)(0.7^2) = 196\\text{ J}$.",
+      "analogy": "Energy packed into a coiled spring ready to launch back."
+    },
+    "etot": {
+      "label": "$E$",
+      "role": "derived",
+      "color": "yellow",
+      "meaning": "total mechanical energy $E_k + E_p + E_{ps}$, in joules (J)",
+      "body": "Stays constant whenever only conservative forces (gravity and ideal springs) do work: {conservation_energy|$E_1 = E_2$}.",
+      "example": "$E = 196\\text{ J}$ at the top, at the bottom, and at full compression.",
+      "analogy": "The fixed total amount of water poured back and forth between three cups without spilling."
+    },
+    "speed": {
+      "label": "$v$",
+      "role": "goal",
+      "color": "green",
+      "meaning": "speed of the block at the bottom of the ramp, in m/s",
+      "body": "Depends only on the vertical drop $h_0$ and $g$, never on the block's mass or the curve's shape.",
+      "example": "From $h_0 = 10\\text{ m}$, $v = \\sqrt{2 \\times 9.8 \\times 10} = 14\\text{ m/s}$.",
+      "analogy": "How fast a roller-coaster car whips through the bottom of a dip."
+    },
+    "compress": {
+      "label": "$x_{\\max}$",
+      "role": "goal",
+      "color": "red",
+      "meaning": "maximum compression of the spring when the block momentarily stops, in meters (m)",
+      "body": "At maximum compression, the block stops for an instant ($v = 0$), so all mechanical energy sits in the spring.",
+      "example": "For $E = 196\\text{ J}$ and $k = 800\\text{ N/m}$, $x_{\\max} = 0.7\\text{ m}$.",
+      "analogy": "How far the bumper squeezes in before springing back."
+    }
+  },
+  "cards": {
+    "conservation_energy": {
+      "concept": "physics.conservation-of-energy"
+    },
+    "kinetic_energy": {
+      "concept": "physics.kinetic-energy"
+    },
+    "gpe": {
+      "concept": "physics.gravitational-potential-energy"
+    },
+    "epe": {
+      "concept": "physics.elastic-potential-energy"
+    },
+    "work": {
+      "concept": "physics.work"
+    },
+    "kinetic_friction": {
+      "concept": "physics.kinetic-friction"
+    },
+    "reference_level": {
+      "kind": "term",
+      "title": "Reference level (h = 0)",
+      "kicker": "pick once and keep",
+      "body": "The horizontal line where you define [ep:$E_p = 0$]. You may pick the floor, a tabletop, or the lowest point of the motion — physics depends only on changes $\\Delta h$.",
+      "useWhen": "starting any {gpe|gravitational potential energy} problem. Pick the lowest point so heights stay non-negative, and keep that same level from start to finish.",
+      "analogy": "Measuring heights from the ground floor instead of sea level: every floor shifts by the same number, so height differences stay identical."
+    },
+    "nonconservative_work": {
+      "kind": "formula",
+      "title": "Energy with friction",
+      "kicker": "E₁ + W_nc = E₂",
+      "body": "$E_1 + W_{\\text{nc}} = E_2$. When a non-conservative force such as {kinetic_friction|kinetic friction} acts, its {work|work} $W_{\\text{nc}} = -f_k s$ turns mechanical energy into thermal energy, so $E_2 < E_1$.",
+      "says": "Total energy in the universe is still conserved, but mechanical energy alone drops by $|W_{\\text{nc}}|$.",
+      "useWhen": "a track or floor is rough, or air drag is present.",
+      "units": "Joules ($\\text{J}$)."
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "text",
+      "title": "Why energy beats tracking forces",
+      "body": "On a curved ramp, the slope and normal force change at every centimeter, making $F = ma$ painful. {conservation_energy|Conservation of mechanical energy} skips the whole middle of the path.\n\nAs long as no friction steals energy, the [etot:total mechanical energy] is a fixed budget split among three buckets: {kinetic_energy|kinetic energy} ([ek:$E_k$]), {gpe|gravitational potential energy} ([ep:$E_p$]), and {epe|elastic potential energy} ([eps:$E_{ps}$]). Compare the start and end states directly, and the answer drops right out."
+    },
+    {
+      "id": "energy_forms",
+      "type": "visual",
+      "title": "Three buckets of mechanical energy",
+      "note": "energy moves between these three forms while their sum stays fixed",
+      "widget": {
+        "kind": "table",
+        "head": ["Form", "Formula", "Zero when", "Stored in"],
+        "rows": [
+          [
+            "{kinetic_energy|Kinetic energy} [ek:$E_k$]",
+            "$\\frac{1}{2}mv^2$",
+            "The body is at rest ($v = 0$)",
+            "Motion of the mass"
+          ],
+          [
+            "{gpe|Gravitational potential} [ep:$E_p$]",
+            "$mgh$",
+            "At the {reference_level|reference level} ($h = 0$)",
+            "Height in gravity"
+          ],
+          [
+            "{epe|Elastic potential} [eps:$E_{ps}$]",
+            "$\\frac{1}{2}kx^2$",
+            "Spring at natural length ($x = 0$)",
+            "Stretch or compression of a spring"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "problem",
+      "type": "problem",
+      "title": "The problem",
+      "body": "A [mass:$2\\text{ kg}$ block] is released from rest at the top of a frictionless curved ramp of height [height:$h_0 = 10\\text{ m}$]. It slides onto a flat frictionless floor and strikes a horizontal ideal spring with spring constant [k_spring:$k = 800\\text{ N/m}$]. Use [grav:$g = 9.8\\text{ m/s}^2$].\n\nFind (a) the block's [speed:speed $v$] at the bottom of the ramp and (b) the [compress:maximum compression $x_{\\max}$] of the spring."
+    },
+    {
+      "id": "chunks",
+      "type": "chunks",
+      "title": "Break the problem down",
+      "note": "check all three energy buckets at each snapshot",
+      "rows": [
+        {
+          "id": "c_top",
+          "text": "Top: [mass:$m = 2\\text{ kg}$], [height:$h_0 = 10\\text{ m}$], released from rest",
+          "role": "hidden_given",
+          "note": "At rest means $v_1 = 0$ ($E_{k1} = 0$), and the spring is untouched ($E_{ps1} = 0$)."
+        },
+        {
+          "id": "c_smooth",
+          "text": "Frictionless curved ramp and floor",
+          "role": "condition",
+          "note": "Normal force is always perpendicular to motion ($W_N = 0$), and $W_{\\text{nc}} = 0$, so {conservation_energy|$E_1 = E_2 = E_3$}."
+        },
+        {
+          "id": "c_spring",
+          "text": "Horizontal spring [k_spring:$k = 800\\text{ N/m}$]",
+          "role": "given",
+          "note": "At maximum compression, the block stops momentarily ($v_3 = 0$), converting everything into [eps:$E_{ps}$]."
+        },
+        {
+          "id": "c_goals",
+          "text": "Find bottom [speed:$v$] and maximum [compress:$x_{\\max}$]",
+          "role": "goal",
+          "note": "Match [etot:total energy] across State 1 (top), State 2 (bottom), and State 3 (full compression)."
+        }
+      ]
+    },
+    {
+      "id": "plan",
+      "type": "plan",
+      "title": "Plan",
+      "note": "three routes; only energy handles a curved track cleanly",
+      "routes": [
+        {
+          "id": "r_energy",
+          "title": "Route A",
+          "path": "Set $h = 0$ at floor → [ep:$E_{p1}$] = [ek:$E_{k2}$] → [speed:$v$], then [ep:$E_{p1}$] = [eps:$E_{ps3}$] → [compress:$x_{\\max}$]",
+          "why": "No friction acts, so {conservation_energy|total mechanical energy} is identical at the top, bottom, and full compression.",
+          "whyNot": "Nothing. Both answers come directly from one conserved number.",
+          "picked": true
+        },
+        {
+          "id": "r_kinematics",
+          "title": "Route B",
+          "path": "Use $F = ma$ and $v^2 = u^2 + 2as$ along the ramp",
+          "why": "Those equations worked on a flat straight incline.",
+          "whyNot": "The ramp is **curved**, so the angle and acceleration change continuously. Constant-acceleration equations do not apply.",
+          "picked": false
+        },
+        {
+          "id": "r_force_balance",
+          "title": "Route C",
+          "path": "Set $mg = kx_{\\max}$ to find compression",
+          "why": "Equates weight to the spring force $F = kx$.",
+          "whyNot": "The spring is horizontal, not vertical — and even on a vertical spring, $F_{\\text{net}} = 0$ is the equilibrium point, not where a moving block stops.",
+          "picked": false
+        }
+      ],
+      "notUsed": "Not needed: the ramp's exact curve shape and the time taken to slide down. Without friction, every smooth curve dropping $10\\text{ m}$ gives the same bottom speed."
+    },
+    {
+      "id": "steps",
+      "type": "chain",
+      "title": "Work it through",
+      "note": "track the same 196 J budget across every state, then test adding friction",
+      "steps": [
+        {
+          "id": "s1",
+          "move": "Set the {reference_level|reference level} $h = 0$ at the floor and find [etot:total mechanical energy] at the top.",
+          "formula": "\\p{etot}{E_1} = \\p{ek}{E_{k1}} + \\p{ep}{E_{p1}} + \\p{eps}{E_{ps1}} = 0 + \\p{mass}{m}\\p{grav}{g}\\p{height}{h_0} + 0 = 2 \\times 9.8 \\times 10 = 196\\text{ J}",
+          "why": "At release the block is at rest and away from the spring, so all mechanical energy begins as {gpe|gravitational potential energy}.",
+          "whyNot": "Do not plug $g = 10$ if the problem specifies $g = 9.8\\text{ m/s}^2$; keep one value of $g$ throughout.",
+          "uses": ["etot", "ek", "ep", "eps", "mass", "grav", "height"]
+        },
+        {
+          "id": "s2",
+          "move": "Conserve energy from top to bottom ($h = 0$, spring relaxed) to find [speed:$v$].",
+          "formula": "\\p{mass}{m}\\p{grav}{g}\\p{height}{h_0} = \\frac{1}{2}\\p{mass}{m}\\p{speed}{v}^2 \\implies \\p{speed}{v} = \\sqrt{2\\p{grav}{g}\\p{height}{h_0}} = \\sqrt{2 \\times 9.8 \\times 10} = \\sqrt{196} = 14\\text{ m/s}",
+          "why": "At the floor $E_{p2} = 0$ and $E_{ps2} = 0$, so all $196\\text{ J}$ becomes {kinetic_energy|kinetic energy}. Notice [mass:$m$] cancels on both sides.",
+          "whyNot": "Do not forget the factor of $2$ inside $\\sqrt{2gh_0}$ from the $\\frac{1}{2}$ in $\\frac{1}{2}mv^2$.",
+          "uses": ["mass", "grav", "height", "speed", "ek"]
+        },
+        {
+          "id": "s3",
+          "move": "Conserve energy from top to maximum compression ($h = 0$, $v = 0$) to find [compress:$x_{\\max}$].",
+          "formula": "\\p{etot}{E_1} = \\p{eps}{E_{ps3}} = \\frac{1}{2}\\p{k_spring}{k}\\p{compress}{x_{\\max}}^2 \\implies 196 = 400\\,\\p{compress}{x_{\\max}}^2 \\implies \\p{compress}{x_{\\max}} = \\sqrt{0.49} = 0.7\\text{ m}",
+          "why": "At full compression the block stops for an instant ($E_{k3} = 0$), so all $196\\text{ J}$ is stored as {epe|elastic potential energy}.",
+          "whyNot": "Do not drop the $\\frac{1}{2}$ in $\\frac{1}{2}kx^2$, and notice [mass:$m$] does **not** cancel here: a heavier block compresses the spring farther.",
+          "uses": ["etot", "eps", "k_spring", "compress"]
+        },
+        {
+          "id": "s4",
+          "move": "What if a rough floor patch did $W_{\\text{nc}} = -52\\text{ J}$ of {kinetic_friction|friction} work before the spring?",
+          "formula": "\\p{etot}{E_1} + W_{\\text{nc}} = \\frac{1}{2}\\p{k_spring}{k}x^2 \\implies 196 - 52 = 144 = 400 x^2 \\implies x = \\sqrt{0.36} = 0.6\\text{ m}",
+          "why": "With {nonconservative_work|$E_1 + W_{\\text{nc}} = E_2$}, friction removes $52\\text{ J}$ as heat, leaving $144\\text{ J}$ for the spring.",
+          "whyNot": "Do not add $+52\\text{ J}$: friction always removes mechanical energy, so the spring compresses less ($0.6\\text{ m} < 0.7\\text{ m}$).",
+          "uses": ["etot", "k_spring", "eps"]
+        }
+      ]
+    },
+    {
+      "id": "energy_plot",
+      "type": "visual",
+      "title": "Energy trade-off during the fall",
+      "note": "drag height ratio, mass, and starting height; E_p and E_k trade places while their sum stays flat",
+      "widget": {
+        "kind": "plot",
+        "x": {
+          "min": 0,
+          "max": 10,
+          "label": "height $h$ (m)"
+        },
+        "y": {
+          "min": 0,
+          "max": 500,
+          "label": "energy (J)"
+        },
+        "params": [
+          {
+            "id": "m",
+            "label": "[mass:$m$] (kg)",
+            "min": 1,
+            "max": 5,
+            "step": 0.5,
+            "value": 2,
+            "part": "mass"
+          },
+          {
+            "id": "h0",
+            "label": "[height:$h_0$] (m)",
+            "min": 4,
+            "max": 10,
+            "step": 1,
+            "value": 10,
+            "part": "height"
+          },
+          {
+            "id": "frac",
+            "label": "height ratio $h / h_0$",
+            "min": 0,
+            "max": 1,
+            "step": 0.1,
+            "value": 0.5
+          }
+        ],
+        "curves": [
+          {
+            "expr": "m * 9.8 * min(x, h0)",
+            "part": "ep",
+            "label": "[ep:$E_p(h) = mgh$]"
+          },
+          {
+            "expr": "m * 9.8 * max(0, h0 - x)",
+            "part": "ek",
+            "label": "[ek:$E_k(h) = mg(h_0 - h)$]"
+          },
+          {
+            "expr": "m * 9.8 * h0",
+            "part": "etot",
+            "label": "[etot:$E = E_p + E_k$] (constant)"
+          }
+        ],
+        "points": [
+          {
+            "x": "h0 / 2",
+            "y": "m * 9.8 * h0 / 2",
+            "part": "etot",
+            "label": "crossing ($h = h_0/2$, $E_p = E_k$)"
+          },
+          {
+            "x": "frac * h0",
+            "y": "m * 9.8 * frac * h0",
+            "part": "ep",
+            "label": "current $E_p$"
+          },
+          {
+            "x": "frac * h0",
+            "y": "m * 9.8 * (1 - frac) * h0",
+            "part": "ek",
+            "label": "current $E_k$"
+          }
+        ],
+        "readouts": [
+          {
+            "label": "total [etot:$E$]",
+            "expr": "m * 9.8 * h0",
+            "unit": "J",
+            "part": "etot"
+          },
+          {
+            "label": "[ep:$E_p$] at $h$",
+            "expr": "m * 9.8 * frac * h0",
+            "unit": "J",
+            "part": "ep"
+          },
+          {
+            "label": "[ek:$E_k$] at $h$",
+            "expr": "m * 9.8 * (1 - frac) * h0",
+            "unit": "J",
+            "part": "ek"
+          },
+          {
+            "label": "[speed:$v$] at $h$",
+            "expr": "sqrt(2 * 9.8 * (1 - frac) * h0)",
+            "unit": "m/s",
+            "part": "speed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "check",
+      "type": "check",
+      "title": "Check yourself",
+      "items": [
+        "**Where mass cancels (and does not)**: [mass:$m$] cancels in [speed:$v = \\sqrt{2gh_0}$], but does **not** cancel in spring compression [compress:$x_{\\max} = \\sqrt{2mgh_0/k}$].",
+        "**Halfway down is NOT half speed**: at $h = h_0/2$, $E_p = E_k = E/2$, so $v = v_{\\max}/\\sqrt{2} \\approx 0.71\\,v_{\\max}$ (about $9.9\\text{ m/s}$ here, not $7\\text{ m/s}$).",
+        "**Reference level freedom**: raising the {reference_level|reference level} shifts $E_p$ and [etot:$E$] by the same constant, leaving $v$ and $x_{\\max}$ completely unchanged.",
+        "**Units check**: $x_{\\max} = \\sqrt{2E/k}$ has units $\\sqrt{\\text{J}/(\\text{N/m})} = \\sqrt{(\\text{N}\\cdot\\text{m})/(\\text{N/m})} = \\sqrt{\\text{m}^2} = \\text{m}$.",
+        "**With friction**: {nonconservative_work|$W_{\\text{nc}} < 0$} means $E_2 < E_1$ — mechanical energy turns into heat, never disappearing from nature."
+      ]
+    },
+    {
+      "id": "recall",
+      "type": "recall",
+      "title": "Recall",
+      "note": "answer from memory before revealing",
+      "questions": [
+        {
+          "id": "q1",
+          "q": "A $1\\text{ kg}$ block and a $4\\text{ kg}$ block slide from rest down the same frictionless curved slide of height $2.5\\text{ m}$ ($g = 9.8\\text{ m/s}^2$). How do their speeds at the bottom compare?",
+          "options": [
+            "The $4\\text{ kg}$ block is twice as fast",
+            "The $4\\text{ kg}$ block is four times as fast",
+            "Both reach the bottom at the same speed, $7\\text{ m/s}$"
+          ],
+          "answer": 2,
+          "why": "Mass cancels in $mgh = \\frac{1}{2}mv^2$, giving $v = \\sqrt{2 \\times 9.8 \\times 2.5} = \\sqrt{49} = 7\\text{ m/s}$ for both blocks."
+        },
+        {
+          "id": "q2",
+          "q": "A ball is dropped from rest at height $h_0$ with no air drag. At what height does its kinetic energy equal its gravitational potential energy ($E_k = E_p$)?",
+          "options": ["At $h = h_0 / 2$", "At $h = h_0 / 4$", "At $h = 0$"],
+          "answer": 0,
+          "why": "Since $E_p = mgh$ is linear in height, half of $mgh_0$ remains at $h = h_0/2$, leaving the other half as $E_k$."
+        },
+        {
+          "id": "q3",
+          "q": "An ideal spring ($k = 200\\text{ N/m}$) is compressed by $0.2\\text{ m}$ instead of $0.1\\text{ m}$. How much {epe|elastic potential energy} does it store now?",
+          "options": [
+            "$2\\text{ J}$, twice as much as at $0.1\\text{ m}$",
+            "$4\\text{ J}$, four times as much as at $0.1\\text{ m}$",
+            "$20\\text{ J}$, equal to $kx/2$"
+          ],
+          "answer": 1,
+          "why": "$E_{ps} = \\frac{1}{2}kx^2 = \\frac{1}{2}(200)(0.2^2) = 4\\text{ J}$, which is $4$ times the $1\\text{ J}$ stored at $0.1\\text{ m}$."
+        },
+        {
+          "id": "q4",
+          "q": "A $2\\text{ kg}$ sled starts from rest at height $5\\text{ m}$ ($g = 9.8\\text{ m/s}^2$, so $E_1 = 98\\text{ J}$) and reaches the bottom ($h = 0$) with $E_k = 64\\text{ J}$ due to snow friction. What work did friction do?",
+          "options": ["$+34\\text{ J}$", "$-64\\text{ J}$", "$-34\\text{ J}$"],
+          "answer": 2,
+          "why": "From {nonconservative_work|$E_1 + W_{\\text{nc}} = E_2$}, $98 + W_{\\text{nc}} = 64 \\implies W_{\\text{nc}} = -34\\text{ J}$."
+        }
+      ]
+    }
+  ]
+}

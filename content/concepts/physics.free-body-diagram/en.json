@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "slug": "physics.free-body-diagram",
+  "lang": "en",
+  "card": {
+    "kind": "term",
+    "title": "Free-body diagram (FBD)",
+    "kicker": "method",
+    "body": "A sketch that isolates **one chosen object** and draws arrows for **every external force acting on it** (such as $\\vec{W}$, $\\vec{N}$, $\\vec{T}$, $\\vec{f}$) before writing $\\sum F_x$ and $\\sum F_y$.",
+    "says": "include only forces **on** the object—never draw forces the object exerts on other things, and never draw $m\\vec{a}$ as an extra force arrow.",
+    "from": "standard mechanics problem-solving practice built on Newton's laws: turning a word problem into clean axis-by-axis equations.",
+    "useWhen": "solving **any** force, friction, pulley, elevator, or inclined-plane problem—always draw the FBD first before picking formulas.",
+    "example": "A $5\\text{ kg}$ crate on a flat floor ($g = 9.8\\text{ m/s}^2$) pulled horizontally right by a rope with $40\\text{ N}$ while $f_k = 15\\text{ N}$ has 4 arrows: $W = 49\\text{ N}$ down, $N = 49\\text{ N}$ up, $T = 40\\text{ N}$ right, $f_k = 15\\text{ N}$ left → $\\sum F_x = 40 - 15 = 25\\text{ N}$, so $a_x = \\dfrac{25}{5} = 5\\text{ m/s}^2$.",
+    "analogy": "A bank statement for one account: list only deposits and withdrawals on that account, ignoring transfers happening between other people."
+  },
+  "needs": [
+    "physics.weight",
+    "physics.normal-force",
+    "physics.static-friction",
+    "physics.kinetic-friction"
+  ],
+  "aliases": [
+    "free-body diagram",
+    "free body diagram",
+    "FBD",
+    "force diagram",
+    "แผนภาพวัตถุอิสระ",
+    "แผนภาพแรงอิสระ",
+    "เขียนแรงกระทำต่อวัตถุ"
+  ]
+}

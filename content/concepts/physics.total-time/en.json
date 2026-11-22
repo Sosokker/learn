@@ -12,7 +12,10 @@
   },
   "needs": [],
   "aliases": [
+    "total time",
     "elapsed time",
-    "clock time"
+    "clock time",
+    "เวลาทั้งหมด",
+    "เวลาที่ผ่านไป"
   ]
 }

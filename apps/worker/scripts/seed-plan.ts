@@ -21,7 +21,13 @@ import { convertV4MiniflareOptions, Miniflare } from "miniflare"
 
 export const workerDir = join(import.meta.dirname, "..")
 const contentDir = join(workerDir, "../../content")
+const lessonsDir = join(workerDir, "../../lessons")
 const migrationsDir = join(workerDir, "../../packages/db/migrations")
+
+export interface SeedOptions {
+  /** Also seed `lessons/<slug>/{en,th}.json` locally as unlisted via `Lessons.publishBundle`. */
+  readonly includeLocalLessons?: boolean | undefined
+}
 
 export type Row = Readonly<Record<string, unknown>>
 
@@ -60,6 +66,12 @@ const guideSettings = {
 
 const readJson = (path: string): unknown => JSON.parse(readFileSync(join(contentDir, path), "utf8"))
 const hashOf = (spec: unknown) => sha256Hex(canonicalJson(spec))
+
+const localLessonSlugs = (): ReadonlyArray<string> =>
+  readdirSync(lessonsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort()
 
 // Concepts in prerequisite order, so every `needs` exists when its concept is published.
 const conceptSlugs = () => {
@@ -120,10 +132,11 @@ export const inlineStatement = (statement: Statement): string => {
 }
 
 // The rows the services read while publishing the seed, in foreign-key order.
-const snapshotQueries = (slugs: ReadonlyArray<string>) => {
+const snapshotQueries = (slugs: ReadonlyArray<string>, lessonSlugs: ReadonlyArray<string>) => {
   const slugList = slugs.map(sqlLiteral).join(", ")
+  const lessonList = lessonSlugs.map(sqlLiteral).join(", ")
   const concepts = `select id from concept where slug in (${slugList})`
-  const guide = `select id from lesson where owner_id = ${sqlLiteral(platformUser.id)} and slug = ${sqlLiteral(guideSlug)}`
+  const seededLessons = `select id from lesson where owner_id = ${sqlLiteral(platformUser.id)} and slug in (${lessonList})`
   const users = `id = ${sqlLiteral(platformUser.id)} or id in (select owner_id from concept where slug in (${slugList}))`
   const tagSlugs = guideSettings.tags.map(sqlLiteral).join(", ")
   return [
@@ -133,18 +146,18 @@ const snapshotQueries = (slugs: ReadonlyArray<string>) => {
     ["concept_version", `select * from concept_version where concept_id in (${concepts})`],
     ["concept_lang", `select * from concept_lang where concept_id in (${concepts})`],
     ["concept_need", `select * from concept_need where concept_id in (${concepts})`],
-    ["lesson", `select * from lesson where id in (${guide})`],
-    ["lesson_version", `select * from lesson_version where lesson_id in (${guide})`],
-    ["lesson_lang", `select * from lesson_lang where lesson_id in (${guide})`],
+    ["lesson", `select * from lesson where id in (${seededLessons})`],
+    ["lesson_version", `select * from lesson_version where lesson_id in (${seededLessons})`],
+    ["lesson_lang", `select * from lesson_lang where lesson_id in (${seededLessons})`],
     [
       "lesson_version_concept",
-      `select * from lesson_version_concept where lesson_version_id in (select id from lesson_version where lesson_id in (${guide}))`,
+      `select * from lesson_version_concept where lesson_version_id in (select id from lesson_version where lesson_id in (${seededLessons}))`,
     ],
     [
       "tag",
-      `select * from tag where slug in (${tagSlugs}) or id in (select tag_id from lesson_tag where lesson_id in (${guide}))`,
+      `select * from tag where slug in (${tagSlugs}) or id in (select tag_id from lesson_tag where lesson_id in (${seededLessons}))`,
     ],
-    ["lesson_tag", `select * from lesson_tag where lesson_id in (${guide})`],
+    ["lesson_tag", `select * from lesson_tag where lesson_id in (${seededLessons})`],
   ] as const
 }
 
@@ -230,7 +243,7 @@ const statement = (text: string, ...params: ReadonlyArray<unknown>): Compilable 
 
 const CountRow = Schema.Struct({ n: Schema.Int })
 
-const seed = (log: (line: string) => void) =>
+const seed = (log: (line: string) => void, localSlugs: ReadonlyArray<string>) =>
   Effect.gen(function* () {
     const db = yield* Database
     const now = Date.now()
@@ -317,11 +330,35 @@ const seed = (log: (line: string) => void) =>
       log(`guide settings: public, ${guideSettings.category_id}, tags ${guideSettings.tags.join(", ")}`)
     }
     log(`guide: /@learn/${guideSlug} (lesson ${guide.id})`)
+
+    for (const slug of localSlugs) {
+      const specs = (["en", "th"] as const).map((lang) =>
+        JSON.parse(readFileSync(join(lessonsDir, slug, `${lang}.json`), "utf8")),
+      )
+      const body = new TextEncoder().encode(JSON.stringify({ specs }))
+      const published = yield* lessons.publishBundle(slug, body)
+      if (published.created) {
+        log(
+          `lesson ${slug}: ${published.versions.map((v) => `${v.version.lang} v${v.version.n}`).join(", ")}`,
+        )
+      } else {
+        log(`lesson ${slug}: up to date`)
+      }
+      if (published.lesson.visibility === "private") {
+        yield* lessons.update(LessonId.make(published.lesson.id), { visibility: "unlisted" })
+        log(`lesson ${slug}: unlisted (/@learn/${slug})`)
+      }
+    }
   }).pipe(Effect.provideService(CurrentUser, platformUser))
 
 // Computes the plan for one target. Reads the target; never writes to it.
-export const planSeed = async (source: SeedSource, log: (line: string) => void): Promise<SeedPlan> => {
+export const planSeed = async (
+  source: SeedSource,
+  log: (line: string) => void,
+  options: SeedOptions = {},
+): Promise<SeedPlan> => {
   const slugs = conceptSlugs()
+  const localSlugs = options.includeLocalLessons === true ? localLessonSlugs() : []
   const mf = new Miniflare(
     convertV4MiniflareOptions({
       modules: true,
@@ -334,7 +371,7 @@ export const planSeed = async (source: SeedSource, log: (line: string) => void):
     const { DB: scratch } = await mf.getBindings<{ DB: D1Database }>()
     await migrate(scratch)
 
-    const queries = snapshotQueries(slugs)
+    const queries = snapshotQueries(slugs, [guideSlug, ...localSlugs])
     const results = await source.query(queries.map(([, query]) => query))
     const copies = queries.flatMap(([table], index) =>
       (results[index] ?? []).map((row) => {
@@ -355,7 +392,7 @@ export const planSeed = async (source: SeedSource, log: (line: string) => void):
       Layer.provideMerge(RecordingDatabase(batches)),
       Layer.provide(Layer.mergeAll(Layer.succeed(D1, scratch), PlanStorage(source, objects))),
     )
-    const exit = await Effect.runPromiseExit(seed(log).pipe(Effect.provide(layer)))
+    const exit = await Effect.runPromiseExit(seed(log, localSlugs).pipe(Effect.provide(layer)))
     if (exit._tag === "Failure") throw new Error(`seed failed:\n${String(exit.cause)}`)
     return { batches, objects: [...objects].map(([key, body]) => ({ key, body })) }
   } finally {

@@ -1,0 +1,444 @@
+{
+  "schema": 1,
+  "kind": "learn",
+  "lang": "en",
+  "title": "Work, kinetic energy, and power: how force transfers energy",
+  "summary": "Only the force along the displacement does work. See how angle flips work from positive to zero to negative, how net work changes kinetic energy, and how power measures the rate.",
+  "parts": {
+    "force": {
+      "label": "$F$",
+      "role": "given",
+      "color": "blue",
+      "meaning": "constant pulling force applied to the crate, in newtons (N)",
+      "body": "Only the component $F\\cos\\theta$ along the displacement transfers energy. The upward part $F\\sin\\theta$ is perpendicular to the floor and does zero work.",
+      "example": "A $40\\text{ N}$ pull at $60^\\circ$ has a horizontal component of $40\\cos 60^\\circ = 20\\text{ N}$.",
+      "analogy": "Pulling a suitcase handle at an angle: part of your pull lifts the handle, and only the forward part moves it across the floor."
+    },
+    "angle": {
+      "label": "$\\theta$",
+      "role": "given",
+      "color": "yellow",
+      "meaning": "angle between the force vector and the displacement, in degrees",
+      "body": "Controls the sign of work through $\\cos\\theta$: positive below $90^\\circ$, zero at $90^\\circ$, and negative above $90^\\circ$.",
+      "example": "At $\\theta = 60^\\circ$, $\\cos 60^\\circ = 0.5$, so half the force acts along the displacement.",
+      "analogy": "How closely your push lines up with the direction the crate actually goes."
+    },
+    "disp": {
+      "label": "$s$",
+      "role": "given",
+      "color": "orange",
+      "meaning": "displacement of the crate along the floor, in meters (m)",
+      "body": "No displacement means zero work, no matter how hard you push.",
+      "example": "Sliding the crate $8\\text{ m}$ across a flat floor.",
+      "analogy": "How far the crate shifts from its starting chalk mark."
+    },
+    "friction": {
+      "label": "$f_k$",
+      "role": "given",
+      "color": "red",
+      "meaning": "kinetic friction opposing the slide along the floor, in newtons (N)",
+      "body": "Always points opposite to the displacement ($\\theta = 180^\\circ$), so $\\cos 180^\\circ = -1$ and kinetic friction always does negative work.",
+      "example": "A $10\\text{ N}$ friction force over $8\\text{ m}$ removes $80\\text{ J}$ of mechanical energy.",
+      "analogy": "Rough floorboards rubbing the crate and draining energy into heat."
+    },
+    "mass": {
+      "label": "$m$",
+      "role": "given",
+      "color": "mustard",
+      "meaning": "mass of the crate, in kilograms (kg)",
+      "body": "Links net work to final speed through kinetic energy $E_k = \\frac{1}{2}mv^2$.",
+      "example": "A $10\\text{ kg}$ crate needs $80\\text{ J}$ of kinetic energy to reach $4\\text{ m/s}$.",
+      "analogy": "How heavy the load is inside the crate."
+    },
+    "time": {
+      "label": "$\\Delta t$",
+      "role": "given",
+      "color": "grey",
+      "meaning": "time taken for the slide, in seconds (s)",
+      "body": "Work does not depend on time, but power does: doing the same work in half the time requires twice the power.",
+      "example": "Doing $160\\text{ J}$ of work in $4\\text{ s}$ gives an average power of $40\\text{ W}$.",
+      "analogy": "The stopwatch reading from start to finish."
+    },
+    "work_pull": {
+      "label": "$W_F$",
+      "role": "derived",
+      "color": "teal",
+      "meaning": "work done by the pulling force alone, in joules (J)",
+      "body": "Computed with {work|$W_F = Fs\\cos\\theta$}. It measures only the energy put in by the rope.",
+      "example": "$40 \\times 8 \\times \\cos 60^\\circ = 160\\text{ J}$.",
+      "analogy": "The energy deposited into the crate's account by your pull."
+    },
+    "work_net": {
+      "label": "$W_{\\text{net}}$",
+      "role": "derived",
+      "color": "purple",
+      "meaning": "sum of the work done by every force on the crate, in joules (J)",
+      "body": "Add positive and negative work from every force. By the {work_energy_theorem|work-energy theorem}, $W_{\\text{net}} = \\Delta E_k$.",
+      "example": "$160\\text{ J} + (-80\\text{ J}) + 0 + 0 = 80\\text{ J}$.",
+      "analogy": "Net balance after deposits from the pull and withdrawals from friction."
+    },
+    "speed": {
+      "label": "$v$",
+      "role": "goal",
+      "color": "green",
+      "meaning": "final speed of the crate at the end of the slide, in m/s",
+      "body": "Found directly from net work and {kinetic_energy|kinetic energy} without computing acceleration.",
+      "example": "From rest with $W_{\\text{net}} = 80\\text{ J}$ and $m = 10\\text{ kg}$, $v = 4\\text{ m/s}$.",
+      "analogy": "The speedometer reading the moment the crate passes the $8\\text{ m}$ mark."
+    },
+    "power_out": {
+      "label": "$P$",
+      "role": "goal",
+      "color": "cyan",
+      "meaning": "average power delivered by the pulling force, in watts (W)",
+      "body": "Rate at which the pulling force transfers energy: {power|$P = W_F / \\Delta t$}.",
+      "example": "$160\\text{ J} / 4\\text{ s} = 40\\text{ W}$.",
+      "analogy": "How fast the energy flows from the worker into the crate each second."
+    }
+  },
+  "cards": {
+    "work": {
+      "concept": "physics.work"
+    },
+    "kinetic_energy": {
+      "concept": "physics.kinetic-energy"
+    },
+    "power": {
+      "concept": "physics.power"
+    },
+    "kinetic_friction": {
+      "concept": "physics.kinetic-friction"
+    },
+    "normal_force": {
+      "concept": "physics.normal-force"
+    },
+    "vectors": {
+      "concept": "physics.vectors-and-components"
+    },
+    "work_energy_theorem": {
+      "kind": "thm",
+      "title": "Work-energy theorem",
+      "kicker": "core bridge",
+      "body": "$\\p{work_net}{W_{\\text{net}}} = \\Delta E_k = \\frac{1}{2}\\p{mass}{m}\\p{speed}{v}^2 - \\frac{1}{2}\\p{mass}{m}u^2$. The total {work|work} of all forces equals the change in {kinetic_energy|kinetic energy}.",
+      "says": "Positive net work speeds an object up; zero net work leaves its speed unchanged; negative net work slows it down.",
+      "useWhen": "forces act over a known distance and you want the final speed without solving for acceleration first.",
+      "units": "Both sides are in joules ($\\text{J}$)."
+    },
+    "sign_of_work": {
+      "kind": "lemma",
+      "title": "Three signs of work",
+      "kicker": "check cos θ",
+      "body": "Work is a scalar, not a vector, yet its **sign** tells you the direction of energy flow. Because $W = Fs\\cos\\theta$, the [angle:angle $\\theta$] decides whether energy enters or leaves the body.",
+      "says": "$0^\\circ \\le \\theta < 90^\\circ$: $W > 0$ (adds energy). $\\theta = 90^\\circ$: $W = 0$ (no transfer). $90^\\circ < \\theta \\le 180^\\circ$: $W < 0$ (removes energy).",
+      "useWhen": "a force is angled, vertical on a flat floor, or pointing opposite to motion."
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "text",
+      "title": "Force transfers energy",
+      "body": "Holding a heavy box still makes your arms ache, so everyday speech calls it work. In physics, {work|work} means something sharper: a force transferring energy into or out of a body as it moves through a [disp:displacement].\n\nOnly the component of [force:force] along the motion counts, found by resolving {vectors|vector components}. Add the work of every force to get [work_net:net work], and the {work_energy_theorem|work-energy theorem} turns that directly into a change in {kinetic_energy|kinetic energy}. Divide work by [time:time] and you get {power|power}."
+    },
+    {
+      "id": "three_signs",
+      "type": "visual",
+      "title": "Positive, zero, or negative work",
+      "note": "watch the angle between force and displacement",
+      "widget": {
+        "kind": "table",
+        "head": ["Angle $\\theta$", "Sign of $W = Fs\\cos\\theta$", "Effect on energy", "Example"],
+        "rows": [
+          [
+            "$0^\\circ \\le \\theta < 90^\\circ$",
+            "Positive ($W > 0$)",
+            "Transfers energy **into** the body",
+            "A [force:rope pull] dragging a crate forward"
+          ],
+          [
+            "$\\theta = 90^\\circ$",
+            "Zero ($W = 0$)",
+            "Transfers **no** energy",
+            "Gravity or the {normal_force|normal force} on a flat floor"
+          ],
+          [
+            "$90^\\circ < \\theta \\le 180^\\circ$",
+            "Negative ($W < 0$)",
+            "Removes energy **from** the body",
+            "[friction:Kinetic friction] opposing a sliding crate"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "problem",
+      "type": "problem",
+      "title": "The problem",
+      "body": "A worker pulls a [mass:$10\\text{ kg}$ crate] from rest across a rough horizontal floor for [disp:$8\\text{ m}$] in [time:$4\\text{ s}$]. The rope exerts a constant [force:pull of $40\\text{ N}$] at [angle:$\\theta = 60^\\circ$] above the floor, while [friction:kinetic friction] opposes the slide with $10\\text{ N}$. Use $g = 9.8\\text{ m/s}^2$.\n\nFind the [work_pull:work done by the pull], the [work_net:net work], the crate's [speed:final speed], and the [power_out:average power] delivered by the pull."
+    },
+    {
+      "id": "chunks",
+      "type": "chunks",
+      "title": "Break the problem down",
+      "note": "spot the hidden given and the perpendicular forces before calculating",
+      "rows": [
+        {
+          "id": "c_force",
+          "text": "[force:$F = 40\\text{ N}$] at [angle:$\\theta = 60^\\circ$]",
+          "role": "given",
+          "note": "Use {vectors|vector components}: only $F\\cos 60^\\circ = 20\\text{ N}$ acts along the floor."
+        },
+        {
+          "id": "c_disp",
+          "text": "[disp:$s = 8\\text{ m}$], [time:$\\Delta t = 4\\text{ s}$]",
+          "role": "given",
+          "note": "Horizontal displacement and duration."
+        },
+        {
+          "id": "c_friction",
+          "text": "[friction:$f_k = 10\\text{ N}$] opposing motion",
+          "role": "given",
+          "note": "{kinetic_friction|Kinetic friction} points at $180^\\circ$ to displacement, so its work is negative."
+        },
+        {
+          "id": "c_rest",
+          "text": "Starts from rest ($u = 0$), [mass:$m = 10\\text{ kg}$]",
+          "role": "hidden_given",
+          "note": "Initial {kinetic_energy|kinetic energy} is $E_{k1} = 0\\text{ J}$."
+        },
+        {
+          "id": "c_goals",
+          "text": "Find [work_pull:$W_F$], [work_net:$W_{\\text{net}}$], [speed:$v$], and [power_out:$P$]",
+          "role": "goal",
+          "note": "Compute work first, then apply the {work_energy_theorem|work-energy theorem} and {power|power}."
+        }
+      ]
+    },
+    {
+      "id": "plan",
+      "type": "plan",
+      "title": "Plan",
+      "note": "three routes; watch out for missing angles and missing friction",
+      "routes": [
+        {
+          "id": "r_energy",
+          "title": "Route A",
+          "path": "[work_pull:$W_F$] + $W_f$ → [work_net:$W_{\\text{net}}$] → [speed:$v$], and [work_pull:$W_F$] ÷ [time:$\\Delta t$] → [power_out:$P$]",
+          "why": "Every force is constant over a known distance, so {work|work} and the {work_energy_theorem|work-energy theorem} go straight to [speed:$v$].",
+          "whyNot": "Nothing. This is the cleanest, exact route.",
+          "picked": true
+        },
+        {
+          "id": "r_no_cos",
+          "title": "Route B",
+          "path": "Multiply [force:$F$] × [disp:$s$] = $320\\text{ J}$ directly",
+          "why": "Looks like the simplest formula $W = Fs$.",
+          "whyNot": "Ignores [angle:$\\theta = 60^\\circ$]. Only half of the pull's magnitude ($F\\cos 60^\\circ = 20\\text{ N}$) acts along the floor; the upward part $F\\sin 60^\\circ \\approx 34.6\\text{ N}$ does zero horizontal work.",
+          "picked": false
+        },
+        {
+          "id": "r_skip_friction",
+          "title": "Route C",
+          "path": "Set [work_pull:$W_F$] = $\\frac{1}{2}mv^2$ directly",
+          "why": "Uses the rope's work in the kinetic energy formula.",
+          "whyNot": "The {work_energy_theorem|work-energy theorem} requires [work_net:net work] from **all** forces. Dropping [friction:friction] overestimates the final speed.",
+          "picked": false
+        }
+      ],
+      "notUsed": "Zero-work forces: weight ($mg = 98\\text{ N}$) and the {normal_force|normal force} are both vertical, perpendicular ($90^\\circ$) to the horizontal floor, so each does $0\\text{ J}$ of work. Because $F\\sin 60^\\circ \\approx 34.6\\text{ N} < 98\\text{ N}$, the crate stays on the floor."
+    },
+    {
+      "id": "steps",
+      "type": "chain",
+      "title": "Work it through",
+      "note": "hover a step to light up its parts and check the trap",
+      "steps": [
+        {
+          "id": "s1",
+          "move": "Find the [work_pull:work done by the pulling force] along the floor.",
+          "formula": "\\p{work_pull}{W_F} = \\p{force}{F}\\,\\p{disp}{s}\\cos\\p{angle}{\\theta} = 40 \\times 8 \\times \\cos 60^\\circ = 40 \\times 8 \\times 0.5 = 160\\text{ J}",
+          "why": "By {work|$W = Fs\\cos\\theta$}, only the horizontal component $40 \\times 0.5 = 20\\text{ N}$ transfers energy along the $8\\text{ m}$ displacement.",
+          "whyNot": "Do not omit $\\cos 60^\\circ$, and do not use $\\sin 60^\\circ$: the angle is measured from the floor (the displacement direction).",
+          "uses": ["work_pull", "force", "disp", "angle"]
+        },
+        {
+          "id": "s2",
+          "move": "Find the work done by [friction:kinetic friction].",
+          "formula": "W_f = \\p{friction}{f_k}\\,\\p{disp}{s}\\cos 180^\\circ = 10 \\times 8 \\times (-1) = -80\\text{ J}",
+          "why": "Friction points straight opposite to the slide ($\\theta = 180^\\circ$), so {sign_of_work|its work is negative} and removes $80\\text{ J}$ as heat.",
+          "whyNot": "Do not write $+80\\text{ J}$: friction opposes the motion, so it reduces kinetic energy rather than adding to it.",
+          "uses": ["friction", "disp"]
+        },
+        {
+          "id": "s3",
+          "move": "Sum the work of all four forces to get [work_net:net work].",
+          "formula": "\\p{work_net}{W_{\\text{net}}} = \\p{work_pull}{W_F} + W_f + W_{mg} + W_N = 160 + (-80) + 0 + 0 = 80\\text{ J}",
+          "why": "Work is a scalar, so add signed values directly. Gravity and the {normal_force|normal force} are at $90^\\circ$ to the floor, giving $0\\text{ J}$ each.",
+          "whyNot": "Do not subtract the crate's weight $98\\text{ N}$ from the horizontal forces; vertical forces contribute zero work along a flat floor.",
+          "uses": ["work_net", "work_pull", "friction"]
+        },
+        {
+          "id": "s4",
+          "move": "Use the {work_energy_theorem|work-energy theorem} to find the [speed:final speed].",
+          "formula": "\\p{work_net}{W_{\\text{net}}} = \\frac{1}{2}\\p{mass}{m}\\p{speed}{v}^2 - 0 \\implies 80 = \\frac{1}{2}(10)\\p{speed}{v}^2 \\implies \\p{speed}{v}^2 = 16 \\implies \\p{speed}{v} = 4\\text{ m/s}",
+          "why": "Starting from rest means $E_{k1} = 0$, so all $80\\text{ J}$ of net work becomes final {kinetic_energy|kinetic energy}.",
+          "whyNot": "Do not forget the square root ($v = 4$, not $16$), and do not plug $W_F = 160\\text{ J}$ instead of $W_{\\text{net}} = 80\\text{ J}$.",
+          "uses": ["work_net", "mass", "speed"]
+        },
+        {
+          "id": "s5",
+          "move": "Divide the pulling work by [time:time] to get the [power_out:average power] of the pull.",
+          "formula": "\\p{power_out}{P} = \\frac{\\p{work_pull}{W_F}}{\\p{time}{\\Delta t}} = \\frac{160}{4} = 40\\text{ W}",
+          "why": "{power|Power} is the rate at which the worker transfers energy: $160\\text{ J}$ delivered over $4\\text{ s}$ equals $40\\text{ J/s} = 40\\text{ W}$.",
+          "whyNot": "Do not divide $W_{\\text{net}}$ when asked for the power of the **pulling force**; the worker actually supplied $160\\text{ J}$, half of which went into overcoming friction.",
+          "uses": ["power_out", "work_pull", "time"]
+        }
+      ]
+    },
+    {
+      "id": "work_plot",
+      "type": "visual",
+      "title": "How angle changes work",
+      "note": "drag the angle slider across 90° and watch work flip from positive to zero to negative",
+      "widget": {
+        "kind": "plot",
+        "x": {
+          "min": 0,
+          "max": 180,
+          "label": "angle [angle:$\\theta$] (°)"
+        },
+        "y": {
+          "min": -500,
+          "max": 500,
+          "label": "work [work_pull:$W_F$] (J)"
+        },
+        "params": [
+          {
+            "id": "f",
+            "label": "[force:$F$] (N)",
+            "min": 10,
+            "max": 50,
+            "step": 5,
+            "value": 40,
+            "part": "force"
+          },
+          {
+            "id": "s",
+            "label": "[disp:$s$] (m)",
+            "min": 2,
+            "max": 10,
+            "step": 1,
+            "value": 8,
+            "part": "disp"
+          },
+          {
+            "id": "ang",
+            "label": "[angle:$\\theta$] (°)",
+            "min": 0,
+            "max": 180,
+            "step": 5,
+            "value": 60,
+            "part": "angle"
+          }
+        ],
+        "curves": [
+          {
+            "expr": "f * s * cos(x * pi / 180)",
+            "part": "work_pull",
+            "label": "$W(\\theta) = F s \\cos\\theta$"
+          }
+        ],
+        "points": [
+          {
+            "x": "ang",
+            "y": "f * s * cos(ang * pi / 180)",
+            "part": "work_pull",
+            "label": "selected pull ($\\theta$, $W_F$)"
+          },
+          {
+            "x": "90",
+            "y": "0",
+            "part": "angle",
+            "label": "perpendicular ($90^\\circ$, $W = 0$)"
+          }
+        ],
+        "readouts": [
+          {
+            "label": "[work_pull:$W_F$]",
+            "expr": "f * s * cos(ang * pi / 180)",
+            "unit": "J",
+            "part": "work_pull"
+          },
+          {
+            "label": "component $F\\cos\\theta$",
+            "expr": "f * cos(ang * pi / 180)",
+            "unit": "N",
+            "part": "force"
+          },
+          {
+            "label": "max work ($0^\\circ$)",
+            "expr": "f * s",
+            "unit": "J",
+            "part": "disp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "check",
+      "type": "check",
+      "title": "Check yourself",
+      "items": [
+        "**Units**: $\\text{N}\\cdot\\text{m} = \\text{J}$ for [work_pull:work], and $\\text{J/s} = \\text{W}$ for [power_out:power].",
+        "**Kinematics cross-check**: horizontal net force is $20 - 10 = 10\\text{ N}$, so $a = 10/10 = 1\\text{ m/s}^2$; in $4\\text{ s}$ from rest, $v = at = 4\\text{ m/s}$ and $s = \\frac{1}{2}(1)(4^2) = 8\\text{ m}$ — matches exactly.",
+        "**Power cross-check**: average velocity is $(0 + 4)/2 = 2\\text{ m/s}$, so $P = F_x v_{\\text{avg}} = 20 \\times 2 = 40\\text{ W}$ — matches $W_F / \\Delta t$.",
+        "**Perpendicular rule**: any force at $90^\\circ$ to displacement does **$0\\text{ J}$**, even if the force is huge.",
+        "**Squared speed**: doubling [speed:speed] requires **$4$ times** as much [work_net:net work], because $E_k = \\frac{1}{2}mv^2$."
+      ]
+    },
+    {
+      "id": "recall",
+      "type": "recall",
+      "title": "Recall",
+      "note": "answer from memory before revealing",
+      "questions": [
+        {
+          "id": "q1",
+          "q": "A student carries a $4\\text{ kg}$ stack of books horizontally across a flat room for $10\\text{ m}$ at constant height ($g = 9.8\\text{ m/s}^2$). How much work does the student's upward holding force do on the books?",
+          "options": ["$392\\text{ J}$", "$0\\text{ J}$", "$40\\text{ J}$"],
+          "answer": 1,
+          "why": "The upward holding force is perpendicular ($\\theta = 90^\\circ$) to the horizontal displacement, so $W = Fs\\cos 90^\\circ = 0\\text{ J}$."
+        },
+        {
+          "id": "q2",
+          "q": "A car doubles its speed from $10\\text{ m/s}$ to $20\\text{ m/s}$. How does its {kinetic_energy|kinetic energy} change?",
+          "options": [
+            "It becomes $4$ times as large",
+            "It becomes $2$ times as large",
+            "It stays the same because the mass is unchanged"
+          ],
+          "answer": 0,
+          "why": "$E_k = \\frac{1}{2}mv^2$ grows with the square of speed: $(2v)^2 = 4v^2$."
+        },
+        {
+          "id": "q3",
+          "q": "A $2\\text{ kg}$ block sliding at $6\\text{ m/s}$ is brought to rest by friction on a level floor. What is the work done by friction?",
+          "options": ["$+36\\text{ J}$", "$-12\\text{ J}$", "$-36\\text{ J}$"],
+          "answer": 2,
+          "why": "By the {work_energy_theorem|work-energy theorem}, $W_f = \\Delta E_k = 0 - \\frac{1}{2}(2)(6^2) = -36\\text{ J}$. The minus sign shows friction removed $36\\text{ J}$."
+        },
+        {
+          "id": "q4",
+          "q": "Two cranes each lift an identical $500\\text{ kg}$ beam by $6\\text{ m}$ at steady speed ($g = 9.8\\text{ m/s}^2$). Crane A takes $10\\text{ s}$ and Crane B takes $20\\text{ s}$. Which statement is right?",
+          "options": [
+            "Crane A does twice the work and uses twice the power",
+            "Both do $29{,}400\\text{ J}$ of work, and Crane A delivers twice the power ($2{,}940\\text{ W}$ vs $1{,}470\\text{ W}$)",
+            "Both do the same work and deliver the same power"
+          ],
+          "answer": 1,
+          "why": "Work depends on force and height: $W = 500 \\times 9.8 \\times 6 = 29{,}400\\text{ J}$ for both. {power|Power} divides by time, so $29{,}400/10 = 2{,}940\\text{ W}$ is twice $29{,}400/20 = 1{,}470\\text{ W}$."
+        }
+      ]
+    }
+  ]
+}

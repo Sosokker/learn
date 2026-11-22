@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "slug": "physics.acceleration",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Acceleration",
+    "kicker": "formula",
+    "body": "$\\vec{a}_{\\text{av}} = \\dfrac{\\Delta\\vec{v}}{\\Delta t} = \\dfrac{\\vec{v} - \\vec{u}}{\\Delta t}$",
+    "says": "how much an object's **velocity** changes each second — in speed, in direction, or both.",
+    "from": "the definition of the rate of change of velocity between an initial velocity $\\vec{u}$ and a final velocity $\\vec{v}$ over time $\\Delta t$.",
+    "useWhen": "velocity is changing (speeding up, slowing down, or turning). If $\\vec{a}$ points opposite to $\\vec{v}$, the object slows down.",
+    "units": "$\\text{m/s}^2$",
+    "example": "A car accelerates in a straight line from $u = 10\\text{ m/s}$ to $v = 26\\text{ m/s}$ in $\\Delta t = 4\\text{ s}$ → $a = \\dfrac{26 - 10}{4} = \\dfrac{16}{4} = 4\\text{ m/s}^2$ forward.",
+    "analogy": "If velocity is how fast your savings grow per month, acceleration is how much bigger your monthly deposit gets each month."
+  },
+  "needs": [
+    "physics.speed-and-velocity"
+  ],
+  "aliases": [
+    "acceleration",
+    "a = (v - u)/t",
+    "rate of change of velocity",
+    "deceleration",
+    "ความเร่ง",
+    "ความเร่งเฉลี่ย",
+    "ความหน่วง"
+  ]
+}

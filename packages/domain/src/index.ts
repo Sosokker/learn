@@ -9,6 +9,14 @@ export {
   type SchemaIssue,
 } from "./codec.ts"
 export {
+  type ConceptPathEdge,
+  type ConceptPathNode,
+  maxConceptPath,
+  type OrderedConceptPath,
+  orderConceptPath,
+  walkConceptPath,
+} from "./concept-path.ts"
+export {
   type BinaryOp,
   type Compiled,
   compile,

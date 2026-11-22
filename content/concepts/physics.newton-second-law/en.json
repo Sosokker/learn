@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "slug": "physics.newton-second-law",
+  "lang": "en",
+  "card": {
+    "kind": "law",
+    "title": "Newton's second law",
+    "kicker": "law",
+    "body": "$\\sum \\vec{F} = m\\vec{a}$",
+    "says": "a nonzero net force accelerates an object in the **same direction** as $\\sum \\vec{F}$, with $a$ proportional to $\\sum F$ and inversely proportional to mass $m$.",
+    "from": "Isaac Newton's *Principia* (1687), linking how hard you push ($\\sum \\vec{F}$), how much inertia resists ($m$), and how fast velocity changes ($\\vec{a}$).",
+    "useWhen": "forces do not cancel and you need to find acceleration from forces, or an unknown force from a known acceleration; apply it separately along $x$ and $y$.",
+    "units": "$\\text{N} = \\text{kg}\\cdot\\text{m/s}^2$",
+    "example": "A $4\\text{ kg}$ box on a smooth floor is pulled $20\\text{ N}$ right and $8\\text{ N}$ left → $\\sum F = 20 - 8 = 12\\text{ N}$ right, so $a = \\dfrac{12}{4} = 3\\text{ m/s}^2$ right.",
+    "analogy": "Pushing an empty shopping cart versus a loaded one with the same push: the lighter cart picks up speed much faster."
+  },
+  "needs": [
+    "physics.net-force",
+    "physics.mass-and-inertia",
+    "physics.acceleration"
+  ],
+  "aliases": [
+    "Newton's second law",
+    "Newton's 2nd law",
+    "F = ma",
+    "sum F = ma",
+    "กฎข้อที่สองของนิวตัน",
+    "กฎข้อที่ 2 ของนิวตัน"
+  ]
+}

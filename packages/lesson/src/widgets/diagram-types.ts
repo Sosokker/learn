@@ -30,4 +30,6 @@ export interface DiagramProps {
   readonly edges: ReadonlyArray<DiagramEdge>
   readonly direction: "BT" | "LR"
   readonly ariaLabel: string
+  /** Optional click handler for standalone diagrams outside `<Lesson>` (e.g. `/path`). */
+  readonly onSelect?: ((id: string) => void) | undefined
 }

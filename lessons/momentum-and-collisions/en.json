@@ -1,0 +1,439 @@
+{
+  "schema": 1,
+  "kind": "learn",
+  "lang": "en",
+  "title": "Momentum, impulse, and collisions: vector conservation in action",
+  "summary": "Signs matter: momentum is a vector. See why stretching impact time saves lives with airbags, how momentum stays conserved in every isolated collision, and what separates elastic from inelastic hits.",
+  "parts": {
+    "m1": {
+      "label": "$m_1$",
+      "role": "given",
+      "color": "orange",
+      "meaning": "mass of cart A, in kilograms (kg)",
+      "body": "Multiplies cart A's velocity to give its momentum, and joins $m_2$ after the two carts lock together.",
+      "example": "Cart A has mass $m_1 = 3\\text{ kg}$.",
+      "analogy": "The heavier cart entering from the left."
+    },
+    "u1": {
+      "label": "$u_1$",
+      "role": "given",
+      "color": "blue",
+      "meaning": "initial velocity of cart A (to the right, positive), in m/s",
+      "body": "Positive because we choose right as the $+$ direction. Always set a {sign_convention|sign convention} first.",
+      "example": "$u_1 = +8\\text{ m/s}$ to the right.",
+      "analogy": "Cart A's arrow pointing right before the hit."
+    },
+    "m2": {
+      "label": "$m_2$",
+      "role": "given",
+      "color": "mustard",
+      "meaning": "mass of cart B, in kilograms (kg)",
+      "body": "Smaller than $m_1$, yet moving head-on so its negative momentum cancels part of cart A's momentum.",
+      "example": "Cart B has mass $m_2 = 2\\text{ kg}$.",
+      "analogy": "The lighter oncoming cart from the right."
+    },
+    "u2": {
+      "label": "$u_2$",
+      "role": "given",
+      "color": "red",
+      "meaning": "initial velocity of cart B (to the left, negative), in m/s",
+      "body": "Carries a **minus sign** because it moves opposite to the chosen positive direction. Dropping this sign ruins the answer.",
+      "example": "$u_2 = -7\\text{ m/s}$ to the left.",
+      "analogy": "Cart B's arrow pointing left, opposing cart A."
+    },
+    "dt": {
+      "label": "$\\Delta t$",
+      "role": "given",
+      "color": "grey",
+      "meaning": "contact duration of the collision, in seconds (s)",
+      "body": "Links {impulse|impulse} to average impact force via $F_{\\text{avg}} = I / \\Delta t$. Longer contact means smaller peak force.",
+      "example": "A padded bumper stretches the collision to $\\Delta t = 0.2\\text{ s}$.",
+      "analogy": "How long the bumpers stay pressed together during the crunch."
+    },
+    "p_tot": {
+      "label": "$\\Sigma p$",
+      "role": "derived",
+      "color": "purple",
+      "meaning": "total vector momentum of the two-cart system, in kg·m/s",
+      "body": "By {conservation_momentum|conservation of momentum}, $\\Sigma p$ before the hit equals $\\Sigma p$ after whenever external net force is zero.",
+      "example": "$3(+8) + 2(-7) = 24 - 14 = +10\\text{ kg}\\cdot\\text{m/s}$.",
+      "analogy": "The combined directional push carried by the pair as a whole."
+    },
+    "v_after": {
+      "label": "$v$",
+      "role": "goal",
+      "color": "green",
+      "meaning": "common velocity of the coupled carts after impact, in m/s",
+      "body": "Both carts share this single velocity because they lock together. Its sign tells you which way the pair moves.",
+      "example": "$v = +10 / 5 = +2\\text{ m/s}$ (to the right).",
+      "analogy": "The speed and direction of the stuck-together wreck right after impact."
+    },
+    "imp": {
+      "label": "$I$",
+      "role": "goal",
+      "color": "teal",
+      "meaning": "impulse delivered to cart A during the hit, in N·s",
+      "body": "Equals cart A's change in momentum: {impulse|$I = m_1 v - m_1 u_1$}. Cart B receives the exact opposite impulse $-I$.",
+      "example": "$I = 3(2) - 3(8) = -18\\text{ N}\\cdot\\text{s}$ (to the left).",
+      "analogy": "The total jolt cart B delivers to cart A."
+    },
+    "f_avg": {
+      "label": "$F_{\\text{avg}}$",
+      "role": "goal",
+      "color": "cyan",
+      "meaning": "average impact force on cart A during contact, in newtons (N)",
+      "body": "Found from {newton_second|Newton's second law} in impulse form: $F_{\\text{avg}} = I / \\Delta t$. By {newton_third|Newton's third law}, cart B feels $-F_{\\text{avg}}$.",
+      "example": "$-18 / 0.2 = -90\\text{ N}$ (pointing left on cart A).",
+      "analogy": "How hard the bumper actually shoves cart A during the crunch."
+    },
+    "dk": {
+      "label": "$\\Delta E_k$",
+      "role": "derived",
+      "color": "pink",
+      "meaning": "change in total kinetic energy of the two-cart system, in joules (J)",
+      "body": "Zero only in an elastic collision. In a {collision_types|completely inelastic collision}, $\\Delta E_k < 0$ because mechanical energy becomes sound, heat, and deformation.",
+      "example": "$10\\text{ J} - 145\\text{ J} = -135\\text{ J}$.",
+      "analogy": "The kinetic energy spent crumpling the bumpers and making a loud bang."
+    }
+  },
+  "cards": {
+    "momentum": {
+      "concept": "physics.momentum"
+    },
+    "impulse": {
+      "concept": "physics.impulse"
+    },
+    "conservation_momentum": {
+      "concept": "physics.conservation-of-momentum"
+    },
+    "newton_third": {
+      "concept": "physics.newton-third-law"
+    },
+    "newton_second": {
+      "concept": "physics.newton-second-law"
+    },
+    "kinetic_energy": {
+      "concept": "physics.kinetic-energy"
+    },
+    "collision_types": {
+      "kind": "term",
+      "title": "Elastic vs inelastic collisions",
+      "kicker": "what stays conserved",
+      "body": "In an isolated collision ($\\Sigma F_{\\text{ext}} = 0$), total {momentum|momentum} is **always** conserved. Only an **elastic** collision also conserves total {kinetic_energy|kinetic energy}.",
+      "says": "Elastic: $\\Delta E_k = 0$. Inelastic: $\\Delta E_k < 0$. Completely inelastic: bodies stick together ($v_1 = v_2 = v$) and lose the maximum kinetic energy allowed by momentum conservation.",
+      "useWhen": "deciding whether you may write $E_{k,\\text{before}} = E_{k,\\text{after}}$ — never assume it unless the problem states the collision is elastic."
+    },
+    "sign_convention": {
+      "kind": "lemma",
+      "title": "Fix the positive direction first",
+      "kicker": "vectors have signs",
+      "body": "Both {momentum|momentum} and {impulse|impulse} are vectors. Pick one direction as $+$ before substituting numbers, and give every opposite velocity a minus sign.",
+      "says": "Rebounding flips $+u$ to $-v$, so $\\Delta p = m(-v - u)$ has a **larger** magnitude than stopping dead ($0 - mu$).",
+      "useWhen": "objects meet head-on, recoil, or bounce off a wall."
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "text",
+      "title": "Force over time changes momentum",
+      "body": "Work asked how far a force pushes; {impulse|impulse} asks **how long** it pushes. Multiply average force by contact time [dt:$\\Delta t$] and you get the change in {momentum|momentum}: $\\vec{F}_{\\text{avg}}\\Delta t = \\Delta\\vec{p}$.\n\nWhen two objects collide with no outside horizontal force, {newton_third|Newton's third law} guarantees they push each other with equal and opposite forces for the exact same [dt:$\\Delta t$]. Their impulses cancel in pairs, giving {conservation_momentum|conservation of momentum} — even when bumpers crumple and {kinetic_energy|kinetic energy} is lost."
+    },
+    {
+      "id": "collision_table",
+      "type": "visual",
+      "title": "Types of isolated collisions",
+      "note": "momentum is conserved in all three; kinetic energy is conserved only in the first",
+      "widget": {
+        "kind": "table",
+        "head": ["Collision type", "Total momentum", "Total kinetic energy", "After impact"],
+        "rows": [
+          [
+            "Elastic",
+            "Conserved ($\\Delta\\Sigma p = 0$)",
+            "Conserved ($\\Delta E_k = 0$)",
+            "Bounce apart with no permanent deformation"
+          ],
+          [
+            "Inelastic",
+            "Conserved ($\\Delta\\Sigma p = 0$)",
+            "Decreases ($\\Delta E_k < 0$)",
+            "Separate, but some energy turns into heat and sound"
+          ],
+          [
+            "Completely inelastic",
+            "Conserved ($\\Delta\\Sigma p = 0$)",
+            "Drops the most ($\\Delta E_k < 0$)",
+            "Stick together and move at one [v_after:common velocity]"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "problem",
+      "type": "problem",
+      "title": "The problem",
+      "body": "On a frictionless horizontal track, cart A ([m1:$m_1 = 3\\text{ kg}$]) moves right at [u1:$u_1 = +8\\text{ m/s}$] and collides head-on with cart B ([m2:$m_2 = 2\\text{ kg}$]) moving left at [u2:$u_2 = -7\\text{ m/s}$]. The two carts lock together during an impact lasting [dt:$\\Delta t = 0.2\\text{ s}$].\n\nFind (a) their [v_after:common velocity $v$] after impact, (b) the [imp:impulse $I$] and [f_avg:average impact force $F_{\\text{avg}}$] on cart A, and (c) the [dk:kinetic energy change $\\Delta E_k$] of the system."
+    },
+    {
+      "id": "chunks",
+      "type": "chunks",
+      "title": "Break the problem down",
+      "note": "assign signs before writing a single equation",
+      "rows": [
+        {
+          "id": "c_cart_a",
+          "text": "Cart A: [m1:$m_1 = 3\\text{ kg}$], [u1:$u_1 = +8\\text{ m/s}$]",
+          "role": "given",
+          "note": "Choose right as $+$ using the {sign_convention|sign convention}."
+        },
+        {
+          "id": "c_cart_b",
+          "text": "Cart B: [m2:$m_2 = 2\\text{ kg}$], [u2:$u_2 = -7\\text{ m/s}$]",
+          "role": "given",
+          "note": "Moving left gives a **negative** velocity and negative initial momentum."
+        },
+        {
+          "id": "c_isolated",
+          "text": "Frictionless track, carts lock together in [dt:$\\Delta t = 0.2\\text{ s}$]",
+          "role": "condition",
+          "note": "$\\Sigma F_{\\text{ext}} = 0$ means {conservation_momentum|momentum is conserved}; locking together marks a {collision_types|completely inelastic collision}."
+        },
+        {
+          "id": "c_goals",
+          "text": "Find [v_after:$v$], [imp:$I$], [f_avg:$F_{\\text{avg}}$], and [dk:$\\Delta E_k$]",
+          "role": "goal",
+          "note": "Solve for [v_after:$v$] first, then compute impulse, force, and energy loss."
+        }
+      ]
+    },
+    {
+      "id": "plan",
+      "type": "plan",
+      "title": "Plan",
+      "note": "three routes; watch out for missing minus signs and wrong energy assumptions",
+      "routes": [
+        {
+          "id": "r_momentum",
+          "title": "Route A",
+          "path": "[p_tot:$\\Sigma p$] with signs → [v_after:$v$] → [imp:$I$] and [f_avg:$F_{\\text{avg}}$] → check [dk:$\\Delta E_k$]",
+          "why": "{conservation_momentum|Conservation of momentum} holds for every isolated collision, including ones where carts stick together.",
+          "whyNot": "Nothing. This is the exact method.",
+          "picked": true
+        },
+        {
+          "id": "r_unsigned",
+          "title": "Route B",
+          "path": "Add $3(8) + 2(7) = 38\\text{ kg}\\cdot\\text{m/s}$ ignoring direction",
+          "why": "Adds both speeds as positive numbers.",
+          "whyNot": "Violates the {sign_convention|sign convention}: cart B moves left, so its momentum is $-14$, not $+14$.",
+          "picked": false
+        },
+        {
+          "id": "r_ke_conserved",
+          "title": "Route C",
+          "path": "Set $E_{k,\\text{before}} = E_{k,\\text{after}}$ to solve for [v_after:$v$]",
+          "why": "Uses conservation of energy from the previous topic.",
+          "whyNot": "Locking together is a {collision_types|completely inelastic collision}: most of the kinetic energy turns into heat and deformation, so $E_k$ is NOT conserved.",
+          "picked": false
+        }
+      ],
+      "notUsed": "Vertical forces: weight and the track's normal force cancel on each cart, leaving zero net external horizontal force."
+    },
+    {
+      "id": "steps",
+      "type": "chain",
+      "title": "Work it through",
+      "note": "keep every plus and minus sign intact",
+      "steps": [
+        {
+          "id": "s1",
+          "move": "Find the [p_tot:total momentum] before collision, taking right as $+$.",
+          "formula": "\\p{p_tot}{\\Sigma p} = \\p{m1}{m_1}\\p{u1}{u_1} + \\p{m2}{m_2}\\p{u2}{u_2} = 3(+8) + 2(-7) = 24 - 14 = +10\\text{ kg}\\cdot\\text{m/s}",
+          "why": "{momentum|Momentum} is a vector; opposing directions partially cancel each other.",
+          "whyNot": "Do not add $24 + 14 = 38$: cart B's velocity is $-7\\text{ m/s}$, not $+7\\text{ m/s}$.",
+          "uses": ["p_tot", "m1", "u1", "m2", "u2"]
+        },
+        {
+          "id": "s2",
+          "move": "Apply {conservation_momentum|conservation of momentum} to find the [v_after:common velocity] after locking together.",
+          "formula": "(\\p{m1}{m_1} + \\p{m2}{m_2})\\p{v_after}{v} = \\p{p_tot}{\\Sigma p} \\implies (3 + 2)\\p{v_after}{v} = 10 \\implies \\p{v_after}{v} = +2\\text{ m/s}",
+          "why": "Both carts share one velocity [v_after:$v$], so they act as one combined mass of $5\\text{ kg}$. The $+$ sign means the pair moves right.",
+          "whyNot": "Do not divide by $m_1$ alone; both carts move together after the hit.",
+          "uses": ["m1", "m2", "v_after", "p_tot"]
+        },
+        {
+          "id": "s3",
+          "move": "Compute the [imp:impulse] on cart A alone.",
+          "formula": "\\p{imp}{I} = \\p{m1}{m_1}\\p{v_after}{v} - \\p{m1}{m_1}\\p{u1}{u_1} = 3(2) - 3(8) = 6 - 24 = -18\\text{ N}\\cdot\\text{s}",
+          "why": "By {impulse|$I = \\Delta p = mv - mu$}, cart A slows from $+8$ to $+2\\text{ m/s}$, so the impulse pushes it to the left ($-$).",
+          "whyNot": "Do not swap initial and final ($u - v$): impulse is always **final minus initial**.",
+          "uses": ["imp", "m1", "v_after", "u1"]
+        },
+        {
+          "id": "s4",
+          "move": "Divide impulse by [dt:contact time] to find the [f_avg:average impact force] on cart A.",
+          "formula": "\\p{f_avg}{F_{\\text{avg}}} = \\frac{\\p{imp}{I}}{\\p{dt}{\\Delta t}} = \\frac{-18}{0.2} = -90\\text{ N}",
+          "why": "From {newton_second|Newton's second law} ($F_{\\text{avg}} = \\Delta p / \\Delta t$), cart B pushes cart A left with an average force of $90\\text{ N}$.",
+          "whyNot": "Do not multiply by $0.2$: shorter contact time makes the force **larger**, so $\\Delta t$ belongs in the denominator.",
+          "uses": ["f_avg", "imp", "dt"]
+        },
+        {
+          "id": "s5",
+          "move": "Compare total {kinetic_energy|kinetic energy} before and after to find [dk:$\\Delta E_k$].",
+          "formula": "\\p{dk}{\\Delta E_k} = \\frac{1}{2}(5)(2^2) - \\left[\\frac{1}{2}(3)(8^2) + \\frac{1}{2}(2)(-7)^2\\right] = 10 - (96 + 49) = -135\\text{ J}",
+          "why": "Kinetic energy uses speed squared, so both carts start with positive $E_k$ ($96 + 49 = 145\\text{ J}$). Only $10\\text{ J}$ remains; $135\\text{ J}$ became heat, sound, and deformation.",
+          "whyNot": "Do not make cart B's initial kinetic energy negative: $(-7)^2 = +49$, so $E_k$ is never negative.",
+          "uses": ["dk", "m1", "u1", "m2", "u2", "v_after"]
+        }
+      ]
+    },
+    {
+      "id": "impulse_plot",
+      "type": "visual",
+      "title": "Why airbags and crumple zones reduce impact force",
+      "note": "for the same impulse m|Δv|, stretching collision time Δt sharply drops average force",
+      "widget": {
+        "kind": "plot",
+        "x": {
+          "min": 0.04,
+          "max": 0.5,
+          "label": "collision time [dt:$\\Delta t$] (s)"
+        },
+        "y": {
+          "min": 0,
+          "max": 800,
+          "label": "average force [f_avg:$|F_{\\text{avg}}|$] (N)"
+        },
+        "params": [
+          {
+            "id": "m",
+            "label": "mass [m1:$m$] (kg)",
+            "min": 1,
+            "max": 4,
+            "step": 0.5,
+            "value": 3,
+            "part": "m1"
+          },
+          {
+            "id": "dv",
+            "label": "velocity change $|\\Delta v|$ (m/s)",
+            "min": 2,
+            "max": 8,
+            "step": 1,
+            "value": 6,
+            "part": "u1"
+          },
+          {
+            "id": "dt",
+            "label": "collision time [dt:$\\Delta t$] (s)",
+            "min": 0.05,
+            "max": 0.5,
+            "step": 0.05,
+            "value": 0.2,
+            "part": "dt"
+          }
+        ],
+        "curves": [
+          {
+            "expr": "(m * dv) / x",
+            "part": "f_avg",
+            "label": "$|F_{\\text{avg}}(\\Delta t)| = \\dfrac{m|\\Delta v|}{\\Delta t}$"
+          }
+        ],
+        "points": [
+          {
+            "x": "dt",
+            "y": "(m * dv) / dt",
+            "part": "f_avg",
+            "label": "selected impact ($\\Delta t$, $|F_{\\text{avg}}|$)"
+          }
+        ],
+        "readouts": [
+          {
+            "label": "impulse [imp:$|I|$]",
+            "expr": "m * dv",
+            "unit": "N·s",
+            "part": "imp"
+          },
+          {
+            "label": "average force [f_avg:$|F_{\\text{avg}}|$]",
+            "expr": "(m * dv) / dt",
+            "unit": "N",
+            "part": "f_avg"
+          },
+          {
+            "label": "hard hit ($0.05\\text{ s}$)",
+            "expr": "(m * dv) / 0.05",
+            "unit": "N",
+            "part": "dt"
+          }
+        ]
+      }
+    },
+    {
+      "id": "check",
+      "type": "check",
+      "title": "Check yourself",
+      "items": [
+        "**Newton's third law check**: impulse on cart B is $2(2) - 2(-7) = 4 + 14 = +18\\text{ N}\\cdot\\text{s} = -$[imp:$I$], and average force on cart B is $+18 / 0.2 = +90\\text{ N} = -$[f_avg:$F_{\\text{avg}}$].",
+        "**Direction check**: cart A brought $+24\\text{ kg}\\cdot\\text{m/s}$ right while cart B brought $-14\\text{ kg}\\cdot\\text{m/s}$ left, so the net $+10$ means the locked carts must move right ([v_after:$+2\\text{ m/s}$]).",
+        "**Energy check**: [dk:$\\Delta E_k = -135\\text{ J} < 0$] confirms mechanical energy dropped — never positive in a passive collision.",
+        "**Airbag rule**: doubling [dt:$\\Delta t$] for the same [imp:impulse] cuts [f_avg:$|F_{\\text{avg}}|$] in **half** (drag $\\Delta t$ from $0.2\\text{ s}$ to $0.4\\text{ s}$ and watch $90\\text{ N}$ fall to $45\\text{ N}$).",
+        "**Units**: $1\\text{ N}\\cdot\\text{s} = 1\\text{ (kg}\\cdot\\text{m/s}^2)\\cdot\\text{s} = 1\\text{ kg}\\cdot\\text{m/s}$."
+      ]
+    },
+    {
+      "id": "recall",
+      "type": "recall",
+      "title": "Recall",
+      "note": "answer from memory before revealing",
+      "questions": [
+        {
+          "id": "q1",
+          "q": "A $0.5\\text{ kg}$ rubber ball hits a wall at $+10\\text{ m/s}$ and rebounds straight back at $-8\\text{ m/s}$. What is the {impulse|impulse} on the ball?",
+          "options": [
+            "$-1\\text{ N}\\cdot\\text{s}$",
+            "$-5\\text{ N}\\cdot\\text{s}$",
+            "$-9\\text{ N}\\cdot\\text{s}$"
+          ],
+          "answer": 2,
+          "why": "Keep the minus sign on the rebound velocity: $I = m(v - u) = 0.5(-8 - 10) = 0.5(-18) = -9\\text{ N}\\cdot\\text{s}$."
+        },
+        {
+          "id": "q2",
+          "q": "How does a car airbag protect a driver during a crash?",
+          "options": [
+            "It reduces the driver's total momentum change $\\Delta p$ to nearly zero",
+            "It increases the stopping time $\\Delta t$, reducing average impact force $F_{\\text{avg}} = \\Delta p / \\Delta t$ for the same $\\Delta p$",
+            "It bounces the driver backward so the impulse cancels out"
+          ],
+          "answer": 1,
+          "why": "The driver still goes from driving speed to $0$, so $\\Delta p$ is the same. Stretching $\\Delta t$ lowers the average force on the body."
+        },
+        {
+          "id": "q3",
+          "q": "A $4000\\text{ kg}$ truck and a $1000\\text{ kg}$ car collide head-on. How does the magnitude of the impact force on the car compare with the force on the truck?",
+          "options": [
+            "They are exactly equal",
+            "The force on the car is $4$ times larger because the truck is $4$ times heavier",
+            "The force on the truck is larger because the truck has more momentum"
+          ],
+          "answer": 0,
+          "why": "By {newton_third|Newton's third law}, the forces are equal and opposite. The lighter car suffers $4$ times larger acceleration ($a = F/m$), not a larger force."
+        },
+        {
+          "id": "q4",
+          "q": "Two carts on a frictionless track collide and stick together. Which quantity is conserved during this {collision_types|completely inelastic collision}?",
+          "options": [
+            "Both total momentum and total kinetic energy",
+            "Total momentum only; total kinetic energy decreases",
+            "Total kinetic energy only; total momentum decreases because they slow down"
+          ],
+          "answer": 1,
+          "why": "With zero external net force, total momentum is conserved, while sticking together converts part of the kinetic energy into heat, sound, and deformation."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "slug": "physics.force",
+  "lang": "en",
+  "card": {
+    "kind": "def",
+    "title": "Force",
+    "kicker": "definition",
+    "body": "A **force** ($\\vec{F}$) is a push or pull produced by an interaction between two objects. It is a **vector** quantity that can change an object's velocity or deform its shape. Forces may act through contact (normal, friction, tension) or at a distance (gravity, electric, magnetic).",
+    "says": "a force always comes from another object pushing or pulling, with both a strength in newtons and a direction.",
+    "from": "observing how pushes, pulls, and fields change an object's motion or stretch a spring.",
+    "useWhen": "drawing a free-body diagram: identify every object interacting with the body of interest and draw one force arrow for each interaction.",
+    "units": "N ($\\text{kg}\\cdot\\text{m/s}^2$)",
+    "example": "Hold a $2\\text{ kg}$ book steady in your hand (using $g = 9.8\\text{ m/s}^2$): Earth pulls it downward with weight $W = mg = 2 \\times 9.8 = 19.6\\text{ N}$, and your hand pushes it upward with a $19.6\\text{ N}$ contact force.",
+    "analogy": "Every force is like a hand or an invisible rope attached to the object, pulling or pushing in a specific direction."
+  },
+  "needs": [
+    "physics.vectors-and-components"
+  ],
+  "aliases": [
+    "force",
+    "newton",
+    "push or pull",
+    "contact and non-contact force",
+    "แรง",
+    "นิวตัน",
+    "แรงสัมผัสและแรงไม่สัมผัส"
+  ]
+}

@@ -18,8 +18,10 @@
     "physics.total-time"
   ],
   "aliases": [
+    "average speed",
     "mean speed over a trip",
     "v = d/t",
-    "average velocity (magnitude)"
+    "v = s/t",
+    "อัตราเร็วเฉลี่ย"
   ]
 }

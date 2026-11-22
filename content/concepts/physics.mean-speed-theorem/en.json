@@ -6,7 +6,7 @@
     "kind": "thm",
     "title": "Mean speed theorem",
     "kicker": "theorem",
-    "body": "A body that speeds up at a steady rate covers the same distance as a body moving the whole time at the speed it had at the **middle** of the interval.",
+    "body": "A body whose velocity changes at a steady rate covers the same distance as a body moving the whole time at the speed it had at the **middle** of the interval.",
     "from": "the Merton scholars in Oxford (c. 1335). Oresme gave a picture proof with areas (c. 1350); Galileo used it for falling bodies (1638).",
     "example": "From 0 to 20 m/s steadily in 10 s → same distance as 10 m/s for 10 s = 100 m.",
     "analogy": "A ramp of speed has the same area under it as a flat line at its middle height."
@@ -15,7 +15,11 @@
     "physics.average-speed"
   ],
   "aliases": [
+    "mean speed theorem",
     "Merton rule",
-    "Merton mean speed theorem"
+    "Merton mean speed theorem",
+    "กฎเมอร์ตัน",
+    "ทฤษฎีบทอัตราเร็วกึ่งกลาง",
+    "ทฤษฎีบทอัตราเร็วเฉลี่ย"
   ]
 }

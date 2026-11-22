@@ -19,10 +19,17 @@ import { type CSSProperties, useMemo } from "react"
 import { labelSize, layoutDiagram } from "./diagram-layout.ts"
 import type { DiagramNode, DiagramProps } from "./diagram-types.ts"
 
-type LessonNode = Node<{ readonly d: DiagramNode; readonly horizontal: boolean }, "lesson">
+type LessonNode = Node<
+  {
+    readonly d: DiagramNode
+    readonly horizontal: boolean
+    readonly onSelect?: ((id: string) => void) | undefined
+  },
+  "lesson"
+>
 
 function LessonNodeView(props: NodeProps<LessonNode>) {
-  const { d, horizontal } = props.data
+  const { d, horizontal, onSelect } = props.data
   const style =
     d.part === undefined && d.color !== undefined ? ({ "--c": d.color } as CSSProperties) : undefined
   return (
@@ -35,6 +42,7 @@ function LessonNodeView(props: NodeProps<LessonNode>) {
         data-p={d.part}
         style={style}
         aria-label={d.text}
+        onClick={onSelect === undefined ? undefined : () => onSelect(d.id)}
       >
         {d.label}
       </button>
@@ -62,7 +70,7 @@ export default function Diagram(props: DiagramProps) {
       position: layout.positions.get(n.id) ?? { x: 0, y: 0 },
       width: size.width,
       height: size.height,
-      data: { d: n, horizontal },
+      data: { d: n, horizontal, onSelect: props.onSelect },
       draggable: false,
       selectable: false,
       connectable: false,
@@ -84,7 +92,7 @@ export default function Diagram(props: DiagramProps) {
       }
     })
     return { nodes: rfNodes, edges: rfEdges, height: Math.min(560, Math.max(180, layout.height + 40)) }
-  }, [props.nodes, props.edges, props.direction, horizontal])
+  }, [props.nodes, props.edges, props.direction, props.onSelect, horizontal])
 
   return (
     <figure className="lsn-diagram" style={{ height }} aria-label={props.ariaLabel}>

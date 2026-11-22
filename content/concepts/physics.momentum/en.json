@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "slug": "physics.momentum",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Linear momentum",
+    "kicker": "formula",
+    "body": "$\\vec{p} = m\\vec{v}$",
+    "says": "a **vector** measuring how hard it is to stop a moving object: its mass $m$ times its velocity $\\vec{v}$, pointing in the same direction as $\\vec{v}$.",
+    "from": "Newton's original form of the second law, $\\sum\\vec{F} = \\dfrac{\\Delta\\vec{p}}{\\Delta t}$: net force is the rate of change of momentum.",
+    "useWhen": "objects collide, rebound, explode, or receive a brief push—always pick a positive direction first so opposite velocities carry opposite signs.",
+    "units": "$\\text{kg}\\cdot\\text{m/s}$ (equivalent to $\\text{N}\\cdot\\text{s}$)",
+    "example": "A $4\\text{ kg}$ bowling ball rolling right at $+5\\text{ m/s}$ has $p = 4(+5) = +20\\text{ kg}\\cdot\\text{m/s}$. A $0.5\\text{ kg}$ ball flying left at $-40\\text{ m/s}$ has $p = 0.5(-40) = -20\\text{ kg}\\cdot\\text{m/s}$ — same magnitude, opposite direction.",
+    "analogy": "A slow freight train and a fast ball are both hard to stop for different reasons—momentum combines mass and velocity into one quantity with a direction."
+  },
+  "needs": [
+    "physics.mass-and-inertia",
+    "physics.speed-and-velocity"
+  ],
+  "aliases": [
+    "momentum",
+    "linear momentum",
+    "p = mv",
+    "โมเมนตัม",
+    "โมเมนตัมเชิงเส้น"
+  ]
+}

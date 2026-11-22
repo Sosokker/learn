@@ -14,6 +14,7 @@ import { Route as CreateRouteImport } from './routes/create'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as PathRouteImport } from './routes/path'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AtChar123handleChar125SlugRouteImport } from './routes/@{$handle}.$slug'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -43,6 +44,11 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PathRoute = PathRouteImport.update({
+  id: '/path',
+  path: '/path',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/guide': typeof GuideRoute
   '/library': typeof LibraryRoute
+  '/path': typeof PathRoute
   '/settings': typeof SettingsRoute
   '/@{$handle}/$slug': typeof AtChar123handleChar125SlugRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/guide': typeof GuideRoute
   '/library': typeof LibraryRoute
+  '/path': typeof PathRoute
   '/settings': typeof SettingsRoute
   '/@{$handle}/$slug': typeof AtChar123handleChar125SlugRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/guide': typeof GuideRoute
   '/library': typeof LibraryRoute
+  '/path': typeof PathRoute
   '/settings': typeof SettingsRoute
   '/@{$handle}/$slug': typeof AtChar123handleChar125SlugRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/guide'
     | '/library'
+    | '/path'
     | '/settings'
     | '/@{$handle}/$slug'
     | '/admin/reports'
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/guide'
     | '/library'
+    | '/path'
     | '/settings'
     | '/@{$handle}/$slug'
     | '/admin/reports'
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/guide'
     | '/library'
+    | '/path'
     | '/settings'
     | '/@{$handle}/$slug'
     | '/admin/reports'
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   GuideRoute: typeof GuideRoute
   LibraryRoute: typeof LibraryRoute
+  PathRoute: typeof PathRoute
   SettingsRoute: typeof SettingsRoute
   AtChar123handleChar125SlugRoute: typeof AtChar123handleChar125SlugRoute
   AdminReportsRoute: typeof AdminReportsRoute
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/path': {
+      id: '/path'
+      path: '/path'
+      fullPath: '/path'
+      preLoaderRoute: typeof PathRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   GuideRoute: GuideRoute,
   LibraryRoute: LibraryRoute,
+  PathRoute: PathRoute,
   SettingsRoute: SettingsRoute,
   AtChar123handleChar125SlugRoute: AtChar123handleChar125SlugRoute,
   AdminReportsRoute: AdminReportsRoute,

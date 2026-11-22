@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "slug": "physics.uniform-acceleration-equations",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Equations of uniform acceleration",
+    "kicker": "formula",
+    "body": "$$v = u + at, \\quad s = \\left(\\dfrac{u+v}{2}\\right)t, \\quad s = ut + \\dfrac{1}{2}at^2, \\quad s = vt - \\dfrac{1}{2}at^2, \\quad v^2 = u^2 + 2as$$",
+    "says": "five equations linking displacement $s$, initial velocity $u$, final velocity $v$, constant acceleration $a$, and time $t$ — each one leaves out a different variable.",
+    "from": "combining the definition of constant acceleration ($v = u + at$) with the mean speed theorem ($s = \\dfrac{u+v}{2}\\,t$).",
+    "useWhen": "motion is along a straight line with **constant acceleration**. List the three quantities you know and the one you want, then pick the equation missing the fifth.",
+    "units": "$s$: m; $u, v$: m/s; $a$: $\\text{m/s}^2$; $t$: s",
+    "example": "A train starts at $u = 4\\text{ m/s}$ with constant $a = 2\\text{ m/s}^2$ for $t = 5\\text{ s}$. Then $v = 4 + 2(5) = 14\\text{ m/s}$ and $s = 4(5) + \\dfrac{1}{2}(2)(5^2) = 20 + 25 = 45\\text{ m}$. Check: $v^2 = 14^2 = 196 = 4^2 + 2(2)(45)$.",
+    "analogy": "Five different wrenches for the same five-variable toolbox: pick the one that does not need the variable you neither have nor want."
+  },
+  "needs": [
+    "physics.acceleration",
+    "physics.mean-speed-theorem"
+  ],
+  "aliases": [
+    "kinematic equations",
+    "SUVAT",
+    "uniform acceleration",
+    "constant acceleration equations",
+    "สมการการเคลื่อนที่ด้วยความเร่งคงที่",
+    "สูตรการเคลื่อนที่แนวตรง",
+    "ความเร่งคงตัว"
+  ]
+}
