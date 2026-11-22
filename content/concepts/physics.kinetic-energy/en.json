@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "slug": "physics.kinetic-energy",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Kinetic energy",
+    "kicker": "formula",
+    "body": "$E_k = \\dfrac{1}{2} m v^2$",
+    "says": "the energy a body has because it is moving: proportional to mass $m$ and to the **square** of its speed $v$, so doubling the speed **quadruples** $E_k$.",
+    "from": "the work-energy theorem: accelerating mass $m$ from rest with net force $F = ma$ over $\\Delta x = \\dfrac{v^2}{2a}$ does work $W = F \\Delta x = \\dfrac{1}{2} m v^2$.",
+    "useWhen": "a moving object speeds up, slows down, or trades speed for height or spring compression—especially when you do not need time.",
+    "units": "J (joule, $1\\text{ J} = 1\\text{ kg}\\cdot\\text{m}^2/\\text{s}^2$)",
+    "example": "A $2\\text{ kg}$ ball at $v = 6\\text{ m/s}$ has $E_k = \\dfrac{1}{2}(2)(6^2) = 36\\text{ J}$. At $v = 12\\text{ m/s}$ (twice as fast), $E_k = \\dfrac{1}{2}(2)(12^2) = 144\\text{ J}$ — four times as much.",
+    "analogy": "A car's braking distance grows fourfold when you double your speed because the brakes must absorb four times the kinetic energy."
+  },
+  "needs": [
+    "physics.work",
+    "physics.mass-and-inertia",
+    "physics.speed-and-velocity"
+  ],
+  "aliases": [
+    "kinetic energy",
+    "KE",
+    "Ek = 1/2 mv^2",
+    "work-energy theorem",
+    "พลังงานจลน์",
+    "ทฤษฎีบทงาน-พลังงานจลน์"
+  ]
+}

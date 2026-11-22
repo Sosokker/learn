@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "slug": "physics.mass-and-inertia",
+  "lang": "en",
+  "card": {
+    "kind": "term",
+    "title": "Mass and inertia",
+    "kicker": "term",
+    "body": "**Inertia** is an object's natural tendency to resist any change in its velocity — staying at rest if at rest, or keeping constant velocity if already moving. **Mass** ($m$) is the scalar quantity that measures how much inertia an object has; it stays the same everywhere and is distinct from weight ($W = mg$).",
+    "says": "more mass means more stubbornness against starting, stopping, or turning.",
+    "from": "Galileo's thought experiments and Newton's framing of motion: inertia is a property of matter itself, not a force.",
+    "useWhen": "comparing how hard it is to accelerate different objects, or separating constant **mass** ($\\text{kg}$) from gravity-dependent **weight** ($\\text{N}$).",
+    "units": "kg, g",
+    "example": "An astronaut of mass $m = 60\\text{ kg}$ weighs $W = 60 \\times 9.8 = 588\\text{ N}$ on Earth ($g = 9.8\\text{ m/s}^2$) and $W = 60 \\times 1.6 = 96\\text{ N}$ on the Moon ($g_{\\text{Moon}} = 1.6\\text{ m/s}^2$), yet their mass — and inertia — remains $60\\text{ kg}$ in both places.",
+    "analogy": "Pushing an empty shopping cart is easy, while pushing a cart loaded with water bottles takes far more effort to start, stop, or steer around a corner."
+  },
+  "needs": [],
+  "aliases": [
+    "mass",
+    "inertia",
+    "mass vs weight",
+    "kilogram",
+    "มวล",
+    "ความเฉื่อย",
+    "มวลและความเฉื่อย"
+  ]
+}

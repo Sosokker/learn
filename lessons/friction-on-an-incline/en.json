@@ -1,0 +1,343 @@
+{
+  "schema": 1,
+  "kind": "learn",
+  "lang": "en",
+  "title": "Friction on an incline",
+  "summary": "Tilt your axes along the ramp, split weight into mg sin θ and mg cos θ, and see why the normal force shrinks and mass cancels out of acceleration.",
+  "parts": {
+    "mass": {
+      "label": "$m$",
+      "role": "given",
+      "color": "orange",
+      "meaning": "mass of the block on the incline, in kilograms",
+      "body": "Scales both the downhill pull ($mg\\sin\\theta$) and friction ($\\mu_k mg\\cos\\theta$) by the same factor, so it cancels out of the sliding acceleration.",
+      "example": "A $5\\text{ kg}$ block weighs $49\\text{ N}$ when $g = 9.8\\text{ m/s}^2$.",
+      "analogy": "Adding more bricks to a crate increases both its downhill pull and its grip on the ramp in lockstep."
+    },
+    "theta": {
+      "label": "$\\theta$",
+      "role": "given",
+      "color": "purple",
+      "meaning": "angle of the ramp measured from the horizontal, in degrees",
+      "body": "Raising $\\theta$ increases the downhill pull ($\\sin\\theta$ rises) and reduces the normal push ($\\cos\\theta$ falls), doubly helping the block slide.",
+      "example": "At $\\theta = 37°$, $\\sin 37° = 0.6$ and $\\cos 37° = 0.8$.",
+      "analogy": "Tilting a book steeper until an eraser on the cover breaks loose."
+    },
+    "mu_k": {
+      "label": "$\\mu_k$",
+      "role": "given",
+      "color": "pink",
+      "meaning": "coefficient of kinetic friction between block and ramp (no units)",
+      "body": "Measures how rough the two sliding surfaces are against each other. Larger $\\mu_k$ means stronger {kinetic_fric|kinetic friction}.",
+      "example": "With $\\mu_k = 0.25$ and $N = 39.2\\text{ N}$, kinetic friction is $9.8\\text{ N}$.",
+      "analogy": "Swapping polished wood for sandpaper on the ramp surface."
+    },
+    "weight": {
+      "label": "$mg$",
+      "role": "derived",
+      "color": "red",
+      "meaning": "gravitational force pulling straight down, in newtons",
+      "body": "Always vertical — never tilted! To solve incline problems, split it into $mg\\sin\\theta$ down the slope and $mg\\cos\\theta$ into the slope.",
+      "example": "For $m = 5\\text{ kg}$ and $g = 9.8\\text{ m/s}^2$: $W = mg = 49\\text{ N}$.",
+      "analogy": "A plumb line hanging straight toward the floor regardless of how steep the ramp is."
+    },
+    "normal": {
+      "label": "$N$",
+      "role": "derived",
+      "color": "mustard",
+      "meaning": "normal force pushing perpendicular out of the ramp, in newtons",
+      "body": "On an incline with no other perpendicular forces, $N = mg\\cos\\theta$ — always **less** than $mg$ whenever $\\theta > 0$.",
+      "example": "At $m = 5\\text{ kg}$, $g = 9.8\\text{ m/s}^2$, $\\cos 37° = 0.8$: $N = 49 \\times 0.8 = 39.2\\text{ N}$.",
+      "analogy": "A bathroom scale tilted on a ramp reads only the perpendicular squeeze, not your full weight."
+    },
+    "friction": {
+      "label": "$f_k$",
+      "role": "derived",
+      "color": "cyan",
+      "meaning": "kinetic friction opposing the slide (acting up along the ramp), in newtons",
+      "body": "Given by $f_k = \\mu_k N = \\mu_k mg\\cos\\theta$ while sliding. When at rest, {static_fric|static friction} matches $mg\\sin\\theta$ up to $\\mu_s N$.",
+      "example": "With $\\mu_k = 0.25$ and $N = 39.2\\text{ N}$, $f_k = 9.8\\text{ N}$ up the slope.",
+      "analogy": "The drag you feel rubbing your palm uphill while sliding down a wooden slide."
+    },
+    "accel": {
+      "label": "$a$",
+      "role": "goal",
+      "color": "green",
+      "meaning": "acceleration of the block down the ramp, in m/s²",
+      "body": "From {newton2|Newton's second law} along the slope: $a = g(\\sin\\theta - \\mu_k\\cos\\theta)$ whenever the block slides.",
+      "example": "For $\\theta = 37°$, $\\mu_k = 0.25$, $g = 9.8\\text{ m/s}^2$: $a = 3.92\\text{ m/s}^2$.",
+      "analogy": "How fast the block picks up speed as it races down the ramp."
+    }
+  },
+  "cards": {
+    "weight_card": {
+      "concept": "physics.weight"
+    },
+    "normal_card": {
+      "concept": "physics.normal-force"
+    },
+    "static_fric": {
+      "concept": "physics.static-friction"
+    },
+    "kinetic_fric": {
+      "concept": "physics.kinetic-friction"
+    },
+    "fbd": {
+      "concept": "physics.free-body-diagram"
+    },
+    "vectors": {
+      "concept": "physics.vectors-and-components"
+    },
+    "newton2": {
+      "concept": "physics.newton-second-law"
+    },
+    "equilibrium": {
+      "concept": "physics.equilibrium"
+    },
+    "tilted_axes": {
+      "kind": "lemma",
+      "title": "Why tilt the coordinate axes?",
+      "kicker": "setup trick",
+      "body": "Put the $x$-axis **along the ramp** and the $y$-axis **perpendicular** to it. Then [normal:$N$], [friction:$f_k$], and [accel:$a$] all lie cleanly on an axis, leaving only [weight:$mg$] to split into two {vectors|components}.",
+      "useWhen": "setting up any {fbd|free-body diagram} on an inclined plane.",
+      "example": "Perpendicular: $N - mg\\cos\\theta = 0$. Parallel: $mg\\sin\\theta - f_k = ma$."
+    },
+    "slide_threshold": {
+      "kind": "formula",
+      "title": "When does a block start to slide?",
+      "kicker": "tan θ vs μ",
+      "body": "A resting block begins to slide only when the downhill pull exceeds maximum {static_fric|static friction}: $mg\\sin\\theta > \\mu_s mg\\cos\\theta$. Dividing both sides by $mg\\cos\\theta$ cancels [mass:mass] and leaves **$\\tan\\theta > \\mu_s$**.",
+      "says": "$\\tan\\theta > \\mu_s$",
+      "useWhen": "deciding whether a block stays put or starts sliding down a rough ramp.",
+      "example": "At $\\theta = 30°$, $\\tan 30° \\approx 0.577$, so a block with $\\mu_s = 0.60$ will not budge."
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "text",
+      "title": "Tilt the axes, split one vector",
+      "body": "A block on a rough ramp feels three forces in its {fbd|free-body diagram}: {weight_card|weight} straight down, the {normal_card|normal force} perpendicular to the surface, and friction along the surface.\n\nThe secret to making the algebra effortless is {tilted_axes|tilting your axes} to match the ramp. Only [weight:$mg$] needs to be resolved into {vectors|components}: $mg\\sin\\theta$ pulls down the slope, while $mg\\cos\\theta$ presses into the slope and sets [normal:$N$]."
+    },
+    {
+      "id": "force_breakdown",
+      "type": "chunks",
+      "title": "Four steps for every incline problem",
+      "note": "parallel = along the slope; perpendicular = at 90° to the slope",
+      "rows": [
+        {
+          "id": "b_split",
+          "text": "Split [weight:$mg$] into $mg\\sin\\theta$ (down slope) and $mg\\cos\\theta$ (into slope)",
+          "role": "derived",
+          "note": "at [theta:$\\theta = 0°$] (flat ground), $\\sin 0° = 0$ and $\\cos 0° = 1$ — quick check for which trig function goes where"
+        },
+        {
+          "id": "b_normal",
+          "text": "Perpendicular {equilibrium|equilibrium}: [normal:$N = mg\\cos\\theta$]",
+          "role": "derived",
+          "note": "the block neither sinks into nor flies off the ramp, so $\\Sigma F_\\perp = 0$"
+        },
+        {
+          "id": "b_fric",
+          "text": "Friction: {static_fric|$f_s \\le \\mu_s N$} at rest; [friction:$f_k = \\mu_k N$] while sliding",
+          "role": "derived",
+          "note": "check {slide_threshold|$\\tan\\theta > \\mu_s$} first if the block starts from rest"
+        },
+        {
+          "id": "b_accel",
+          "text": "Parallel {newton2|second law}: $mg\\sin\\theta - f_k = ma \\implies$ [accel:$a = g(\\sin\\theta - \\mu_k\\cos\\theta)$]",
+          "role": "goal",
+          "note": "[mass:mass] cancels completely — heavy and light blocks with the same [mu_k:$\\mu_k$] share the same acceleration"
+        }
+      ]
+    },
+    {
+      "id": "problem",
+      "type": "problem",
+      "title": "Worked problem",
+      "body": "A [mass:$5\\text{ kg}$] crate slides down a rough ramp inclined at [theta:$\\theta = 37°$] with [mu_k:$\\mu_k = 0.25$].\n\nTaking $g = 9.8\\text{ m/s}^2$, $\\sin 37° = 0.6$, and $\\cos 37° = 0.8$, find the [normal:normal force $N$], the [friction:kinetic friction $f_k$], and the [accel:acceleration $a$] down the ramp."
+    },
+    {
+      "id": "plan",
+      "type": "plan",
+      "title": "Plan",
+      "note": "resolve weight first — everything else flows from those two components",
+      "routes": [
+        {
+          "id": "r_tilt",
+          "title": "Route A: tilted axes (perpendicular first, then parallel)",
+          "path": "[weight:$mg$] → [normal:$N = mg\\cos\\theta$] → [friction:$f_k = \\mu_k N$] → [accel:$a$]",
+          "why": "Perpendicular {equilibrium|equilibrium} gives [normal:$N$], which unlocks {kinetic_fric|$f_k = \\mu_k N$}, and then {newton2|$\\Sigma F_\\parallel = ma$} yields [accel:$a$].",
+          "whyNot": "Nothing — this is the cleanest route for every incline problem.",
+          "picked": true
+        },
+        {
+          "id": "r_flat_n",
+          "title": "Route B: assume $N = mg$ and plug into $f_k = \\mu_k mg$",
+          "path": "$N = 49\\text{ N}$ → $f_k = 0.25(49) = 12.25\\text{ N}$",
+          "why": "$N = mg$ worked on level ground.",
+          "whyNot": "On a tilted surface, only the perpendicular piece $mg\\cos\\theta$ presses into the ramp; using $N = mg$ overestimates friction.",
+          "picked": false
+        },
+        {
+          "id": "r_swap_trig",
+          "title": "Route C: use $mg\\cos\\theta$ down the slope and $mg\\sin\\theta$ into it",
+          "path": "downhill pull $= mg\\cos 37°$",
+          "why": "Cosine is often used for horizontal $x$-components.",
+          "whyNot": "Test $\\theta = 0°$: on a flat floor the downhill pull must be **zero**, and $\\sin 0° = 0$ whereas $\\cos 0° = 1$.",
+          "picked": false
+        }
+      ],
+      "notUsed": "Not used: static friction coefficient $\\mu_s$. The problem states the crate is already sliding, so kinetic friction $f_k = \\mu_k N$ acts."
+    },
+    {
+      "id": "work",
+      "type": "chain",
+      "title": "Work it through",
+      "note": "hover each step to link the forces on the ramp",
+      "steps": [
+        {
+          "id": "s1",
+          "move": "Compute the total [weight:weight] of the [mass:$5\\text{ kg}$] crate.",
+          "formula": "\\p{weight}{W} = \\p{mass}{m}g = 5 \\times 9.8 = 49\\text{ N}",
+          "why": "{weight_card|Weight} is always $mg$ pointing vertically downward.",
+          "whyNot": "Do not confuse mass ($5\\text{ kg}$) with force ($49\\text{ N}$).",
+          "uses": ["weight", "mass"]
+        },
+        {
+          "id": "s2",
+          "move": "Find the [normal:normal force] from perpendicular {equilibrium|equilibrium}.",
+          "formula": "\\p{normal}{N} = \\p{weight}{mg}\\cos\\p{theta}{\\theta} = 49 \\times 0.8 = 39.2\\text{ N}",
+          "why": "With {tilted_axes|tilted axes}, $a_\\perp = 0$, so [normal:$N$] balances the perpendicular piece $mg\\cos\\theta$ of [weight:weight].",
+          "whyNot": "Do not set $N = 49\\text{ N}$: tilting the ramp takes part of the load along the slope.",
+          "uses": ["normal", "weight", "theta"]
+        },
+        {
+          "id": "s3",
+          "move": "Calculate [friction:kinetic friction] opposing the slide up the ramp.",
+          "formula": "\\p{friction}{f_k} = \\p{mu_k}{\\mu_k}\\,\\p{normal}{N} = 0.25 \\times 39.2 = 9.8\\text{ N}",
+          "why": "Because the crate slides down the ramp, {kinetic_fric|kinetic friction} acts **up** the ramp with size $\\mu_k N$.",
+          "whyNot": "Do not multiply $\\mu_k$ by total weight $49\\text{ N}$ — friction depends on the normal force $N$, not $W$.",
+          "uses": ["friction", "mu_k", "normal"]
+        },
+        {
+          "id": "s4",
+          "move": "Find the net force parallel to the ramp (downward component minus friction).",
+          "formula": "\\Sigma F_\\parallel = \\p{weight}{mg}\\sin\\p{theta}{\\theta} - \\p{friction}{f_k} = 49(0.6) - 9.8 = 29.4 - 9.8 = 19.6\\text{ N}",
+          "why": "Downhill gravity ($29.4\\text{ N}$) and uphill [friction:friction] ($9.8\\text{ N}$) act in opposite directions along the same line.",
+          "whyNot": "Do not add them together: friction opposes the downward slide.",
+          "uses": ["weight", "theta", "friction"]
+        },
+        {
+          "id": "s5",
+          "move": "Divide by [mass:mass] using {newton2|Newton's second law} to get [accel:acceleration].",
+          "formula": "\\p{accel}{a} = \\dfrac{\\Sigma F_\\parallel}{\\p{mass}{m}} = \\dfrac{19.6}{5} = 3.92\\text{ m/s}^2",
+          "why": "Notice the mass-free check: $a = g(\\sin 37° - \\mu_k\\cos 37°) = 9.8(0.6 - 0.25 \\times 0.8) = 9.8(0.4) = 3.92\\text{ m/s}^2$.",
+          "whyNot": "Do not forget to divide by $m = 5\\text{ kg}$; $19.6\\text{ N}$ is the net force, not the acceleration.",
+          "uses": ["accel", "mass", "theta", "mu_k"]
+        }
+      ]
+    },
+    {
+      "id": "incline",
+      "type": "visual",
+      "title": "Explore the rough ramp",
+      "note": "drag θ, μ, and m (uses g = 9.8 m/s² and μ_s = μ_k = μ); hover any force arrow to highlight its part, and raise μ past tan θ to make the block stick",
+      "widget": {
+        "kind": "incline",
+        "params": [
+          {
+            "id": "theta",
+            "label": "[theta:$\\theta$] (°)",
+            "min": 5,
+            "max": 60,
+            "step": 1,
+            "value": 30,
+            "part": "theta"
+          },
+          {
+            "id": "mu",
+            "label": "[mu_k:$\\mu$]",
+            "min": 0,
+            "max": 0.8,
+            "step": 0.01,
+            "value": 0.2,
+            "part": "mu_k"
+          },
+          {
+            "id": "m",
+            "label": "[mass:$m$] (kg)",
+            "min": 0.5,
+            "max": 10,
+            "step": 0.5,
+            "value": 2,
+            "part": "mass"
+          }
+        ],
+        "forces": ["weight", "normal", "friction", "accel"],
+        "parts": {
+          "weight": "weight",
+          "normal": "normal",
+          "friction": "friction",
+          "accel": "accel"
+        }
+      }
+    },
+    {
+      "id": "check",
+      "type": "check",
+      "title": "Check yourself",
+      "items": [
+        "**Normal force**: on a ramp with no extra vertical pushes, [normal:$N = mg\\cos\\theta$] is always **smaller** than [weight:$mg$].",
+        "**Mass cancels**: drag [mass:$m$] on the ramp widget above — every force scales with $m$, yet [accel:$a$] never changes!",
+        "**Slide threshold**: a resting block slides only when {slide_threshold|$\\tan\\theta > \\mu_s$}; at $\\theta = 30°$ ($\\tan 30° \\approx 0.577$), set $\\mu \\ge 0.58$ and watch $a$ drop to $0$.",
+        "**Static friction trap**: if the block is **not** sliding, actual {static_fric|static friction} equals $mg\\sin\\theta$, **not** $\\mu_s N$.",
+        "**Limiting cases**: at $\\theta = 0°$ (flat) $N = mg$ and $a = 0$; at $\\theta = 90°$ (vertical wall) $N = 0$, $f_k = 0$, and $a = g$ (free fall)."
+      ]
+    },
+    {
+      "id": "recall",
+      "type": "recall",
+      "title": "Recall",
+      "note": "use g = 9.8 m/s² unless stated otherwise",
+      "questions": [
+        {
+          "id": "q1",
+          "q": "A $4\\text{ kg}$ block rests on a $60°$ incline ($g = 9.8\\text{ m/s}^2$, $\\cos 60° = 0.5$). What is the normal force $N$ from the ramp?",
+          "options": ["$39.2\\text{ N}$", "$19.6\\text{ N}$", "$33.9\\text{ N}$"],
+          "answer": 1,
+          "why": "$N = mg\\cos 60° = 4(9.8)(0.5) = 19.6\\text{ N}$. Note that $39.2\\text{ N}$ is full weight $mg$, and $33.9\\text{ N}$ mistakenly uses $\\sin 60°$."
+        },
+        {
+          "id": "q2",
+          "q": "A wooden crate is placed at rest on a ramp at $\\theta = 37°$ ($\\tan 37° = 0.75$) with $\\mu_s = 0.80$. What happens when you let go?",
+          "options": [
+            "It slides down because gravity always beats static friction on a steep ramp",
+            "It slides only if the crate has a large enough mass",
+            "It stays at rest because $\\tan 37° = 0.75 < \\mu_s = 0.80$"
+          ],
+          "answer": 2,
+          "why": "By {slide_threshold|the slide condition}, sliding requires $\\tan\\theta > \\mu_s$ regardless of mass. Since $0.75 < 0.80$, static friction holds it."
+        },
+        {
+          "id": "q3",
+          "q": "You double the mass of a block sliding down a rough ramp while keeping $\\theta$ and $\\mu_k$ fixed. What happens to its acceleration $a$?",
+          "options": [
+            "It stays the same",
+            "It doubles because the downhill pull $mg\\sin\\theta$ doubles",
+            "It halves because kinetic friction doubles"
+          ],
+          "answer": 0,
+          "why": "Downhill pull ($mg\\sin\\theta$), friction ($\\mu_k mg\\cos\\theta$), and inertia ($m$) all double together, so $m$ cancels in $a = g(\\sin\\theta - \\mu_k\\cos\\theta)$."
+        },
+        {
+          "id": "q4",
+          "q": "A $2\\text{ kg}$ block stays at rest on a $30°$ ramp ($g = 9.8\\text{ m/s}^2$, $\\sin 30° = 0.5$) with $\\mu_s = 0.70$. What is the static friction force $f_s$ acting on it?",
+          "options": ["$11.9\\text{ N}$", "$9.8\\text{ N}$", "$0\\text{ N}$"],
+          "answer": 1,
+          "why": "Because the block is in {equilibrium|equilibrium}, {static_fric|static friction} matches the downhill pull: $f_s = mg\\sin 30° = 2(9.8)(0.5) = 9.8\\text{ N}$ (below $f_{s,\\max} \\approx 11.9\\text{ N}$)."
+        }
+      ]
+    }
+  ]
+}

@@ -10,8 +10,8 @@
       "role": "given",
       "color": "orange",
       "meaning": "how much matter resists a change in motion, in kilograms",
-      "body": "One quantity, two jobs: it resists acceleration in the second law, and it is what gravity pulls on in weight.",
-      "example": "A 2 kg block is twice as hard to speed up as a 1 kg block.",
+      "body": "One quantity, two jobs: it measures {mass_inertia|inertia} in the second law, and it is what gravity pulls on in [weight:weight].",
+      "example": "A $2\\text{ kg}$ block is twice as hard to accelerate as a $1\\text{ kg}$ block.",
       "analogy": "How full the shopping trolley is."
     },
     "force": {
@@ -20,7 +20,7 @@
       "color": "blue",
       "meaning": "a push or pull from outside the body, in newtons (N)",
       "body": "A force is never a property of the body on its own. It comes from somewhere else: a hand, a rope, the ground.",
-      "example": "A hand pushing a block with 6 N.",
+      "example": "A hand pushing a block with $6\\text{ N}$.",
       "analogy": "Somebody else leaning on your trolley."
     },
     "net": {
@@ -28,17 +28,17 @@
       "role": "derived",
       "color": "purple",
       "meaning": "every force on the body added as an arrow, the one it actually feels",
-      "body": "Forces are vectors, so direction matters. Two equal forces in opposite directions add to **zero**, and a body with zero net force has zero acceleration.",
-      "example": "6 N right and 2 N left add to 4 N right.",
-      "analogy": "Two people pushing a door from opposite sides: the door does not move."
+      "body": "Forces are vectors, so direction matters. Find the {net_force|net force} by adding them as arrows: two equal forces in opposite directions add to **zero**, giving zero acceleration.",
+      "example": "$6\\text{ N}$ right and $2\\text{ N}$ left add to $4\\text{ N}$ right.",
+      "analogy": "Two people pushing equally hard on a door from opposite sides: the door does not move."
     },
     "accel": {
       "label": "$a$",
       "role": "goal",
       "color": "green",
       "meaning": "how fast the velocity changes, in m/s²",
-      "body": "What the second law hands you. Not the speed, but the *rate* at which the speed changes.",
-      "example": "3 m/s² means 3 m/s faster every second.",
+      "body": "What {second_law|the second law} hands you. Not the speed, but the *rate* at which the velocity changes.",
+      "example": "$3\\text{ m/s}^2$ means $3\\text{ m/s}$ faster every second.",
       "analogy": "How quickly the needle on the speedometer climbs."
     },
     "vel": {
@@ -47,7 +47,7 @@
       "color": "teal",
       "meaning": "speed together with its direction, in m/s",
       "body": "Acceleration changes it. A steady force gives a steadily changing velocity, never a constant one.",
-      "example": "From rest at 3 m/s², after 4 s the block moves at 12 m/s.",
+      "example": "From rest at $3\\text{ m/s}^2$, after $4\\text{ s}$ the block moves at $12\\text{ m/s}$.",
       "analogy": "The number the speedometer shows, plus which way you face."
     },
     "time": {
@@ -56,96 +56,74 @@
       "color": "grey",
       "meaning": "how long the force acts, in seconds",
       "body": "The bridge from acceleration to velocity: starting from rest, $v = at$.",
-      "example": "Three seconds of push give three seconds of speed gain.",
-      "analogy": "How long you keep your foot on the pedal."
+      "example": "Four seconds of steady push give four seconds of speed gain.",
+      "analogy": "How long you keep your foot on the accelerator pedal."
     },
     "weight": {
       "label": "$W = mg$",
       "role": "derived",
       "color": "red",
       "meaning": "gravity's pull on the mass, about 9.8 N for every kg",
-      "body": "A force, measured in newtons. On level ground it is cancelled by the normal force, so it usually does not show up in $\\Sigma F$.",
-      "example": "A 2 kg block weighs about 19.6 N.",
-      "analogy": "The Earth leaning on the trolley, always downward."
+      "body": "{weight_card|Weight} is a force measured in newtons, unlike [mass:mass]. On level ground it is cancelled by the [normal:normal force], so it does not appear in horizontal $\\Sigma F$.",
+      "example": "A $2\\text{ kg}$ block weighs about $19.6\\text{ N}$ on Earth.",
+      "analogy": "The Earth pulling down on the trolley, always straight downward."
     },
     "normal": {
       "label": "$N$",
       "role": "derived",
       "color": "mustard",
       "meaning": "a surface pushing back, perpendicular to itself",
-      "body": "Not a law of its own: it takes whatever size stops the body sinking into the surface. On level ground $N = mg$; on a ramp at angle $\\theta$, $N = mg\\cos\\theta$.",
-      "example": "A 30° ramp pushes with about 17 N on a 2 kg block.",
-      "analogy": "A table that answers exactly as hard as you press on it."
+      "body": "The {normal_card|normal force} has no single formula: it takes whatever size stops the body sinking into the surface. On level ground $N = mg$; on a ramp at angle $\\theta$, $N = mg\\cos\\theta$.",
+      "example": "A $30^\\circ$ ramp pushes with about $17\\text{ N}$ on a $2\\text{ kg}$ block.",
+      "analogy": "A table that pushes back exactly as hard as you press on it."
     },
     "friction": {
       "label": "$f_k$",
       "role": "derived",
       "color": "cyan",
       "meaning": "a surface resisting sliding, kinetic friction $f_k = \\mu_k N$",
-      "body": "It opposes sliding, along the surface. It can be zero, and ice is the easy case.",
-      "example": "With $\\mu_k = 0.2$ and $N = 17$ N, friction is about 3.4 N.",
+      "body": "It opposes sliding along the surface. It can be zero, and frictionless ice is the ideal case.",
+      "example": "With $\\mu_k = 0.2$ and $N = 17\\text{ N}$, friction is about $3.4\\text{ N}$.",
       "analogy": "Sandpaper between the trolley and the floor."
     }
   },
   "cards": {
     "first_law": {
-      "kind": "law",
-      "title": "Law I: no force, no change",
-      "kicker": "inertia",
-      "body": "A body keeps its velocity, same speed and same direction, unless a [net:net force] acts on it. Rest is not a special state; it is just the case $v = 0$.",
-      "says": "Every body continues in its state of rest, or of uniform motion in a straight line, unless compelled to change that state by forces impressed upon it.",
-      "useWhen": "nothing seems to be pushing, and you need to know what the motion does.",
-      "analogy": "A puck on ice needs no reason to keep going, only a reason to stop."
+      "concept": "physics.newton-first-law"
     },
     "second_law": {
-      "kind": "law",
-      "title": "Law II: the net force sets the acceleration",
-      "kicker": "F = ma",
-      "body": "$\\p{net}{\\Sigma F} = \\p{mass}{m}\\p{accel}{a}$. The net force does not set the velocity, it sets how fast the velocity changes. Double the force and the acceleration doubles; double the mass and it halves.",
-      "says": "The change of motion is proportional to the force impressed, and is made in the direction of the straight line in which that force is impressed.",
-      "useWhen": "you know the forces and want the motion, or the other way round.",
-      "units": "$\\Sigma F$ in newtons, $m$ in kilograms, $a$ in m/s²."
+      "concept": "physics.newton-second-law"
     },
     "third_law": {
-      "kind": "law",
-      "title": "Law III: forces come in pairs",
-      "kicker": "action and reaction",
-      "body": "If A pushes B, then B pushes A with a force of the same size in the opposite direction. The two forces act on **different bodies**, so they never cancel each other out.",
-      "says": "To every action there is always an equal and opposite reaction.",
-      "useWhen": "you are looking for a force and cannot see where it comes from.",
-      "analogy": "Push off a wall on a skateboard and the wall pushes you back."
+      "concept": "physics.newton-third-law"
     },
     "net_force": {
-      "kind": "term",
-      "title": "Net force",
-      "kicker": "add the arrows",
-      "body": "Add every force on the body as a vector. Equal and opposite pairs acting on **one** body cancel, but a third-law pair never does, because it is split across two bodies.",
-      "example": "A block pulled right with 6 N and left with 2 N has a net force of 4 N to the right.",
-      "useWhen": "two forces act in different directions."
+      "concept": "physics.net-force"
     },
-    "weight_vs_mass": {
-      "kind": "lemma",
-      "title": "Mass is not weight",
-      "kicker": "common mistake",
-      "body": "[mass:Mass] is a property of the body and is the same everywhere. [weight:Weight] is a force from gravity and does change: on the Moon $g$ is about $1.6$ m/s², so the same mass weighs less.",
-      "example": "A 2 kg block weighs 19.6 N on Earth and about 3.2 N on the Moon.",
-      "useWhen": "a problem gives kilograms and asks for a force, or the reverse."
+    "mass_inertia": {
+      "concept": "physics.mass-and-inertia"
+    },
+    "weight_card": {
+      "concept": "physics.weight"
+    },
+    "normal_card": {
+      "concept": "physics.normal-force"
     },
     "ramp_limit": {
       "kind": "formula",
       "title": "When does a ramp start to slide?",
       "kicker": "tan θ against μ",
-      "body": "On a ramp, gravity pulls down the slope with $mg\\sin\\theta$ and friction resists with at most $\\mu_s mg\\cos\\theta$. The mass cancels, so the block starts to slide when $\\tan\\theta > \\mu_s$.",
+      "body": "On a ramp, gravity pulls down the slope with $mg\\sin\\theta$ and static friction resists with at most $\\mu_s mg\\cos\\theta$. The [mass:mass] cancels, so the block starts to slide when $\\tan\\theta > \\mu_s$.",
       "says": "$\\tan\\theta > \\mu_s$",
-      "example": "At $\\theta = 30°$, $\\tan\\theta \\approx 0.58$, so it slides only if $\\mu_s < 0.58$.",
-      "useWhen": "you are asked whether a block stays put."
+      "example": "At $\\theta = 30^\\circ$, $\\tan\\theta \\approx 0.58$, so it slides only if $\\mu_s < 0.58$.",
+      "useWhen": "you are asked whether a block stays put on an incline."
     },
     "principia": {
       "kind": "story",
       "title": "Principia, 1687",
       "kicker": "story",
-      "body": "Newton published the three laws in *Philosophiæ Naturalis Principia Mathematica*. He never wrote $F = ma$: he worked with proportions and geometry, and the equation is later shorthand from Euler.",
-      "example": "The same book gave the law of gravity, which explained the Moon and the apple with one rule."
+      "body": "Newton published the three laws in *Philosophiae Naturalis Principia Mathematica*. He never wrote $F = ma$: he worked with proportions and geometry, and the equation is later shorthand from Euler.",
+      "example": "The same book gave the law of universal gravitation, uniting the Moon and the falling apple under one rule."
     }
   },
   "sections": [
@@ -153,7 +131,7 @@
       "id": "intro",
       "type": "text",
       "title": "The one idea",
-      "body": "Everyday life says a cart stops when you stop pushing, so force must be what **keeps it moving**. Newton's correction is smaller and stranger: a {first_law|body with no net force} keeps its velocity, and a [net:net force] does exactly one thing, it changes [vel:velocity]. That change is [accel:acceleration], and {second_law|the second law} says how much."
+      "body": "Everyday life says a cart stops when you stop pushing, so force must be what **keeps it moving**. Newton's correction is smaller and sharper: a {first_law|body with no net force} keeps its velocity because of its {mass_inertia|inertia}, and a [net:net force] does exactly one thing—it changes [vel:velocity]. That change is [accel:acceleration], and {second_law|the second law} says how much."
     },
     {
       "id": "three_laws",
@@ -165,19 +143,19 @@
           "id": "law_one",
           "text": "A body keeps its velocity unless a [net:net force] acts on it.",
           "role": "concept",
-          "note": "{first_law|No force, no change}. This is also the definition of an inertial frame."
+          "note": "{first_law|Newton's first law} (law of inertia). Rest is just the special case $v = 0$."
         },
         {
           "id": "law_two",
           "text": "$\\p{net}{\\Sigma F} = \\p{mass}{m}\\,\\p{accel}{a}$",
           "role": "concept",
-          "note": "{second_law|The net force sets the acceleration}, never the velocity."
+          "note": "{second_law|Newton's second law}: the {net_force|net force} sets the acceleration, never the velocity."
         },
         {
           "id": "law_three",
           "text": "Two bodies always push each other with equal and opposite forces.",
           "role": "concept",
-          "note": "{third_law|Equal and opposite}, and acting on two different bodies. That is why a rocket works."
+          "note": "{third_law|Newton's third law}: action and reaction act on two different bodies, so they never cancel on one object."
         }
       ]
     },
@@ -185,7 +163,7 @@
       "id": "problem",
       "type": "problem",
       "title": "The problem",
-      "body": "A $2$ kg block sits on frictionless ice. A constant [force:push] of $6$ N acts horizontally for [time:$4$ s].\n\nHow fast is the block going at the end, and how far has it travelled? Use $g = 9.8$ m/s²."
+      "body": "A [mass:$2\\text{ kg}$] block rests on frictionless ice. A constant horizontal [force:push] of $6\\text{ N}$ acts on it for [time:$4\\text{ s}$].\n\nHow fast is the block moving at the end, and how far has it travelled? Use $g = 9.8\\text{ m/s}^2$."
     },
     {
       "id": "plan",
@@ -196,7 +174,7 @@
         {
           "id": "r_direct",
           "title": "Route A",
-          "path": "net force → [accel:$a$] → [vel:$v$]",
+          "path": "{net_force|net force} → [accel:$a$] → [vel:$v$]",
           "why": "The push is the only horizontal force, so $\\Sigma F$ is known and {second_law|the second law} gives $a$.",
           "whyNot": "Nothing. This is the shortest correct route.",
           "picked": true
@@ -206,19 +184,19 @@
           "title": "Route B",
           "path": "average speed = distance ÷ time",
           "why": "It looks like the familiar speed formula, and the time is given.",
-          "whyNot": "The distance is what we are asked to find, so this route assumes its own answer. It also needs an average speed, and the block is speeding up, not cruising.",
+          "whyNot": "The distance is what we are asked to find, so this route assumes its own answer. The block is also speeding up, not cruising.",
           "picked": false
         },
         {
           "id": "r_weight",
           "title": "Route C",
-          "path": "use [weight:weight] $W = mg$ as the force",
-          "why": "Gravity really does act on the block, so $W$ is a real force.",
-          "whyNot": "The block is on ice, not falling. Weight and the [normal:normal force] cancel, so they add nothing to $\\Sigma F$.",
+          "path": "use [weight:weight] $W = mg$ as the driving force",
+          "why": "Gravity really does act on the block, so {weight_card|$W$} is a real force.",
+          "whyNot": "The block sits on ice, not in free fall. Weight and the {normal_card|[normal:normal force]} cancel vertically, so they add nothing to horizontal $\\Sigma F$.",
           "picked": false
         }
       ],
-      "notUsed": "Not used: friction. The ice is frictionless, so $f_k = 0$ and the push is the whole net force."
+      "notUsed": "Not used: friction. The ice is frictionless, so $f_k = 0$ and the horizontal push is the entire net force."
     },
     {
       "id": "work",
@@ -228,34 +206,34 @@
       "steps": [
         {
           "id": "s1",
-          "move": "Add the horizontal forces. The [force:push] is the only one.",
-          "formula": "\\p{net}{\\Sigma F} = 6",
-          "why": "Weight and the normal force are vertical and cancel, and the ice adds no friction. Nothing else touches the block.",
-          "whyNot": "Do not add the push to the weight: they are perpendicular, so they do not add along one line.",
+          "move": "Find the horizontal [net:net force]. The [force:push] is the only horizontal force.",
+          "formula": "\\p{net}{\\Sigma F} = 6\\text{ N}",
+          "why": "{weight_card|Weight} ($19.6\\text{ N}$ down) and the {normal_card|normal force} ($19.6\\text{ N}$ up) cancel vertically, and the ice adds no friction.",
+          "whyNot": "Do not add the push to the weight: they are perpendicular, so they never add along one line.",
           "uses": ["net", "force", "weight", "normal"]
         },
         {
           "id": "s2",
-          "move": "Divide by the [mass:mass].",
-          "formula": "\\p{accel}{a} = \\frac{\\p{net}{\\Sigma F}}{\\p{mass}{m}} = \\frac{6}{2} = 3",
-          "why": "{second_law|The second law} defines acceleration as force per unit mass.",
-          "whyNot": "Do not multiply: a bigger mass is harder to accelerate, so the mass divides.",
+          "move": "Divide by the [mass:mass] to get [accel:acceleration].",
+          "formula": "\\p{accel}{a} = \\frac{\\p{net}{\\Sigma F}}{\\p{mass}{m}} = \\frac{6}{2} = 3\\text{ m/s}^2",
+          "why": "{second_law|The second law} gives acceleration as net force per unit {mass_inertia|mass}.",
+          "whyNot": "Do not multiply $6 \\times 2$: a larger mass has more inertia and is harder to accelerate, so mass divides.",
           "uses": ["accel", "net", "mass"]
         },
         {
           "id": "s3",
-          "move": "Multiply the acceleration by the [time:time].",
-          "formula": "\\p{vel}{v} = \\p{accel}{a}\\,\\p{time}{t} = 3 \\times 4 = 12",
-          "why": "Starting from rest, each second adds $3$ m/s to the velocity.",
-          "whyNot": "Do not stop at $6/2 = 3$: that is the acceleration, not the velocity.",
+          "move": "Multiply the acceleration by the [time:time] to find final [vel:velocity].",
+          "formula": "\\p{vel}{v} = \\p{accel}{a}\\,\\p{time}{t} = 3 \\times 4 = 12\\text{ m/s}",
+          "why": "Starting from rest ($u = 0$), each second adds $3\\text{ m/s}$ to the velocity.",
+          "whyNot": "Do not stop at $6/2 = 3$: that is the acceleration in $\\text{m/s}^2$, not the final velocity.",
           "uses": ["vel", "accel", "time"]
         },
         {
           "id": "s4",
-          "move": "For the distance, the average velocity is $(0 + 12)/2$, and the time is still $4$ s. So $s = \\frac{1}{2}at^2$.",
-          "formula": "s = \\frac{1}{2}\\,\\p{accel}{a}\\,\\p{time}{t}^{2} = 24",
-          "why": "With constant acceleration the average velocity is halfway between start and end.",
-          "whyNot": "Do not use $s = \\frac{1}{2}vt^2$: the $\\frac{1}{2}$ belongs to the acceleration, and $v$ here is the final speed.",
+          "move": "Find the distance using average velocity $(0 + 12)/2 = 6\\text{ m/s}$ over $4\\text{ s}$, or $s = \\frac{1}{2}at^2$.",
+          "formula": "s = \\frac{1}{2}\\,\\p{accel}{a}\\,\\p{time}{t}^{2} = \\frac{1}{2}(3)(4^2) = 24\\text{ m}",
+          "why": "With constant acceleration from rest, the average velocity is half the final velocity, so $s = 6 \\times 4 = 24\\text{ m}$.",
+          "whyNot": "Do not compute $s = v t = 12 \\times 4 = 48\\text{ m}$: the block only reaches $12\\text{ m/s}$ at the very end.",
           "uses": ["accel", "time", "vel"]
         }
       ]
@@ -308,10 +286,10 @@
       "type": "check",
       "title": "Check yourself",
       "items": [
-        "A block slides at a steady $2$ m/s on frictionless ice. The net force on it is **zero**, not $2m$.",
+        "A block slides at a steady $2\\text{ m/s}$ on frictionless ice. The {net_force|net force} on it is **zero**, not $2m$.",
         "Doubling the [mass:mass] while keeping the push the same **halves** the [accel:acceleration].",
-        "On level ground, weight and the [normal:normal force] cancel, so neither one appears in $\\Sigma F$.",
-        "A third-law pair acts on **two different bodies**, so the two forces never cancel on one body.",
+        "On level ground, {weight_card|weight} and the {normal_card|[normal:normal force]} cancel vertically, so neither appears in horizontal $\\Sigma F$.",
+        "A {third_law|third-law pair} acts on **two different bodies**, so the two forces never cancel on one body.",
         "Remove the push and the block does not stop at once: with no friction it keeps its [vel:velocity], as {first_law|the first law} says."
       ]
     },
@@ -323,28 +301,39 @@
       "questions": [
         {
           "id": "q1",
-          "q": "A $4$ kg block starts from rest under a net force of $8$ N. What is its speed after $3$ s?",
-          "options": ["$6$ m/s", "$2$ m/s", "$24$ m/s"],
-          "answer": 0,
-          "why": "$a = 8/4 = 2$ m/s², so $v = at = 6$ m/s."
+          "q": "A $4\\text{ kg}$ block starts from rest under a constant net force of $8\\text{ N}$. What is its speed after $3\\text{ s}$?",
+          "options": ["$2\\text{ m/s}$", "$6\\text{ m/s}$", "$24\\text{ m/s}$"],
+          "answer": 1,
+          "why": "$a = 8/4 = 2\\text{ m/s}^2$, so after $3\\text{ s}$ from rest, $v = at = 2 \\times 3 = 6\\text{ m/s}$."
         },
         {
           "id": "q2",
-          "q": "Which law explains a puck sliding on forever on frictionless ice?",
-          "options": ["The first", "The second", "The third"],
-          "answer": 0,
-          "why": "No net force means no change in velocity, so it keeps the velocity it has."
+          "q": "Which law explains a puck sliding on at constant velocity across frictionless ice?",
+          "options": ["Newton's third law", "Newton's second law", "Newton's first law"],
+          "answer": 2,
+          "why": "{first_law|Newton's first law}: zero net force means zero change in velocity, so the puck keeps moving straight at the same speed."
         },
         {
           "id": "q3",
-          "q": "A ramp is at $\\theta = 30°$ and $\\mu_s = 0.7$. Does the block start to slide?",
+          "q": "A ramp is tilted at $\\theta = 30^\\circ$ with static friction coefficient $\\mu_s = 0.7$. Does a block placed on it start to slide?",
           "options": [
-            "No, because $\\tan 30° \\approx 0.58 < 0.7$",
-            "Yes, because gravity always wins",
-            "Only if the block is heavy enough"
+            "No, because $\\tan 30^\\circ \\approx 0.58 < 0.7$",
+            "Yes, because gravity always pulls down the ramp",
+            "Only if the block has a large enough mass"
           ],
           "answer": 0,
-          "why": "It slides when $\\tan\\theta > \\mu_s$, and {ramp_limit|the mass cancels} out of that comparison."
+          "why": "It slides only when $\\tan\\theta > \\mu_s$, and {ramp_limit|the mass cancels} out of that condition."
+        },
+        {
+          "id": "q4",
+          "q": "A textbook rests on a flat table. What is the third-law reaction pair to Earth's downward gravitational pull on the book?",
+          "options": [
+            "The upward normal force of the table on the book",
+            "The upward gravitational pull of the book on the Earth",
+            "The downward push of the book on the table"
+          ],
+          "answer": 1,
+          "why": "A {third_law|third-law pair} swaps the two interacting bodies (Earth and book) and keeps the same type of force (gravity). The table's normal force merely balances weight on the book."
         }
       ]
     },
@@ -356,17 +345,17 @@
         {
           "id": "aristotle",
           "year": "350 BC",
-          "text": "Aristotle: motion needs a mover. Carts and arrows in everyday life agree with him."
+          "text": "Aristotle: motion needs a mover. Carts and arrows in everyday life seem to agree with him."
         },
         {
           "id": "galileo",
           "year": "1638",
-          "text": "Galileo: a ball on a smooth, level track keeps rolling. It is the *resistance*, not motion itself, that needs a cause."
+          "text": "Galileo: a ball on a smooth, level track keeps rolling. It is *resistance*, not motion itself, that needs a cause."
         },
         {
           "id": "newton",
           "year": "1687",
-          "text": "Newton, *Principia*: three laws and one universal gravity. {principia|The whole mechanics of the sky in one arrow}."
+          "text": "Newton, *Principia*: three laws and one universal gravity. {principia|The whole mechanics of the sky in one framework}."
         },
         {
           "id": "today",

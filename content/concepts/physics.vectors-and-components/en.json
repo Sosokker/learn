@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "slug": "physics.vectors-and-components",
+  "lang": "en",
+  "card": {
+    "kind": "term",
+    "title": "Vectors and components",
+    "kicker": "term",
+    "body": "A **vector** is a quantity with both **magnitude** and **direction** (unlike a *scalar*, which has magnitude only). In two dimensions, a vector $\\vec{A}$ at angle $\\theta$ counterclockwise from the $+x$-axis splits into two perpendicular **components**: $A_x = A\\cos\\theta$ and $A_y = A\\sin\\theta$, with $A = \\sqrt{A_x^2 + A_y^2}$ and $\\tan\\theta = A_y / A_x$ (for $A_x \\neq 0$, checking the quadrant).",
+    "says": "break any angled vector into an $x$-part and a $y$-part so you can add vectors along straight axes.",
+    "useWhen": "forces, displacements, or velocities point at angles and you need to combine them or work along one axis at a time.",
+    "example": "A vector of magnitude $A = 20\\text{ N}$ at $\\theta = 60^\\circ$ above the $+x$-axis has $A_x = 20\\cos 60^\\circ = 10\\text{ N}$ and $A_y = 20\\sin 60^\\circ = 10\\sqrt{3}\\text{ N}$. Check: $\\sqrt{10^2 + (10\\sqrt{3})^2} = \\sqrt{100 + 300} = 20\\text{ N}$.",
+    "analogy": "Giving directions on a city grid: instead of saying \"walk diagonally\", you give how many blocks east ($x$) and how many blocks north ($y$)."
+  },
+  "needs": [],
+  "aliases": [
+    "vector",
+    "vector components",
+    "scalar vs vector",
+    "resolving vectors",
+    "เวกเตอร์",
+    "องค์ประกอบเวกเตอร์",
+    "การแตกเวกเตอร์",
+    "ปริมาณเวกเตอร์"
+  ]
+}

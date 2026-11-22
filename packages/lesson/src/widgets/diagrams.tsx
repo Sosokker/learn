@@ -7,9 +7,27 @@ import { SectionFrame } from "../chrome.tsx"
 import { useLesson } from "../context.tsx"
 import { richText } from "../model.ts"
 import { RichInline } from "../rich.tsx"
-import type { DiagramEdge, DiagramNode } from "./diagram-types.ts"
+import type { DiagramEdge, DiagramNode, DiagramProps } from "./diagram-types.ts"
 
 const Diagram = lazy(() => import("./diagram.tsx"))
+
+/** Standalone lazy React Flow + dagre diagram (shares the lazy chunk with lesson graphs). */
+export function LazyDiagram(
+  props: DiagramProps & { readonly loadingLabel: string; readonly fallbackHeight?: number | undefined },
+) {
+  const { loadingLabel, fallbackHeight = 240, ...diagramProps } = props
+  return (
+    <Suspense
+      fallback={
+        <div className="lsn-diagram lsn-diagram-loading" style={{ height: fallbackHeight }}>
+          {loadingLabel}
+        </div>
+      }
+    >
+      <Diagram {...diagramProps} />
+    </Suspense>
+  )
+}
 
 /** React Flow edge id for a graph edge; the highlight CSS lights edges by this id. */
 export const graphEdgeId = (section: string, from: string, to: string): string => `${section}__${from}__${to}`

@@ -1,0 +1,378 @@
+{
+  "schema": 1,
+  "kind": "learn",
+  "lang": "en",
+  "title": "Acceleration: how velocity changes every second",
+  "summary": "Acceleration is the rate of change of velocity—not how fast you move, and negative acceleration does not always mean slowing down. Master signs, braking steps, and the v–t graph.",
+  "parts": {
+    "u": {
+      "label": "$u$",
+      "role": "given",
+      "color": "orange",
+      "meaning": "initial velocity before braking: +24 m/s (east)",
+      "body": "The train's starting velocity along $+x$ at $t = 0$.",
+      "example": "$24\\text{ m/s}$ equals $86.4\\text{ km/h}$."
+    },
+    "vel": {
+      "label": "$v$",
+      "role": "given",
+      "color": "teal",
+      "meaning": "velocity after 6 s of braking: +6 m/s (east)",
+      "body": "Still positive, so the train is still moving east—just much slower than before.",
+      "example": "Dropped from $24\\text{ m/s}$ to $6\\text{ m/s}$."
+    },
+    "time": {
+      "label": "$t$",
+      "role": "given",
+      "color": "grey",
+      "meaning": "braking interval: 6 s",
+      "body": "The time over which velocity changes from [u:$u$] to [vel:$v$]."
+    },
+    "dv": {
+      "label": "$\\Delta v$",
+      "role": "derived",
+      "color": "purple",
+      "meaning": "change in velocity (v - u): -18 m/s",
+      "body": "Always **final minus initial**: $v - u = 6 - 24 = -18\\text{ m/s}$. The minus sign shows the velocity shifted westward."
+    },
+    "accel": {
+      "label": "$a$",
+      "role": "goal",
+      "color": "green",
+      "meaning": "constant acceleration, in m/s²",
+      "body": "Defined by {accel_card|acceleration}: $\\Delta v / t$. Here $a = -3\\text{ m/s}^2$, meaning velocity drops by $3\\text{ m/s}$ every second.",
+      "example": "$-3\\text{ m/s}^2$ directed west while moving east means braking.",
+      "analogy": "How fast the speedometer needle sweeps downward each second while braking."
+    },
+    "disp": {
+      "label": "$s$",
+      "role": "goal",
+      "color": "blue",
+      "meaning": "displacement covered during the 6 s braking interval, in meters",
+      "body": "Found from {mean_speed|the mean speed theorem} or {suvat|uniform acceleration equations}, and equal to the signed area under the {vt_graph|$v\\text{–}t$ graph}.",
+      "example": "$s = \\frac{24 + 6}{2} \\times 6 = 90\\text{ m}$."
+    },
+    "t_stop": {
+      "label": "$t_{\\text{stop}}$",
+      "role": "goal",
+      "color": "pink",
+      "meaning": "extra time needed to slow from 6 m/s to 0 m/s",
+      "body": "How many more seconds at $a = -3\\text{ m/s}^2$ erase the remaining $6\\text{ m/s}$ of velocity."
+    }
+  },
+  "cards": {
+    "accel_card": {
+      "concept": "physics.acceleration"
+    },
+    "speed_vel": {
+      "concept": "physics.speed-and-velocity"
+    },
+    "suvat": {
+      "concept": "physics.uniform-acceleration-equations"
+    },
+    "mean_speed": {
+      "concept": "physics.mean-speed-theorem"
+    },
+    "dist_disp": {
+      "concept": "physics.distance-and-displacement"
+    },
+    "sign_of_a": {
+      "kind": "lemma",
+      "title": "Negative acceleration does not always mean slowing down",
+      "kicker": "check both signs",
+      "body": "The sign of [accel:$a$] only tells you the **direction** of the acceleration vector ($+x$ or $-x$). An object **speeds up** when $v$ and $a$ have the **same sign** (both $+$ or both $-$), and **slows down** (decelerates) when $v$ and $a$ have **opposite signs**.",
+      "example": "Moving west at $v = -10\\text{ m/s}$ with $a = -2\\text{ m/s}^2$ reaches $-12\\text{ m/s}$ after $1\\text{ s}$—it got faster!",
+      "useWhen": "a problem gives a negative acceleration and asks whether the object speeds up or slows down."
+    },
+    "vt_graph": {
+      "kind": "term",
+      "title": "Reading a velocity–time ($v\\text{–}t$) graph",
+      "kicker": "slope and area",
+      "body": "On a $v\\text{–}t$ graph, the **slope** equals [accel:acceleration] $a = \\Delta v / \\Delta t$, and the **signed area** between the curve and the time axis equals [disp:displacement] $s$. A straight tilted line means constant acceleration.",
+      "example": "A trapezoid from $u = 24\\text{ m/s}$ to $v = 6\\text{ m/s}$ over $6\\text{ s}$ has area $\\frac{24+6}{2} \\times 6 = 90\\text{ m}$.",
+      "useWhen": "you are given a velocity–time graph or want to check a kinematic formula visually."
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "text",
+      "title": "Velocity changes, not velocity itself",
+      "body": "A jet cruising smoothly at $250\\text{ m/s}$ in a straight line has **zero** acceleration, whereas a car just starting to roll from rest has a large acceleration. {accel_card|Acceleration} is a vector measuring how much {speed_vel|velocity} changes each second—whether it speeds up, slows down, or changes direction. In 1D motion, watching the signs of both $v$ and $a$ prevents the classic trap in {sign_of_a|negative acceleration}."
+    },
+    {
+      "id": "signs",
+      "type": "visual",
+      "title": "How the signs of velocity and acceleration work together",
+      "note": "compare the sign of $v$ with the sign of $a$ every time",
+      "widget": {
+        "kind": "table",
+        "head": ["Velocity $v$", "Acceleration [accel:$a$]", "Direction of motion", "What happens to speed?"],
+        "rows": [
+          ["$+$", "$+$", "Moving along $+x$", "**Speeding up** (same direction)"],
+          ["$+$", "$-$", "Moving along $+x$", "**Slowing down** (opposite direction)"],
+          ["$-$", "$-$", "Moving along $-x$", "**Speeding up** (same direction!)"],
+          ["$-$", "$+$", "Moving along $-x$", "**Slowing down** (opposite direction)"]
+        ]
+      }
+    },
+    {
+      "id": "problem",
+      "type": "problem",
+      "title": "The problem",
+      "body": "A commuter train travels straight east ($+x$) at initial velocity [u:$u = 24\\text{ m/s}$]. The driver brakes steadily for [time:$t = 6\\text{ s}$], reducing the train's velocity to [vel:$v = 6\\text{ m/s}$] east.\n\nFind (1) the constant [accel:acceleration] $a$, (2) the [disp:displacement] $s$ during these $6\\text{ s}$, and (3) the [t_stop:additional time] needed at the same acceleration to come to a complete stop ($v = 0$)."
+    },
+    {
+      "id": "chunks",
+      "type": "chunks",
+      "title": "Identify the five kinematic quantities",
+      "note": "take east as the positive $+x$ axis",
+      "rows": [
+        {
+          "id": "c_u",
+          "text": "[u:$u = +24\\text{ m/s}$]",
+          "role": "given",
+          "note": "initial velocity eastward"
+        },
+        {
+          "id": "c_v",
+          "text": "[vel:$v = +6\\text{ m/s}$]",
+          "role": "given",
+          "note": "final velocity after $6\\text{ s}$, still eastward"
+        },
+        {
+          "id": "c_t",
+          "text": "[time:$t = 6\\text{ s}$]",
+          "role": "given",
+          "note": "time interval of steady braking"
+        },
+        {
+          "id": "c_goals",
+          "text": "Find [accel:$a$], [disp:$s$], and [t_stop:$t_{\\text{stop}}$]",
+          "role": "goal",
+          "note": "use {accel_card|acceleration} and {suvat|uniform acceleration equations}"
+        }
+      ]
+    },
+    {
+      "id": "concept",
+      "type": "concept",
+      "title": "Concept → Field",
+      "concept": "When [accel:acceleration] is constant, velocity changes linearly ($v = u + at$) and {dist_disp|displacement} equals average velocity times time, $s = \\dfrac{u+v}{2}\\,t$.",
+      "field": "Kinematics (uniformly accelerated 1D motion). Built from {accel_card|acceleration}, {mean_speed|the mean speed theorem}, and {suvat|uniform acceleration equations}.",
+      "prerequisites": ["accel_card", "speed_vel", "mean_speed", "suvat"]
+    },
+    {
+      "id": "plan",
+      "type": "plan",
+      "title": "Plan",
+      "note": "order the steps so each one uses only values you already know",
+      "routes": [
+        {
+          "id": "r_chain",
+          "title": "Route A",
+          "path": "[dv:$\\Delta v$] → [accel:$a = \\Delta v / t$] → [disp:$s = \\frac{u+v}{2}t$] → [t_stop:$t_{\\text{stop}}$]",
+          "why": "Definition of acceleration gives $a$ directly; {mean_speed|the mean speed theorem} finds $s$ without even needing $a$; then $v = u + at$ finishes the stop time.",
+          "whyNot": "Nothing. Every step is short and self-checking.",
+          "picked": true
+        },
+        {
+          "id": "r_u_minus_v",
+          "title": "Route B",
+          "path": "compute $(u - v)/t = (24 - 6)/6 = +3\\text{ m/s}^2$",
+          "why": "Subtracting the smaller number from the bigger number avoids a minus sign.",
+          "whyNot": "Reversing $v - u$ flips the sign of [accel:$a$]. Writing $+3\\text{ m/s}^2$ claims the train accelerated **eastward** to $42\\text{ m/s}$ instead of braking!",
+          "picked": false
+        }
+      ],
+      "notUsed": "Not used: the train's mass. Kinematics describes how velocity and position evolve without needing forces."
+    },
+    {
+      "id": "work",
+      "type": "chain",
+      "title": "Work it through",
+      "note": "hover a step to trace every symbol and sign",
+      "steps": [
+        {
+          "id": "s1",
+          "move": "Find the change in velocity [dv:$\\Delta v$] (final minus initial).",
+          "formula": "\\p{dv}{\\Delta v} = \\p{vel}{v} - \\p{u}{u} = 6 - 24 = -18\\text{ m/s}",
+          "why": "A change is always final minus initial. The negative result means the velocity decreased by $18\\text{ m/s}$.",
+          "whyNot": "Do not compute $24 - 6 = +18$: that flips the direction of change.",
+          "uses": ["dv", "vel", "u"]
+        },
+        {
+          "id": "s2",
+          "move": "Divide [dv:$\\Delta v$] by [time:$t$] to get constant [accel:acceleration].",
+          "formula": "\\p{accel}{a} = \\frac{\\p{dv}{\\Delta v}}{\\p{time}{t}} = \\frac{-18}{6} = -3\\text{ m/s}^2",
+          "why": "By {accel_card|acceleration}, the train's velocity shifts by $-3\\text{ m/s}$ ($3\\text{ m/s}$ west) each second. Since $v > 0$ and $a < 0$, {sign_of_a|the train slows down}.",
+          "whyNot": "Do not confuse $-3\\text{ m/s}^2$ with a velocity: the train is still moving east at $+6\\text{ m/s}$, not backward.",
+          "uses": ["accel", "dv", "time"]
+        },
+        {
+          "id": "s3",
+          "move": "Compute [disp:displacement] during the $6\\text{ s}$ braking period using {mean_speed|average velocity}.",
+          "formula": "\\p{disp}{s} = \\left(\\frac{\\p{u}{u} + \\p{vel}{v}}{2}\\right)\\p{time}{t} = \\left(\\frac{24 + 6}{2}\\right)(6) = 15 \\times 6 = 90\\text{ m}",
+          "why": "With constant acceleration, average velocity is halfway between $u$ and $v$ ($15\\text{ m/s}$), matching the trapezoid area on the {vt_graph|$v\\text{–}t$ graph}. Cross-check via {suvat|$ut + \\frac{1}{2}at^2$}: $24(6) + \\frac{1}{2}(-3)(6^2) = 144 - 54 = 90\\text{ m}$.",
+          "whyNot": "Do not plug $+3$ into $ut + \\frac{1}{2}at^2$: forgetting the minus sign gives $144 + 54 = 198\\text{ m}$, larger than even $24 \\times 6 = 144\\text{ m}$!",
+          "uses": ["disp", "u", "vel", "time", "accel"]
+        },
+        {
+          "id": "s4",
+          "move": "Find the [t_stop:extra time] to drop from [vel:$6\\text{ m/s}$] to $0\\text{ m/s}$ at [accel:$a = -3\\text{ m/s}^2$].",
+          "formula": "0 = \\p{vel}{6} + (\\p{accel}{-3})\\,\\p{t_stop}{t_{\\text{stop}}} \\implies \\p{t_stop}{t_{\\text{stop}}} = \\frac{-6}{-3} = 2\\text{ s}",
+          "why": "Losing $3\\text{ m/s}$ every second erases the remaining $6\\text{ m/s}$ in exactly $2\\text{ s}$ (total braking time from $24\\text{ m/s}$ to rest is $6 + 2 = 8\\text{ s}$).",
+          "whyNot": "Do not answer $8\\text{ s}$ when the question asks for the *additional* time after the first $6\\text{ s}$.",
+          "uses": ["t_stop", "vel", "accel"]
+        }
+      ]
+    },
+    {
+      "id": "plot",
+      "type": "visual",
+      "title": "Velocity–time ($v\\text{–}t$) graph: slope is acceleration",
+      "note": "drag initial velocity $u$, acceleration $a$, and time $t$; notice what happens after the line crosses $v = 0$",
+      "widget": {
+        "kind": "plot",
+        "x": {
+          "min": 0,
+          "max": 10,
+          "label": "time $t$ (s)"
+        },
+        "y": {
+          "min": -60,
+          "max": 80,
+          "label": "velocity $v$ (m/s)"
+        },
+        "params": [
+          {
+            "id": "u",
+            "label": "[u:$u$] initial velocity (m/s)",
+            "min": -10,
+            "max": 30,
+            "step": 2,
+            "value": 24,
+            "part": "u"
+          },
+          {
+            "id": "a",
+            "label": "[accel:$a$] acceleration (m/s²)",
+            "min": -5,
+            "max": 5,
+            "step": 0.5,
+            "value": -3,
+            "part": "accel"
+          },
+          {
+            "id": "t",
+            "label": "[time:$t$] elapsed time (s)",
+            "min": 1,
+            "max": 10,
+            "step": 1,
+            "value": 6,
+            "part": "time"
+          }
+        ],
+        "curves": [
+          {
+            "expr": "u + a * x",
+            "part": "vel",
+            "label": "velocity $v(t) = u + at$ (slope $= a$)"
+          },
+          {
+            "expr": "u",
+            "part": "u",
+            "label": "initial velocity $u$ (zero-acceleration reference)"
+          }
+        ],
+        "points": [
+          {
+            "x": "t",
+            "y": "u + a * t",
+            "part": "vel",
+            "label": "velocity at time $t$"
+          }
+        ],
+        "readouts": [
+          {
+            "label": "[vel:velocity $v(t)$]",
+            "expr": "u + a * t",
+            "unit": "m/s",
+            "part": "vel"
+          },
+          {
+            "label": "[dv:velocity change $\\Delta v$]",
+            "expr": "a * t",
+            "unit": "m/s",
+            "part": "dv"
+          },
+          {
+            "label": "[disp:displacement $s$]",
+            "expr": "u * t + 0.5 * a * t^2",
+            "unit": "m",
+            "part": "disp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "check",
+      "type": "check",
+      "title": "Check yourself",
+      "items": [
+        "**Bounds on displacement**: at $u = 24\\text{ m/s}$ and $v = 6\\text{ m/s}$ over $6\\text{ s}$, $s$ must sit between $6 \\times 6 = 36\\text{ m}$ and $24 \\times 6 = 144\\text{ m}$—and $90\\text{ m}$ is right in the middle.",
+        "**Cross-check with $v^2 = u^2 + 2as$**: $6^2 = 36$ and $24^2 + 2(-3)(90) = 576 - 540 = 36$. Every {suvat|kinematic equation} agrees.",
+        "**Watch the zero crossing**: drag $t$ from $6\\text{ s}$ to $8\\text{ s}$ ($v = 0$, $s = 96\\text{ m}$), then to $10\\text{ s}$ ($v = -6\\text{ m/s}$)—beyond $8\\text{ s}$, $v$ and $a$ are both negative, so the object **speeds up** in the $-x$ direction.",
+        "**Zero velocity $\\neq$ zero acceleration**: at the exact instant $t = 8\\text{ s}$ when $v = 0$, the slope of the $v\\text{–}t$ line is still $-3\\text{ m/s}^2$, not zero."
+      ]
+    },
+    {
+      "id": "recall",
+      "type": "recall",
+      "title": "Recall",
+      "note": "answer from memory before revealing",
+      "questions": [
+        {
+          "id": "q1",
+          "q": "A motorbike speeds up uniformly in a straight line from $8\\text{ m/s}$ to $28\\text{ m/s}$ in $5\\text{ s}$. What is its acceleration?",
+          "options": ["$5.6\\text{ m/s}^2$", "$4\\text{ m/s}^2$", "$7.2\\text{ m/s}^2$"],
+          "answer": 1,
+          "why": "By {accel_card|acceleration}, $a = (v - u)/t = (28 - 8)/5 = 20/5 = 4\\text{ m/s}^2$."
+        },
+        {
+          "id": "q2",
+          "q": "A car moves along the $-x$ axis with velocity $v = -12\\text{ m/s}$ and constant acceleration $a = -2\\text{ m/s}^2$. What happens to its speed?",
+          "options": [
+            "It slows down because $a$ is negative",
+            "It keeps a constant speed of $12\\text{ m/s}$",
+            "It speeds up in the $-x$ direction because $v$ and $a$ have the same sign"
+          ],
+          "answer": 2,
+          "why": "By {sign_of_a|sign comparison}, after $1\\text{ s}$ the velocity becomes $-14\\text{ m/s}$ (speed rises from $12$ to $14\\text{ m/s}$)."
+        },
+        {
+          "id": "q3",
+          "q": "A ball is thrown straight upward. At its highest point, its instantaneous velocity is $0\\text{ m/s}$. Ignoring air resistance, what is its acceleration at that instant?",
+          "options": [
+            "$9.8\\text{ m/s}^2$ downward",
+            "$0\\text{ m/s}^2$ because it momentarily stops",
+            "$9.8\\text{ m/s}^2$ upward"
+          ],
+          "answer": 0,
+          "why": "Gravity never turns off at the peak: velocity passes smoothly from positive through zero to negative, so the slope $a = g \\approx 9.8\\text{ m/s}^2$ downward stays constant."
+        },
+        {
+          "id": "q4",
+          "q": "On a velocity–time ($v\\text{–}t$) graph, what do the **slope** and the **signed area** between the curve and the time axis represent?",
+          "options": [
+            "Slope = displacement, signed area = velocity",
+            "Slope = velocity, signed area = acceleration",
+            "Slope = acceleration, signed area = displacement"
+          ],
+          "answer": 2,
+          "why": "On a {vt_graph|$v\\text{–}t$ graph}, $\\Delta v / \\Delta t$ (slope) is acceleration, while multiplying velocity by time (area) gives displacement."
+        }
+      ]
+    }
+  ]
+}

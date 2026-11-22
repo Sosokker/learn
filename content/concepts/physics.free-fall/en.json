@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "slug": "physics.free-fall",
+  "lang": "en",
+  "card": {
+    "kind": "term",
+    "title": "Free fall",
+    "kicker": "term",
+    "body": "Vertical motion under **gravity alone**, with air resistance ignored. Near Earth's surface, every object in free fall — regardless of mass — has the same constant downward **gravitational acceleration** $g \\approx 9.8\\text{ m/s}^2$. This includes objects dropped, thrown downward, or thrown straight upward.",
+    "says": "once an object leaves your hand and air drag is negligible, gravity pulls it downward at constant acceleration $g$ — even at the very top of a toss where $v = 0$.",
+    "from": "applying the uniform acceleration equations along the vertical axis with $a = g$ downward.",
+    "useWhen": "an object is dropped or thrown vertically and air resistance can be neglected. Choose one positive direction (up or down) and keep the signs of $u$, $v$, $s$, and $g$ consistent.",
+    "units": "$g \\approx 9.8\\text{ m/s}^2$",
+    "example": "Drop a stone from rest ($u = 0$) with $g = 9.8\\text{ m/s}^2$ for $t = 3\\text{ s}$: velocity $v = 0 + 9.8(3) = 29.4\\text{ m/s}$ downward, and distance fallen $h = \\dfrac{1}{2}(9.8)(3^2) = 4.9 \\times 9 = 44.1\\text{ m}$.",
+    "analogy": "In a vacuum tube, a feather and a bowling ball released together fall side by side and hit the bottom at the exact same instant."
+  },
+  "needs": [
+    "physics.uniform-acceleration-equations"
+  ],
+  "aliases": [
+    "free fall",
+    "gravitational acceleration",
+    "g = 9.8 m/s^2",
+    "falling body",
+    "การตกแบบเสรี",
+    "การตกอย่างอิสระ",
+    "ความเร่งโน้มถ่วง"
+  ]
+}

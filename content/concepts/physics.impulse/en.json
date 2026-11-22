@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "slug": "physics.impulse",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Impulse",
+    "kicker": "formula",
+    "body": "$\\vec{I} = \\vec{F}_{\\text{av}} \\Delta t = \\Delta\\vec{p} = m\\vec{v} - m\\vec{u}$",
+    "says": "the **vector** change in momentum $\\Delta\\vec{p}$ caused by an average impulsive force $\\vec{F}_{\\text{av}}$ acting over contact time $\\Delta t$. For the same $\\Delta\\vec{p}$, stretching out $\\Delta t$ lowers the average force.",
+    "from": "multiplying Newton's second law $\\vec{F}_{\\text{av}} = \\dfrac{\\Delta\\vec{p}}{\\Delta t}$ by $\\Delta t$; when the force varies in time, impulse equals the area under the $F$–$t$ graph.",
+    "useWhen": "a ball rebounds off a wall or racket, a car hits a barrier, or you need the average impulsive force during a brief impact—remember the minus sign when velocity reverses.",
+    "units": "$\\text{N}\\cdot\\text{s}$ (equivalent to $\\text{kg}\\cdot\\text{m/s}$)",
+    "example": "A $0.2\\text{ kg}$ ball hits a wall at $u = +10\\text{ m/s}$ and rebounds at $v = -8\\text{ m/s}$ over $\\Delta t = 0.04\\text{ s}$: $I = 0.2(-8 - 10) = -3.6\\text{ N}\\cdot\\text{s}$, so $F_{\\text{av}} = \\dfrac{-3.6}{0.04} = -90\\text{ N}$.",
+    "analogy": "Bending your knees when landing from a jump—or an airbag inflating in a crash—does not change your $\\Delta p$, but it lengthens $\\Delta t$ so the average force on your body stays much smaller."
+  },
+  "needs": [
+    "physics.net-force",
+    "physics.total-time",
+    "physics.momentum"
+  ],
+  "aliases": [
+    "impulse",
+    "impulsive force",
+    "impulse-momentum theorem",
+    "I = F Δt",
+    "J = F Δt",
+    "การดล",
+    "แรงดล",
+    "การเปลี่ยนโมเมนตัม"
+  ]
+}

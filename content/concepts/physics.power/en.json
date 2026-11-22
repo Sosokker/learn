@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "slug": "physics.power",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Power",
+    "kicker": "formula",
+    "body": "$P = \\dfrac{W}{\\Delta t}$",
+    "says": "the **rate** at which work is done or energy is transferred. For a constant force $F$ along velocity $v$, instantaneous power is $P = F v$.",
+    "from": "dividing work $W$ by the elapsed time $\\Delta t$; substituting $W = F \\Delta x$ gives $P = F \\dfrac{\\Delta x}{\\Delta t} = F v$.",
+    "useWhen": "the question asks how fast a motor, hoist, or person delivers energy, or gives power in watts (or horsepower) alongside time or speed.",
+    "units": "W (watt, $1\\text{ W} = 1\\text{ J/s}$; $1\\text{ hp} \\approx 746\\text{ W}$)",
+    "example": "A hoist lifts a $50\\text{ kg}$ crate $h = 4\\text{ m}$ at steady speed in $\\Delta t = 10\\text{ s}$ (with $g = 9.8\\text{ m/s}^2$): $W = 50 \\times 9.8 \\times 4 = 1960\\text{ J}$ → $P = \\dfrac{1960}{10} = 196\\text{ W}$.",
+    "analogy": "Walking and sprinting up the same staircase do the exact same work against gravity, but sprinting finishes in less time and therefore demands higher power."
+  },
+  "needs": [
+    "physics.work",
+    "physics.total-time"
+  ],
+  "aliases": [
+    "power",
+    "mechanical power",
+    "P = W/t",
+    "P = Fv",
+    "watt",
+    "กำลัง",
+    "กำลังเฉลี่ย",
+    "วัตต์"
+  ]
+}

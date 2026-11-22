@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "slug": "physics.static-friction",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Static friction",
+    "kicker": "formula",
+    "body": "$0 \\le f_s \\le f_{s,\\max} = \\mu_s N$",
+    "says": "the friction between surfaces that are **not sliding** past each other; it matches the applied push along the surface up to the ceiling $\\mu_s N$.",
+    "from": "microscopic roughness and molecular bonds locking two stationary surfaces together; $\\mu_s$ (coefficient of static friction) depends on the pair of materials.",
+    "useWhen": "an object is at rest on a rough surface (or rolling without slipping) and you need to test whether it stays put or find the threshold push to make it budge.",
+    "units": "$f_s$ and $N$ in $\\text{N}$; $\\mu_s$ is dimensionless",
+    "example": "A $10\\text{ kg}$ box on a flat floor ($g = 9.8\\text{ m/s}^2$, $N = 98\\text{ N}$) with $\\mu_s = 0.50$ has $f_{s,\\max} = 0.50 \\times 98 = 49\\text{ N}$. Push horizontally with $30\\text{ N}$ → it stays put, and $f_s = 30\\text{ N}$ (not $49\\text{ N}$).",
+    "analogy": "A stubborn friend bracing against a door: they only push back as hard as you push, until you exceed their maximum strength and the door gives way."
+  },
+  "needs": [
+    "physics.normal-force",
+    "physics.newton-first-law"
+  ],
+  "aliases": [
+    "static friction",
+    "maximum static friction",
+    "fs <= mu_s N",
+    "coefficient of static friction",
+    "แรงเสียดทานสถิต",
+    "แรงเสียดทานสถิตสูงสุด",
+    "สัมประสิทธิ์ความเสียดทานสถิต"
+  ]
+}

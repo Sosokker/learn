@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "slug": "physics.conservation-of-momentum",
+  "lang": "en",
+  "card": {
+    "kind": "law",
+    "title": "Conservation of momentum",
+    "kicker": "law",
+    "body": "$\\sum\\vec{p}_{\\text{before}} = \\sum\\vec{p}_{\\text{after}} \\quad \\Longleftrightarrow \\quad m_1\\vec{u}_1 + m_2\\vec{u}_2 = m_1\\vec{v}_1 + m_2\\vec{v}_2$",
+    "says": "when the **net external force** on a system is zero ($\\sum\\vec{F}_{\\text{ext}} = \\vec{0}$), the system's total momentum stays constant—even in inelastic collisions where kinetic energy is lost to heat or deformation.",
+    "from": "Newton's third law combined with impulse: during a collision, objects 1 and 2 exert equal and opposite forces ($\\vec{F}_{12} = -\\vec{F}_{21}$) for the same contact time $\\Delta t$, so their impulses cancel ($\\Delta\\vec{p}_1 + \\Delta\\vec{p}_2 = \\vec{0}$).",
+    "useWhen": "two or more objects collide, stick together, or push off each other (recoil or explosion) on a frictionless surface or during a brief impact where external forces are negligible.",
+    "example": "A $2\\text{ kg}$ cart at $+6\\text{ m/s}$ collides and sticks to a stationary $4\\text{ kg}$ cart: $2(6) + 4(0) = (2 + 4)v \\Rightarrow 12 = 6v \\Rightarrow v = +2\\text{ m/s}$.",
+    "analogy": "Standing on ice skates and throwing a heavy ball forward pushes you backward with equal and opposite momentum—the pair's combined momentum stays zero."
+  },
+  "needs": [
+    "physics.momentum",
+    "physics.impulse",
+    "physics.newton-third-law"
+  ],
+  "aliases": [
+    "conservation of momentum",
+    "linear momentum conservation",
+    "collisions",
+    "recoil",
+    "กฎการอนุรักษ์โมเมนตัม",
+    "กฎอนุรักษ์โมเมนตัม",
+    "การชน"
+  ]
+}

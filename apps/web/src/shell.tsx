@@ -11,6 +11,7 @@ import {
   HomeIcon,
   LibraryIcon,
   MenuIcon,
+  PathIcon,
   SettingsIcon,
   ShieldIcon,
   SparkIcon,
@@ -97,6 +98,7 @@ export function Shell(props: { readonly children: ReactNode }) {
             <NavLink to="/library" label={t("nav.library")} icon={<LibraryIcon />} />
             <NavLink to="/create" label={t("nav.create")} icon={<SparkIcon />} />
             <NavLink to="/explore" label={t("nav.explore")} icon={<CompassIcon />} />
+            <NavLink to="/path" label={t("nav.path")} icon={<PathIcon />} />
             <AdminLink />
           </ul>
           <Categories />
@@ -146,7 +148,7 @@ function AdminLink() {
 }
 
 function NavLink(props: {
-  readonly to: "/" | "/guide" | "/library" | "/create" | "/explore" | "/admin/reports"
+  readonly to: "/" | "/guide" | "/library" | "/create" | "/explore" | "/path" | "/admin/reports"
   readonly label: string
   readonly icon: ReactNode
   readonly exact?: boolean

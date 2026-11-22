@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "slug": "physics.normal-force",
+  "lang": "en",
+  "card": {
+    "kind": "term",
+    "title": "Normal force",
+    "kicker": "term",
+    "body": "The contact force $\\vec{N}$ a surface exerts **perpendicular** (normal) to itself, pushing outward to prevent an object from passing through it.",
+    "says": "$N$ has **no single universal formula**—it adjusts to whatever value satisfies $\\sum F_\\perp = m a_\\perp$, so $N = mg$ only on a flat floor with no other vertical forces or vertical acceleration.",
+    "from": "microscopic electromagnetic repulsion between atoms at the contact surface; by Newton's third law, the object pushes on the surface with equal and opposite magnitude $N$.",
+    "useWhen": "an object touches a floor, wall, table, or ramp—especially before calculating friction ($f_{s,\\max} = \\mu_s N$ or $f_k = \\mu_k N$) or finding apparent weight in an elevator.",
+    "units": "$\\text{N}$ (newton)",
+    "example": "A $10\\text{ kg}$ crate ($g = 9.8\\text{ m/s}^2$, $W = 98\\text{ N}$) rests on a flat floor while someone pushes straight down with $22\\text{ N}$ → $N = 98 + 22 = 120\\text{ N}$ upward.",
+    "analogy": "A bathroom scale's spring: it compresses just enough to hold you up, and its reading is the normal force $N$, not always your true weight $mg$."
+  },
+  "needs": [
+    "physics.newton-second-law",
+    "physics.newton-third-law"
+  ],
+  "aliases": [
+    "normal force",
+    "support force",
+    "N",
+    "แรงปฏิกิริยาตั้งฉาก",
+    "แรงตั้งฉาก",
+    "แรงแนวฉาก"
+  ]
+}

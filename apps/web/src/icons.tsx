@@ -115,3 +115,12 @@ export const AlertIcon = () => (
     <path d="M8 6.5v3M8 11.25v.01" />
   </Icon>
 )
+
+export const PathIcon = () => (
+  <Icon>
+    <circle cx="3.5" cy="12.5" r="1.75" />
+    <circle cx="8" cy="8" r="1.75" />
+    <circle cx="12.5" cy="3.5" r="1.75" />
+    <path d="M4.8 11.2 6.7 9.3M9.3 6.7 11.2 4.8" />
+  </Icon>
+)

@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "slug": "physics.weight",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Weight",
+    "kicker": "formula",
+    "body": "$\\vec{W} = m\\vec{g}$ (magnitude $W = mg$, directed vertically **downward** toward Earth's center)",
+    "says": "the **gravitational force** a planet pulls on a mass $m$; unlike mass, weight is a vector force and changes if $g$ changes.",
+    "from": "Newton's second law applied to a freely falling body: when gravity is the only force, $W = \\sum F = mg$.",
+    "useWhen": "any object is near Earth's surface (or another planet with known $g$) and you need its gravitational force in newtons.",
+    "units": "$\\text{N}$ (newton); $m$ in $\\text{kg}$, $g \\approx 9.8\\text{ m/s}^2$ near Earth's surface",
+    "example": "A $5\\text{ kg}$ backpack with $g = 9.8\\text{ m/s}^2$ weighs $W = 5 \\times 9.8 = 49\\text{ N}$ on Earth; on the Moon ($g = 1.6\\text{ m/s}^2$), its mass is still $5\\text{ kg}$ but $W = 5 \\times 1.6 = 8.0\\text{ N}$.",
+    "analogy": "Mass is how many bricks are in a bag; weight is how hard the planet pulls down on that bag."
+  },
+  "needs": [
+    "physics.newton-second-law",
+    "physics.free-fall"
+  ],
+  "aliases": [
+    "weight",
+    "W = mg",
+    "gravitational force",
+    "force of gravity",
+    "น้ำหนัก",
+    "แรงโน้มถ่วง"
+  ]
+}

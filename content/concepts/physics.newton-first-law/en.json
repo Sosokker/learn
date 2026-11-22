@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "slug": "physics.newton-first-law",
+  "lang": "en",
+  "card": {
+    "kind": "law",
+    "title": "Newton's first law",
+    "kicker": "law",
+    "body": "If $\\sum \\vec{F} = \\vec{0}$, an object stays at rest or keeps moving at **constant velocity** (same speed, same direction).",
+    "says": "you do not need a net force to keep moving; you only need one to **change** velocity.",
+    "from": "Galileo's thought experiments on frictionless ramps and Isaac Newton's *Principia* (1687), also called the **law of inertia**.",
+    "useWhen": "an object is stationary or moving steadily in a straight line, so every pair of opposing force components must cancel ($\\sum \\vec{F} = \\vec{0}$).",
+    "example": "A 1,200 kg car cruises straight at a constant $20\\text{ m/s}$ with a $450\\text{ N}$ forward driving force → $\\sum F = 0$, so total drag and rolling resistance is $450\\text{ N}$ backward.",
+    "analogy": "Standing on a bus when it brakes hard: your feet stop with the floor, while your upper body keeps moving forward."
+  },
+  "needs": [
+    "physics.net-force",
+    "physics.mass-and-inertia",
+    "physics.speed-and-velocity"
+  ],
+  "aliases": [
+    "Newton's first law",
+    "Newton's 1st law",
+    "law of inertia",
+    "sum F = 0",
+    "กฎข้อที่หนึ่งของนิวตัน",
+    "กฎข้อที่ 1 ของนิวตัน",
+    "กฎแห่งความเฉื่อย"
+  ]
+}

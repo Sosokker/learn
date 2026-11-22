@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "slug": "physics.newton-third-law",
+  "lang": "en",
+  "card": {
+    "kind": "law",
+    "title": "Newton's third law",
+    "kicker": "law",
+    "body": "$\\vec{F}_{AB} = -\\vec{F}_{BA}$ — whenever object A pushes or pulls object B, object B simultaneously pushes or pulls A with **equal magnitude** and **opposite direction**.",
+    "says": "forces always come in **action–reaction pairs** acting on **two different objects**, so they never cancel each other on one body's force diagram.",
+    "from": "Isaac Newton's *Principia* (1687): every force is a two-way interaction between a pair of bodies, never a one-sided push.",
+    "useWhen": "two objects touch, collide, pull each other via a rope, or attract via gravity, and you need the force on one from the force on the other.",
+    "example": "A $50\\text{ kg}$ skater pushes a wall backward with $60\\text{ N}$ → the wall pushes the skater forward with $60\\text{ N}$, giving $a = \\dfrac{60}{50} = 1.2\\text{ m/s}^2$ on frictionless ice.",
+    "analogy": "Swimming forward by pushing water backward: your hand pushes the water, and the water pushes you forward just as hard."
+  },
+  "needs": [
+    "physics.force"
+  ],
+  "aliases": [
+    "Newton's third law",
+    "Newton's 3rd law",
+    "action-reaction",
+    "action and reaction",
+    "กฎข้อที่สามของนิวตัน",
+    "กฎข้อที่ 3 ของนิวตัน",
+    "แรงกิริยา",
+    "แรงปฏิกิริยา"
+  ]
+}

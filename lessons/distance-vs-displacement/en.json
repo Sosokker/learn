@@ -1,0 +1,385 @@
+{
+  "schema": 1,
+  "kind": "learn",
+  "lang": "en",
+  "title": "Distance vs. displacement: path length and straight arrow",
+  "summary": "Distance counts every meter you walk; displacement only points straight from start to finish. Learn when they match, when they cancel, and how to combine perpendicular legs.",
+  "parts": {
+    "leg_e": {
+      "label": "$d_1$",
+      "role": "given",
+      "color": "orange",
+      "meaning": "first leg eastward: 90 m along +x",
+      "body": "The opening segment along the east–west axis. Moving east gives a positive change in $x$.",
+      "example": "Walking $90\\text{ m}$ east moves you from $x = 0$ to $x = +90\\text{ m}$."
+    },
+    "leg_n": {
+      "label": "$d_2$",
+      "role": "given",
+      "color": "teal",
+      "meaning": "second leg northward: 80 m along +y",
+      "body": "A turn at a right angle ($90^\\circ$) onto the north–south axis, independent of east–west motion.",
+      "example": "Walking $80\\text{ m}$ north sets $\\Delta y = +80\\text{ m}$."
+    },
+    "leg_w": {
+      "label": "$d_3$",
+      "role": "given",
+      "color": "yellow",
+      "meaning": "third leg westward: 30 m along -x",
+      "body": "Backtracking along the east–west axis: it **adds** to total [dist:distance], but **subtracts** from eastward [dx:net east–west change].",
+      "example": "Turning $30\\text{ m}$ west pulls $x$ back from $+90\\text{ m}$ to $+60\\text{ m}$."
+    },
+    "dx": {
+      "label": "$\\Delta x$",
+      "role": "derived",
+      "color": "purple",
+      "meaning": "net change in east–west position: +60 m",
+      "body": "Add signed legs along the $x$-axis using {vectors|vector components}: $+90 - 30 = +60\\text{ m}$ east.",
+      "example": "Two opposite segments along the same line partially cancel."
+    },
+    "dy": {
+      "label": "$\\Delta y$",
+      "role": "derived",
+      "color": "cyan",
+      "meaning": "net change in north–south position: +80 m",
+      "body": "Only the northward leg acts along the $y$-axis, so $\\Delta y = +80\\text{ m}$ north."
+    },
+    "dist": {
+      "label": "$d$",
+      "role": "goal",
+      "color": "blue",
+      "meaning": "total path length traveled (scalar), in meters",
+      "body": "Defined in {dist_disp|distance and displacement}: add the positive length of every leg, regardless of direction.",
+      "example": "$90 + 80 + 30 = 200\\text{ m}$.",
+      "analogy": "The odometer in a car or a step counter on your phone—it never runs backward."
+    },
+    "disp": {
+      "label": "$\\Delta\\vec{x}$",
+      "role": "goal",
+      "color": "green",
+      "meaning": "straight-line vector from start to finish, in meters with direction",
+      "body": "Defined in {dist_disp|distance and displacement}: depends only on start and finish. Its magnitude always satisfies $|\\Delta\\vec{x}| \\le d$.",
+      "example": "$100\\text{ m}$ at $53^\\circ$ north of east.",
+      "analogy": "A single straight arrow drawn on a map from your starting pin to your ending pin."
+    }
+  },
+  "cards": {
+    "dist_disp": {
+      "concept": "physics.distance-and-displacement"
+    },
+    "vectors": {
+      "concept": "physics.vectors-and-components"
+    },
+    "speed_vel": {
+      "concept": "physics.speed-and-velocity"
+    },
+    "avg_speed": {
+      "concept": "physics.average-speed"
+    },
+    "pythagoras_disp": {
+      "kind": "formula",
+      "title": "Combining perpendicular displacements",
+      "kicker": "Pythagoras in 2D",
+      "body": "When net horizontal change [dx:$\\Delta x$] and net vertical change [dy:$\\Delta y$] are perpendicular, they form the legs of a right triangle: $|\\Delta\\vec{x}| = \\sqrt{\\Delta x^2 + \\Delta y^2}$ and $\\tan\\theta = \\dfrac{|\\Delta y|}{|\\Delta x|}$.",
+      "says": "$|\\Delta\\vec{x}| = \\sqrt{\\Delta x^2 + \\Delta y^2}$",
+      "example": "$\\Delta x = 60\\text{ m}$ and $\\Delta y = 80\\text{ m}$ give $\\sqrt{60^2 + 80^2} = \\sqrt{10000} = 100\\text{ m}$ at $\\theta \\approx 53^\\circ$.",
+      "useWhen": "motion has both east–west and north–south segments."
+    },
+    "round_trip": {
+      "kind": "lemma",
+      "title": "Why a round trip has zero displacement",
+      "kicker": "closed loop",
+      "body": "If you finish at the exact point where you started ($\\vec{x}_f = \\vec{x}_i$), the arrow from start to finish has length **zero**, so $\\Delta\\vec{x} = \\vec{0}$ even though [dist:distance] $d > 0$.",
+      "example": "One full lap on a $400\\text{ m}$ running track gives $d = 400\\text{ m}$ and $|\\Delta\\vec{x}| = 0\\text{ m}$.",
+      "useWhen": "an object returns to its starting position."
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "text",
+      "title": "Two ways to answer 'how far?'",
+      "body": "If you walk around a school building and end up back at the gate, your legs feel every meter—yet you are zero meters from where you began. Physics separates these two questions into {dist_disp|distance and displacement}. [dist:Distance] is a **scalar** (magnitude only) that adds every step; [disp:displacement] is a {vectors|vector} pointing straight from start to finish, and it later drives {speed_vel|velocity} while distance drives {avg_speed|average speed}."
+    },
+    {
+      "id": "compare",
+      "type": "visual",
+      "title": "Distance and displacement side by side",
+      "note": "spot the difference before solving any motion problem",
+      "widget": {
+        "kind": "table",
+        "head": ["Property", "[dist:Distance] ($d$)", "[disp:Displacement] ($\\Delta\\vec{x}$)"],
+        "rows": [
+          ["Quantity type", "Scalar (magnitude only)", "{vectors|Vector} (magnitude and direction)"],
+          ["Can it be negative?", "No ($d \\ge 0$ always)", "Yes (sign shows direction along an axis)"],
+          ["Depends on path?", "Yes, every detour adds to $d$", "No, only start and finish matter"],
+          ["{round_trip|Round trip}", "Positive ($d > 0$)", "Zero ($\\Delta\\vec{x} = \\vec{0}$)"],
+          ["Always satisfies", "$d \\ge |\\Delta\\vec{x}|$", "$|\\Delta\\vec{x}| \\le d$"]
+        ]
+      }
+    },
+    {
+      "id": "problem",
+      "type": "problem",
+      "title": "The problem",
+      "body": "Starting from the school gate, a student walks [leg_e:$90\\text{ m}$ east], then turns and walks [leg_n:$80\\text{ m}$ north], and finally walks [leg_w:$30\\text{ m}$ west] to the library.\n\nFind the total [dist:distance] walked and the student's [disp:displacement] (magnitude and direction)."
+    },
+    {
+      "id": "chunks",
+      "type": "chunks",
+      "title": "Break the walk into axes",
+      "note": "choose east as $+x$ and north as $+y$",
+      "rows": [
+        {
+          "id": "c_e",
+          "text": "[leg_e:$d_1 = 90\\text{ m}$ east]",
+          "role": "given",
+          "note": "along $+x$: contributes $+90\\text{ m}$ to [dx:$\\Delta x$]"
+        },
+        {
+          "id": "c_n",
+          "text": "[leg_n:$d_2 = 80\\text{ m}$ north]",
+          "role": "given",
+          "note": "along $+y$: contributes $+80\\text{ m}$ to [dy:$\\Delta y$]"
+        },
+        {
+          "id": "c_w",
+          "text": "[leg_w:$d_3 = 30\\text{ m}$ west]",
+          "role": "given",
+          "note": "along $-x$: adds $+30\\text{ m}$ to [dist:$d$], but $-30\\text{ m}$ to [dx:$\\Delta x$]"
+        },
+        {
+          "id": "c_goal",
+          "text": "Find [dist:$d$] and [disp:$\\Delta\\vec{x}$]",
+          "role": "goal",
+          "note": "compare path length with straight-line vector"
+        }
+      ]
+    },
+    {
+      "id": "concept",
+      "type": "concept",
+      "title": "Concept → Field",
+      "concept": "Every step increases [dist:distance], whereas opposite steps cancel along each axis before perpendicular axes combine by {pythagoras_disp|Pythagoras} into [disp:displacement].",
+      "field": "Kinematics (straight-line and 2D motion). Built on {dist_disp|distance and displacement} and {vectors|vectors and components}.",
+      "prerequisites": ["dist_disp", "vectors"]
+    },
+    {
+      "id": "plan",
+      "type": "plan",
+      "title": "Plan",
+      "note": "separate the $x$-axis from the $y$-axis first",
+      "routes": [
+        {
+          "id": "r_axes",
+          "title": "Route A",
+          "path": "sum lengths for [dist:$d$]; group [dx:$\\Delta x$] and [dy:$\\Delta y$] → {pythagoras_disp|Pythagoras} → [disp:$\\Delta\\vec{x}$]",
+          "why": "East and west lie on one line ($+x$/$-x$), and north is perpendicular ($+y$), so components simplify the geometry cleanly.",
+          "whyNot": "Nothing. This works for any multi-leg path.",
+          "picked": true
+        },
+        {
+          "id": "r_subtract_all",
+          "title": "Route B",
+          "path": "add and subtract all three numbers directly: $90 + 80 - 30$",
+          "why": "West is opposite to east, so subtracting $30$ feels natural.",
+          "whyNot": "You cannot add north ($80\\text{ m}$) directly to net east ($60\\text{ m}$) as if they pointed the same way: $60 + 80 = 140\\text{ m}$ is NOT the straight-line length.",
+          "picked": false
+        }
+      ],
+      "notUsed": "Not used: time. Finding distance and displacement needs only positions and path lengths, not how fast the student walked."
+    },
+    {
+      "id": "work",
+      "type": "chain",
+      "title": "Work it through",
+      "note": "hover a step to highlight the parts it uses",
+      "steps": [
+        {
+          "id": "s1",
+          "move": "Add the length of every leg to find total [dist:distance].",
+          "formula": "\\p{dist}{d} = \\p{leg_e}{90} + \\p{leg_n}{80} + \\p{leg_w}{30} = 200\\text{ m}",
+          "why": "{dist_disp|Distance} is a non-negative scalar, so turning west still adds $30\\text{ m}$ of walking.",
+          "whyNot": "Do not subtract $30\\text{ m}$ here: walking west never erases the steps already taken.",
+          "uses": ["dist", "leg_e", "leg_n", "leg_w"]
+        },
+        {
+          "id": "s2",
+          "move": "Combine the east and west legs along the $x$-axis to get [dx:$\\Delta x$].",
+          "formula": "\\p{dx}{\\Delta x} = \\p{leg_e}{90} - \\p{leg_w}{30} = +60\\text{ m}\\ (\\text{east})",
+          "why": "East ($+x$) and west ($-x$) point in opposite directions along the same axis, so they partially cancel.",
+          "whyNot": "Do not ignore the sign of the westward leg: $90 + 30 = 120\\text{ m}$ would put the library $60\\text{ m}$ too far east.",
+          "uses": ["dx", "leg_e", "leg_w"]
+        },
+        {
+          "id": "s3",
+          "move": "Read the north–south component [dy:$\\Delta y$].",
+          "formula": "\\p{dy}{\\Delta y} = +\\p{leg_n}{80}\\text{ m}\\ (\\text{north})",
+          "why": "No leg goes south, so the net north–south shift is simply $+80\\text{ m}$.",
+          "whyNot": "Do not mix [dy:$\\Delta y$] with [dx:$\\Delta x$] yet—perpendicular components stay separate until the right-triangle step.",
+          "uses": ["dy", "leg_n"]
+        },
+        {
+          "id": "s4",
+          "move": "Combine [dx:$\\Delta x$] and [dy:$\\Delta y$] with {pythagoras_disp|Pythagoras} to find [disp:displacement].",
+          "formula": "|\\p{disp}{\\Delta\\vec{x}}| = \\sqrt{\\p{dx}{60}^{2} + \\p{dy}{80}^{2}} = \\sqrt{3600 + 6400} = 100\\text{ m}",
+          "why": "A $60\\text{ m}$ east leg and $80\\text{ m}$ north leg form a $3\\text{–}4\\text{–}5$ right triangle with hypotenuse $100\\text{ m}$ and direction $\\tan\\theta = 80/60 = 4/3$, or $\\theta \\approx 53^\\circ$ north of east.",
+          "whyNot": "Never stop at $100\\text{ m}$ alone: {dist_disp|displacement} is a vector, so always state its direction ($53^\\circ$ north of east).",
+          "uses": ["disp", "dx", "dy"]
+        }
+      ]
+    },
+    {
+      "id": "plot",
+      "type": "visual",
+      "title": "Explore 1D backtracking: when curves split",
+      "note": "walk east at $v_1$ until $t_1$, then turn west at $v_2$ until $10\\text{ s}$",
+      "widget": {
+        "kind": "plot",
+        "x": {
+          "min": 0,
+          "max": 10,
+          "label": "time $t$ (s)"
+        },
+        "y": {
+          "min": -100,
+          "max": 150,
+          "label": "distance / displacement (m)"
+        },
+        "params": [
+          {
+            "id": "v1",
+            "label": "east speed $v_1$ (m/s)",
+            "min": 2,
+            "max": 12,
+            "step": 1,
+            "value": 10,
+            "part": "leg_e"
+          },
+          {
+            "id": "v2",
+            "label": "west speed $v_2$ (m/s)",
+            "min": 0,
+            "max": 12,
+            "step": 1,
+            "value": 10,
+            "part": "leg_w"
+          },
+          {
+            "id": "t1",
+            "label": "turnaround time $t_1$ (s)",
+            "min": 2,
+            "max": 8,
+            "step": 1,
+            "value": 6
+          }
+        ],
+        "curves": [
+          {
+            "expr": "v1 * min(x, t1) + v2 * max(0, x - t1)",
+            "part": "dist",
+            "label": "[dist:distance $d(t)$] (always rises)"
+          },
+          {
+            "expr": "v1 * min(x, t1) - v2 * max(0, x - t1)",
+            "part": "disp",
+            "label": "[disp:displacement $\\Delta x(t)$] (bends back)"
+          }
+        ],
+        "points": [
+          {
+            "x": "t1",
+            "y": "v1 * t1",
+            "part": "leg_e",
+            "label": "turnaround point"
+          },
+          {
+            "x": "10",
+            "y": "v1 * t1 - v2 * (10 - t1)",
+            "part": "disp",
+            "label": "final displacement at $t = 10\\text{ s}$"
+          }
+        ],
+        "readouts": [
+          {
+            "label": "[dist:total distance $d$]",
+            "expr": "v1 * t1 + v2 * (10 - t1)",
+            "unit": "m",
+            "part": "dist"
+          },
+          {
+            "label": "[disp:net displacement $\\Delta x$]",
+            "expr": "v1 * t1 - v2 * (10 - t1)",
+            "unit": "m",
+            "part": "disp"
+          },
+          {
+            "label": "magnitude $|\\Delta x|$",
+            "expr": "abs(v1 * t1 - v2 * (10 - t1))",
+            "unit": "m",
+            "part": "disp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "check",
+      "type": "check",
+      "title": "Check yourself",
+      "items": [
+        "**Inequality check**: $|\\Delta\\vec{x}| = 100\\text{ m} \\le 200\\text{ m} = d$. If your displacement ever comes out larger than your distance, recheck your arithmetic.",
+        "**Straight one-way trip**: in the plot above, set $v_2 = 0$—the two curves overlap completely because $|\\Delta x| = d$ when you never turn around.",
+        "**{round_trip|Round trip}**: set $v_1 = 10$, $v_2 = 10$, and $t_1 = 5\\text{ s}$—distance is $100\\text{ m}$, while displacement drops to **zero**.",
+        "**Direction matters**: displacement is never complete without a sign ($+$/$-$) in 1D or an angle/compass bearing in 2D."
+      ]
+    },
+    {
+      "id": "recall",
+      "type": "recall",
+      "title": "Recall",
+      "note": "answer from memory before revealing",
+      "questions": [
+        {
+          "id": "q1",
+          "q": "A runner completes one full lap around a $400\\text{ m}$ oval track and stops at the starting line. What are the distance $d$ and displacement magnitude $|\\Delta\\vec{x}|$?",
+          "options": [
+            "$d = 0\\text{ m},\\ |\\Delta\\vec{x}| = 0\\text{ m}$",
+            "$d = 400\\text{ m},\\ |\\Delta\\vec{x}| = 0\\text{ m}$",
+            "$d = 400\\text{ m},\\ |\\Delta\\vec{x}| = 400\\text{ m}$"
+          ],
+          "answer": 1,
+          "why": "The path covered is $400\\text{ m}$, but start and finish are the same point, so {round_trip|displacement is zero}."
+        },
+        {
+          "id": "q2",
+          "q": "A cyclist rides $30\\text{ m}$ east and then $40\\text{ m}$ north. What is the magnitude of the displacement?",
+          "options": ["$70\\text{ m}$", "$10\\text{ m}$", "$50\\text{ m}$"],
+          "answer": 2,
+          "why": "East and north are perpendicular, so by {pythagoras_disp|Pythagoras}, $|\\Delta\\vec{x}| = \\sqrt{30^2 + 40^2} = \\sqrt{2500} = 50\\text{ m}$ (while $70\\text{ m}$ is the distance)."
+        },
+        {
+          "id": "q3",
+          "q": "When does the magnitude of displacement equal the distance traveled ($|\\Delta\\vec{x}| = d$)?",
+          "options": [
+            "When the object moves in a straight line without reversing direction",
+            "Whenever the object moves at constant speed",
+            "Whenever the object ends where it started"
+          ],
+          "answer": 0,
+          "why": "Any curve or reversal makes the path longer than the straight arrow. Constant speed around a circle still has $|\\Delta\\vec{x}| < d$."
+        },
+        {
+          "id": "q4",
+          "q": "Along a straight road with east as positive, a student walks $50\\text{ m}$ east and then $80\\text{ m}$ west. What is the displacement?",
+          "options": [
+            "$+130\\text{ m}$ ($130\\text{ m}$ east)",
+            "$-30\\text{ m}$ ($30\\text{ m}$ west)",
+            "$+30\\text{ m}$ ($30\\text{ m}$ east)"
+          ],
+          "answer": 1,
+          "why": "$\\Delta x = (+50) + (-80) = -30\\text{ m}$, meaning $30\\text{ m}$ west of the starting point (while distance is $130\\text{ m}$)."
+        }
+      ]
+    }
+  ]
+}

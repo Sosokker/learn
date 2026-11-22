@@ -1,0 +1,412 @@
+{
+  "schema": 1,
+  "kind": "learn",
+  "lang": "en",
+  "title": "Speed and velocity: how fast and which way",
+  "summary": "Speed divides total distance by total time; velocity divides displacement by total time. See how stops and reversals pull them apart on a position–time graph.",
+  "parts": {
+    "d1": {
+      "label": "$d_1$",
+      "role": "given",
+      "color": "orange",
+      "meaning": "first leg eastward: 180 m",
+      "body": "Covered in [t1:$t_1 = 30\\text{ s}$] along the $+x$ direction (moving speed $180/30 = 6\\text{ m/s}$)."
+    },
+    "t1": {
+      "label": "$t_1$",
+      "role": "given",
+      "color": "peach",
+      "meaning": "time spent riding east: 30 s",
+      "body": "Duration of the first moving segment."
+    },
+    "t_stop": {
+      "label": "$t_{\\text{stop}}$",
+      "role": "hidden_given",
+      "color": "pink",
+      "meaning": "time paused at the traffic light: 10 s",
+      "body": "Distance covered is zero, yet the clock keeps running—so {total_time|total time} **must** include it."
+    },
+    "d2": {
+      "label": "$d_2$",
+      "role": "given",
+      "color": "yellow",
+      "meaning": "return leg westward: 60 m",
+      "body": "Covered in [t2:$t_2 = 10\\text{ s}$] along $-x$ (moving speed $60/10 = 6\\text{ m/s}$, velocity $-6\\text{ m/s}$)."
+    },
+    "t2": {
+      "label": "$t_2$",
+      "role": "given",
+      "color": "mustard",
+      "meaning": "time spent riding west: 10 s",
+      "body": "Duration of the return segment."
+    },
+    "t_total": {
+      "label": "$T$",
+      "role": "derived",
+      "color": "purple",
+      "meaning": "total elapsed time of the whole trip: 50 s",
+      "body": "From {total_time|total time}: $T = t_1 + t_{\\text{stop}} + t_2 = 30 + 10 + 10 = 50\\text{ s}$."
+    },
+    "dist": {
+      "label": "$d$",
+      "role": "derived",
+      "color": "cyan",
+      "meaning": "total distance traveled: 240 m",
+      "body": "From {dist_disp|distance and displacement}: add every leg ($180 + 60 = 240\\text{ m}$)."
+    },
+    "disp": {
+      "label": "$\\Delta x$",
+      "role": "derived",
+      "color": "teal",
+      "meaning": "net displacement along the road: +120 m (east)",
+      "body": "Using {vectors|signed direction} (east positive): $+180 - 60 = +120\\text{ m}$ east."
+    },
+    "avg_v": {
+      "label": "$v_{\\text{av}}$",
+      "role": "goal",
+      "color": "blue",
+      "meaning": "average speed for the whole trip (scalar), in m/s",
+      "body": "Defined by {avg_speed|average speed} and {speed_vel|speed and velocity}: total [dist:distance] divided by [t_total:total time].",
+      "example": "$240 / 50 = 4.8\\text{ m/s}$."
+    },
+    "avg_vel": {
+      "label": "$\\vec{v}_{\\text{av}}$",
+      "role": "goal",
+      "color": "green",
+      "meaning": "average velocity for the whole trip (vector), in m/s with direction",
+      "body": "Defined by {speed_vel|speed and velocity}: net [disp:displacement] divided by [t_total:total time]. Its direction matches $\\Delta\\vec{x}$.",
+      "example": "$+120 / 50 = +2.4\\text{ m/s}$ ($2.4\\text{ m/s}$ east)."
+    }
+  },
+  "cards": {
+    "speed_vel": {
+      "concept": "physics.speed-and-velocity"
+    },
+    "dist_disp": {
+      "concept": "physics.distance-and-displacement"
+    },
+    "avg_speed": {
+      "concept": "physics.average-speed"
+    },
+    "total_time": {
+      "concept": "physics.total-time"
+    },
+    "vectors": {
+      "concept": "physics.vectors-and-components"
+    },
+    "unit_conv": {
+      "kind": "formula",
+      "title": "Converting km/h and m/s",
+      "kicker": "factor of 3.6",
+      "body": "Since $1\\text{ km} = 1000\\text{ m}$ and $1\\text{ h} = 3600\\text{ s}$, we have $1\\text{ m/s} = 3.6\\text{ km/h}$. Divide $\\text{km/h}$ by $3.6$ (or multiply by $\\frac{5}{18}$) to get $\\text{m/s}$; multiply $\\text{m/s}$ by $3.6$ to get $\\text{km/h}$.",
+      "says": "$\\text{km/h} \\div 3.6 = \\text{m/s}$",
+      "example": "$72\\text{ km/h} = 72 / 3.6 = 20\\text{ m/s}$, and $10\\text{ m/s} = 36\\text{ km/h}$.",
+      "useWhen": "a problem mixes kilometers per hour with seconds or meters."
+    },
+    "inst_vs_avg": {
+      "kind": "term",
+      "title": "Average vs. instantaneous velocity",
+      "kicker": "secant vs. tangent",
+      "body": "**Average velocity** covers a whole time interval $\\Delta t$ and equals the slope of the straight secant line connecting start and end on an $x\\text{–}t$ graph. **Instantaneous velocity** is the velocity at one exact instant (slope of the tangent line); its magnitude equals instantaneous speed.",
+      "analogy": "Average speed is your whole-trip summary; instantaneous speed is the number on the speedometer right now."
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "text",
+      "title": "Why speed and velocity disagree",
+      "body": "In everyday speech, *speed* and *velocity* sound interchangeable. In physics, {speed_vel|speed and velocity} measure two different ratios built from {dist_disp|distance and displacement}. [avg_v:Average speed] asks how much **path** you covered per second, while [avg_vel:average velocity] asks how fast your **position** shifted—and in which direction. Whenever you pause or turn back, the two numbers split apart."
+    },
+    {
+      "id": "compare",
+      "type": "visual",
+      "title": "Four velocity-family quantities compared",
+      "note": "keep average vs. instantaneous and scalar vs. vector separate",
+      "widget": {
+        "kind": "table",
+        "head": ["Quantity", "Formula", "Type", "Reading on an $x\\text{–}t$ graph"],
+        "rows": [
+          [
+            "[avg_v:Average speed]",
+            "$v_{\\text{av}} = \\dfrac{d}{\\Delta t}$",
+            "Scalar ($\\ge 0$)",
+            "Total path length divided by $\\Delta t$"
+          ],
+          [
+            "[avg_vel:Average velocity]",
+            "$\\vec{v}_{\\text{av}} = \\dfrac{\\Delta\\vec{x}}{\\Delta t}$",
+            "{vectors|Vector} (signed)",
+            "Slope of the straight line from start to finish"
+          ],
+          [
+            "{inst_vs_avg|Instantaneous speed}",
+            "$v = |\\vec{v}|$",
+            "Scalar ($\\ge 0$)",
+            "Steepness (absolute slope) of the tangent"
+          ],
+          [
+            "{inst_vs_avg|Instantaneous velocity}",
+            "$\\vec{v} = \\lim_{\\Delta t \\to 0}\\dfrac{\\Delta\\vec{x}}{\\Delta t}$",
+            "{vectors|Vector} (signed)",
+            "Signed slope of the tangent line at instant $t$"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "problem",
+      "type": "problem",
+      "title": "The problem",
+      "body": "A student bicycles along a straight east–west road: first [d1:$180\\text{ m}$ east] in [t1:$30\\text{ s}$], then pauses for [t_stop:$10\\text{ s}$] at a red traffic light, and finally turns around to ride [d2:$60\\text{ m}$ west] in [t2:$10\\text{ s}$].\n\nTaking east as positive, find the [avg_v:average speed] and [avg_vel:average velocity] for the entire trip."
+    },
+    {
+      "id": "chunks",
+      "type": "chunks",
+      "title": "List every segment and hidden given",
+      "note": "notice that both moving legs happen to have the exact same speed ($6\\text{ m/s}$)",
+      "rows": [
+        {
+          "id": "c_leg1",
+          "text": "[d1:$d_1 = 180\\text{ m}$ east] in [t1:$t_1 = 30\\text{ s}$]",
+          "role": "given",
+          "note": "moving velocity $+6\\text{ m/s}$"
+        },
+        {
+          "id": "c_stop",
+          "text": "Paused for [t_stop:$t_{\\text{stop}} = 10\\text{ s}$]",
+          "role": "hidden_given",
+          "note": "$0\\text{ m}$ moved, but still counts in {total_time|total time}"
+        },
+        {
+          "id": "c_leg2",
+          "text": "[d2:$d_2 = 60\\text{ m}$ west] in [t2:$t_2 = 10\\text{ s}$]",
+          "role": "given",
+          "note": "moving velocity $-6\\text{ m/s}$ (opposite direction)"
+        },
+        {
+          "id": "c_goal",
+          "text": "Find [avg_v:$v_{\\text{av}}$] and [avg_vel:$\\vec{v}_{\\text{av}}$]",
+          "role": "goal",
+          "note": "whole trip, including the red-light wait"
+        }
+      ]
+    },
+    {
+      "id": "concept",
+      "type": "concept",
+      "title": "Concept → Field",
+      "concept": "Divide [dist:total distance] by [t_total:total time] for {avg_speed|average speed}, and divide [disp:net displacement] by the same [t_total:total time] for {speed_vel|average velocity}.",
+      "field": "Kinematics (1D motion and graphs). Depends on {dist_disp|distance and displacement} and {total_time|total time}.",
+      "prerequisites": ["speed_vel", "dist_disp", "total_time"]
+    },
+    {
+      "id": "plan",
+      "type": "plan",
+      "title": "Plan",
+      "note": "why averaging $6\\text{ m/s}$ and $6\\text{ m/s}$ fails here",
+      "routes": [
+        {
+          "id": "r_def",
+          "title": "Route A",
+          "path": "[t_total:$T$] + [dist:$d$] and [disp:$\\Delta x$] → {speed_vel|definitions} → [avg_v:$v_{\\text{av}}$] and [avg_vel:$\\vec{v}_{\\text{av}}$]",
+          "why": "Going directly from total distance, net displacement, and total elapsed time handles both the pause and the reversal cleanly.",
+          "whyNot": "Nothing. Always start from the definitions.",
+          "picked": true
+        },
+        {
+          "id": "r_mean",
+          "title": "Route B",
+          "path": "average the two moving speeds: $(6 + 6)/2 = 6\\text{ m/s}$",
+          "why": "Both moving legs are $6\\text{ m/s}$, so $6\\text{ m/s}$ looks irresistible.",
+          "whyNot": "It ignores the [t_stop:$10\\text{ s}$ red-light stop] (pulling average speed down to $4.8\\text{ m/s}$) and ignores the westward reversal (pulling average velocity down to $+2.4\\text{ m/s}$).",
+          "picked": false
+        }
+      ],
+      "notUsed": "Not used: {unit_conv|km/h conversion}. Every given is already in SI units ($\\text{m}$ and $\\text{s}$)."
+    },
+    {
+      "id": "work",
+      "type": "chain",
+      "title": "Work it through",
+      "note": "hover a step to check its reason and trap",
+      "steps": [
+        {
+          "id": "s1",
+          "move": "Sum all three intervals to get [t_total:total time].",
+          "formula": "\\p{t_total}{T} = \\p{t1}{30} + \\p{t_stop}{10} + \\p{t2}{10} = 50\\text{ s}",
+          "why": "{total_time|Total time} counts the entire clock span from start to finish, stops included.",
+          "whyNot": "Do not use $30 + 10 = 40\\text{ s}$: leaving out the red light gives $6\\text{ m/s}$, which is only the moving speed.",
+          "uses": ["t_total", "t1", "t_stop", "t2"]
+        },
+        {
+          "id": "s2",
+          "move": "Find total [dist:distance] and divide by [t_total:$T$] for [avg_v:average speed].",
+          "formula": "\\p{dist}{d} = \\p{d1}{180} + \\p{d2}{60} = 240\\text{ m} \\implies \\p{avg_v}{v_{\\text{av}}} = \\frac{\\p{dist}{240}}{\\p{t_total}{50}} = 4.8\\text{ m/s}",
+          "why": "{avg_speed|Average speed} uses total path length over total time.",
+          "whyNot": "Do not subtract $60\\text{ m}$ when finding distance; the bicycle wheels rolled forward all $240\\text{ m}$.",
+          "uses": ["dist", "d1", "d2", "t_total", "avg_v"]
+        },
+        {
+          "id": "s3",
+          "move": "Find net [disp:displacement] along east–west (east positive).",
+          "formula": "\\p{disp}{\\Delta x} = +\\p{d1}{180} - \\p{d2}{60} = +120\\text{ m}\\ (\\text{east})",
+          "why": "Riding west cancels $60\\text{ m}$ of the eastward progress, leaving the student $120\\text{ m}$ east of start.",
+          "whyNot": "Do not drop the sign: if the westward leg were longer than $180\\text{ m}$, $\\Delta x$ would turn negative.",
+          "uses": ["disp", "d1", "d2"]
+        },
+        {
+          "id": "s4",
+          "move": "Divide [disp:$\\Delta x$] by [t_total:$T$] for [avg_vel:average velocity].",
+          "formula": "\\p{avg_vel}{v_{\\text{av},x}} = \\frac{\\p{disp}{+120}}{\\p{t_total}{50}} = +2.4\\text{ m/s}\\ (2.4\\text{ m/s east})",
+          "why": "{speed_vel|Average velocity} is displacement per unit total time and points in the direction of $\\Delta\\vec{x}$ (east).",
+          "whyNot": "Do not divide by $40\\text{ s}$ or omit the direction: average velocity needs both magnitude ($2.4\\text{ m/s}$) and direction (east).",
+          "uses": ["avg_vel", "disp", "t_total"]
+        }
+      ]
+    },
+    {
+      "id": "plot",
+      "type": "visual",
+      "title": "Position–time graph: slope is velocity",
+      "note": "drag the eastward distance, return distance, and red-light pause; the straight line's slope is average velocity",
+      "widget": {
+        "kind": "plot",
+        "x": {
+          "min": 0,
+          "max": 60,
+          "label": "time $t$ (s)"
+        },
+        "y": {
+          "min": -200,
+          "max": 300,
+          "label": "position $x$ (m, east positive)"
+        },
+        "params": [
+          {
+            "id": "d1",
+            "label": "[d1:$d_1$] east in $30\\text{ s}$ (m)",
+            "min": 60,
+            "max": 240,
+            "step": 20,
+            "value": 180,
+            "part": "d1"
+          },
+          {
+            "id": "d2",
+            "label": "[d2:$d_2$] west in $10\\text{ s}$ (m)",
+            "min": 0,
+            "max": 240,
+            "step": 20,
+            "value": 60,
+            "part": "d2"
+          },
+          {
+            "id": "ts",
+            "label": "[t_stop:$t_{\\text{stop}}$] pause (s)",
+            "min": 0,
+            "max": 20,
+            "step": 5,
+            "value": 10,
+            "part": "t_stop"
+          }
+        ],
+        "curves": [
+          {
+            "expr": "d1 * min(x, 30) / 30 - d2 * min(max(0, x - 30 - ts), 10) / 10",
+            "part": "disp",
+            "label": "position $x(t)$ (flat during pause)"
+          },
+          {
+            "expr": "(d1 - d2) / (40 + ts) * x",
+            "part": "avg_vel",
+            "label": "[avg_vel:average-velocity secant] (slope $= v_{\\text{av},x}$)"
+          }
+        ],
+        "points": [
+          {
+            "x": "40 + ts",
+            "y": "d1 - d2",
+            "part": "disp",
+            "label": "end of trip"
+          }
+        ],
+        "readouts": [
+          {
+            "label": "[t_total:total time $T$]",
+            "expr": "40 + ts",
+            "unit": "s",
+            "part": "t_total"
+          },
+          {
+            "label": "[avg_v:average speed $v_{\\text{av}}$]",
+            "expr": "(d1 + d2) / (40 + ts)",
+            "unit": "m/s",
+            "part": "avg_v"
+          },
+          {
+            "label": "[avg_vel:average velocity $v_{\\text{av},x}$]",
+            "expr": "(d1 - d2) / (40 + ts)",
+            "unit": "m/s",
+            "part": "avg_vel"
+          }
+        ]
+      }
+    },
+    {
+      "id": "check",
+      "type": "check",
+      "title": "Check yourself",
+      "items": [
+        "**Magnitude rule**: $|\\vec{v}_{\\text{av}}| = 2.4\\text{ m/s} \\le 4.8\\text{ m/s} = v_{\\text{av}}$, because $|\\Delta\\vec{x}| \\le d$ over the same time $T$.",
+        "**Zero average velocity**: drag $d_2$ up to $180\\text{ m}$ in the plot—the student returns to $x = 0$, so $v_{\\text{av},x} = 0\\text{ m/s}$ even while $v_{\\text{av}} = 7.2\\text{ m/s}$.",
+        "**Negative velocity**: drag $d_2$ to $240\\text{ m}$—the secant slopes downward ($v_{\\text{av},x} = -1.2\\text{ m/s}$), meaning net motion is **westward**, not \"slowing down.\"",
+        "**{unit_conv|Unit sense}**: $4.8\\text{ m/s} \\times 3.6 = 17.28\\text{ km/h}$—a realistic city cycling pace."
+      ]
+    },
+    {
+      "id": "recall",
+      "type": "recall",
+      "title": "Recall",
+      "note": "answer from memory before revealing",
+      "questions": [
+        {
+          "id": "q1",
+          "q": "A car cruises at $72\\text{ km/h}$. What is this speed in $\\text{m/s}$?",
+          "options": ["$20\\text{ m/s}$", "$259.2\\text{ m/s}$", "$7.2\\text{ m/s}$"],
+          "answer": 0,
+          "why": "By {unit_conv|unit conversion}, divide by $3.6$: $72 / 3.6 = 20\\text{ m/s}$."
+        },
+        {
+          "id": "q2",
+          "q": "A swimmer swims $50\\text{ m}$ to the far wall of a pool and $50\\text{ m}$ back to the start in $40\\text{ s}$. What are the average speed and average velocity?",
+          "options": [
+            "$2.5\\text{ m/s}$ and $2.5\\text{ m/s}$",
+            "$0\\text{ m/s}$ and $2.5\\text{ m/s}$",
+            "$2.5\\text{ m/s}$ and $0\\text{ m/s}$"
+          ],
+          "answer": 2,
+          "why": "Total distance is $100\\text{ m}$, so $v_{\\text{av}} = 100/40 = 2.5\\text{ m/s}$. Net displacement is $0\\text{ m}$, so $\\vec{v}_{\\text{av}} = 0\\text{ m/s}$."
+        },
+        {
+          "id": "q3",
+          "q": "A car drives straight for $60\\text{ km}$ at $30\\text{ km/h}$ and then another $60\\text{ km}$ at $60\\text{ km/h}$. What is its average speed for the $120\\text{ km}$ trip?",
+          "options": ["$45\\text{ km/h}$", "$40\\text{ km/h}$", "$50\\text{ km/h}$"],
+          "answer": 1,
+          "why": "The two times are $60/30 = 2\\text{ h}$ and $60/60 = 1\\text{ h}$, giving $T = 3\\text{ h}$ and $v_{\\text{av}} = 120/3 = 40\\text{ km/h}$ (not the plain mean $45\\text{ km/h}$, because more time is spent going slow)."
+        },
+        {
+          "id": "q4",
+          "q": "On a position–time ($x\\text{–}t$) graph, what does a straight line with a **negative slope** mean?",
+          "options": [
+            "The object is moving in the negative direction at constant velocity",
+            "The object is slowing down toward a stop",
+            "The object's total distance traveled is decreasing"
+          ],
+          "answer": 0,
+          "why": "On an $x\\text{–}t$ graph, slope is {inst_vs_avg|velocity}. A constant negative slope means steady velocity in the $-x$ direction, while distance always increases."
+        }
+      ]
+    }
+  ]
+}

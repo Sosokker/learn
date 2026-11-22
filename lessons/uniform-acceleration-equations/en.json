@@ -1,0 +1,405 @@
+{
+  "schema": 1,
+  "kind": "learn",
+  "lang": "en",
+  "title": "Uniform acceleration equations (SUVAT)",
+  "summary": "Five equations link displacement, initial velocity, final velocity, constant acceleration, and time. Learn to pick the right one by spotting the missing variable.",
+  "parts": {
+    "u": {
+      "label": "$u$",
+      "role": "given",
+      "color": "orange",
+      "meaning": "initial velocity at the start of the time interval, in m/s",
+      "body": "The velocity when your stopwatch starts ($t = 0$). It carries a sign to show direction along the line.",
+      "example": "A car cruising at $20\\text{ m/s}$ right before braking has $u = +20\\text{ m/s}$.",
+      "analogy": "The speedometer reading the instant you press start on a stopwatch."
+    },
+    "v": {
+      "label": "$v$",
+      "role": "hidden_given",
+      "color": "teal",
+      "meaning": "final velocity at the end of the time interval, in m/s",
+      "body": "The velocity at time $t$. Phrases like *comes to a complete stop* hide the number $v = 0\\text{ m/s}$.",
+      "example": "A braking car that stops completely has $v = 0\\text{ m/s}$.",
+      "analogy": "The speedometer reading when you hit stop on the stopwatch."
+    },
+    "a": {
+      "label": "$a$",
+      "role": "given",
+      "color": "green",
+      "meaning": "constant acceleration along the line, in m/s²",
+      "body": "How much velocity changes every second. When it has the **opposite sign** to the velocity, it slows the object down (for example, $a < 0$ when moving in the positive direction).",
+      "example": "Braking at $a = -4\\text{ m/s}^2$ removes $4\\text{ m/s}$ of speed every second.",
+      "analogy": "A steady hand turning the speedometer needle up or down at a fixed rate."
+    },
+    "t": {
+      "label": "$t$",
+      "role": "derived",
+      "color": "purple",
+      "meaning": "time elapsed during the constant-acceleration motion, in seconds",
+      "body": "Always positive. When the problem never mentions time, the timeless equation $v^2 = u^2 + 2as$ lets you bypass it.",
+      "example": "Dropping from $20\\text{ m/s}$ to $0$ at $-4\\text{ m/s}^2$ takes $t = 5\\text{ s}$.",
+      "analogy": "How many seconds pass on the stopwatch between start and stop."
+    },
+    "s": {
+      "label": "$s$",
+      "role": "goal",
+      "color": "blue",
+      "meaning": "displacement from the starting position, in meters",
+      "body": "Directed straight-line change in position. Equal to distance travelled only when the object does not reverse direction.",
+      "example": "Braking from $20\\text{ m/s}$ to rest at $-4\\text{ m/s}^2$ covers $s = 50\\text{ m}$.",
+      "analogy": "The distance painted on the road between the brake line and the stop line."
+    },
+    "const_a": {
+      "label": "constant $a$",
+      "role": "condition",
+      "color": "pink",
+      "meaning": "acceleration stays fixed in both magnitude and direction",
+      "body": "The gatekeeper condition for all five {suvat|SUVAT equations}. If acceleration changes, split the motion into segments where it is constant.",
+      "example": "Steady braking on dry asphalt has nearly constant $a$; hitting a bumpy patch changes it.",
+      "analogy": "A straight-line slope on a $v\\text{–}t$ graph."
+    }
+  },
+  "cards": {
+    "suvat": {
+      "concept": "physics.uniform-acceleration-equations"
+    },
+    "acceleration": {
+      "concept": "physics.acceleration"
+    },
+    "mean_speed": {
+      "concept": "physics.mean-speed-theorem"
+    },
+    "speed_vel": {
+      "concept": "physics.speed-and-velocity"
+    },
+    "disp": {
+      "concept": "physics.distance-and-displacement"
+    },
+    "avg_speed": {
+      "concept": "physics.average-speed"
+    },
+    "missing_var": {
+      "kind": "lemma",
+      "title": "Pick by the missing variable",
+      "kicker": "strategy",
+      "body": "Every {suvat|SUVAT equation} connects **four** of the five variables ([s:$s$], [u:$u$], [v:$v$], [a:$a$], [t:$t$]) and leaves out **one**. List the three you know and the one you want — whichever fifth variable is neither known nor wanted names the exact formula to use.",
+      "useWhen": "you have listed your givens and goal and are unsure which of the five equations to write down.",
+      "example": "Know $u, v, a$ and want $s$? Time $t$ is missing, so pick $v^2 = u^2 + 2as$."
+    },
+    "sign_rule": {
+      "kind": "term",
+      "title": "Sign convention in 1D",
+      "kicker": "vectors in one line",
+      "body": "Because [s:displacement], {speed_vel|velocity}, and {acceleration|acceleration} are vectors, choose **one** direction along the line as positive (usually the initial direction of motion). Any vector pointing the opposite way gets a minus sign.",
+      "useWhen": "an object slows down, brakes, or reverses direction.",
+      "example": "Moving right at $20\\text{ m/s}$ while braking: $u = +20\\text{ m/s}$, $a = -4\\text{ m/s}^2$."
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "text",
+      "title": "Five variables, five equations",
+      "body": "Whenever an object moves along a straight line with [const_a:constant acceleration], just two ideas — the definition of {acceleration|acceleration} ($v = u + at$) and the {mean_speed|mean speed theorem} ($s = \\frac{u+v}{2}t$) — generate the entire set of five {suvat|uniform acceleration equations}.\n\nEach equation links four of the five quantities ([s:$s$], [u:$u$], [v:$v$], [a:$a$], [t:$t$]) and omits one. You never need to guess: use {missing_var|the missing-variable rule}, and keep signs consistent with {sign_rule|one positive direction}."
+    },
+    {
+      "id": "suvat_table",
+      "type": "visual",
+      "title": "The five SUVAT equations",
+      "note": "each row leaves out a different variable — match it to the variable you neither have nor want",
+      "widget": {
+        "kind": "table",
+        "head": ["Equation", "Omits", "When to pick it"],
+        "rows": [
+          [
+            "$v = u + at$",
+            "[s:$s$]",
+            "Relates [u:$u$], [v:$v$], [a:$a$], and [t:$t$] when {disp|displacement} is not involved"
+          ],
+          [
+            "$s = \\left(\\dfrac{u+v}{2}\\right)t$",
+            "[a:$a$]",
+            "Uses the {mean_speed|mean speed} when [a:$a$] is not given or needed"
+          ],
+          [
+            "$s = ut + \\dfrac{1}{2}at^2$",
+            "[v:$v$]",
+            "Finds [s:$s$] directly from [u:$u$], [a:$a$], and [t:$t$] without [v:$v$]"
+          ],
+          [
+            "$s = vt - \\dfrac{1}{2}at^2$",
+            "[u:$u$]",
+            "Finds [s:$s$] from final [v:$v$], [a:$a$], and [t:$t$] without [u:$u$]"
+          ],
+          [
+            "$v^2 = u^2 + 2as$",
+            "[t:$t$]",
+            "Links [u:$u$], [v:$v$], [a:$a$], and [s:$s$] when [t:$t$] is unknown"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "problem",
+      "type": "problem",
+      "title": "Worked problem",
+      "body": "A car travels along a straight road at [u:$u = 20\\text{ m/s}$]. The driver spots a red light and brakes with a [const_a:constant acceleration] of [a:$a = -4\\text{ m/s}^2$] until the car [v:comes to a complete stop].\n\nFind (1) the stopping [s:displacement $s$], and (2) the [t:stopping time $t$]."
+    },
+    {
+      "id": "chunks",
+      "type": "chunks",
+      "title": "Read the givens",
+      "note": "take the forward direction as positive; notice the hidden zero",
+      "rows": [
+        {
+          "id": "c_u",
+          "text": "[u:$u = +20\\text{ m/s}$]",
+          "role": "given",
+          "note": "initial forward {speed_vel|velocity}"
+        },
+        {
+          "id": "c_a",
+          "text": "[a:$a = -4\\text{ m/s}^2$]",
+          "role": "given",
+          "note": "negative because braking opposes forward motion ({sign_rule|sign rule})"
+        },
+        {
+          "id": "c_v",
+          "text": "[v:$v = 0\\text{ m/s}$]",
+          "role": "hidden_given",
+          "note": "hidden in the words *comes to a complete stop*"
+        },
+        {
+          "id": "c_cond",
+          "text": "[const_a:constant acceleration]",
+          "role": "condition",
+          "note": "unlocks all five {suvat|SUVAT equations}"
+        },
+        {
+          "id": "c_s",
+          "text": "Find [s:$s$] and [t:$t$]",
+          "role": "goal",
+          "note": "we know 3 variables ($u, v, a$), so any fourth can be found directly"
+        }
+      ]
+    },
+    {
+      "id": "plan",
+      "type": "plan",
+      "title": "Plan",
+      "note": "choose the equation that matches what you already know",
+      "routes": [
+        {
+          "id": "r_timeless",
+          "title": "Route A: find $s$ without $t$, then find $t$",
+          "path": "$v^2 = u^2 + 2as$ → [s:$s$], then $v = u + at$ → [t:$t$]",
+          "why": "We know [u:$u$], [v:$v$], and [a:$a$]. By {missing_var|the missing-variable rule}, omitting [t:$t$] gives [s:$s$] in one step, and omitting [s:$s$] gives [t:$t$] in one step.",
+          "whyNot": "Nothing — both steps use only the original givens, so a slip in one does not corrupt the other.",
+          "picked": true
+        },
+        {
+          "id": "r_ut_half",
+          "title": "Route B: start straight with $s = ut + \\frac{1}{2}at^2$",
+          "path": "$s = ut + \\frac{1}{2}at^2$ → [s:$s$]",
+          "why": "It is the most familiar displacement formula.",
+          "whyNot": "It contains **two** unknowns ([s:$s$] and [t:$t$]) at once, so you cannot solve it until you find [t:$t$] first.",
+          "picked": false
+        },
+        {
+          "id": "r_avg_trap",
+          "title": "Route C: use $s = ut$",
+          "path": "$s = u \\times t$",
+          "why": "Speed times time looks simple.",
+          "whyNot": "Using {avg_speed|constant-speed} $s = ut$ ignores braking; the car slows from $20\\text{ m/s}$ down to $0$, so its average speed is half as large.",
+          "picked": false
+        }
+      ],
+      "notUsed": "Not used: mass or braking force. Kinematics describes motion from $u, v, a, s, t$ alone without needing Newton's laws."
+    },
+    {
+      "id": "work",
+      "type": "chain",
+      "title": "Work it through",
+      "note": "hover a step to see which parts it uses and what mistake to avoid",
+      "steps": [
+        {
+          "id": "s1",
+          "move": "Find the stopping [s:displacement] with the equation that omits [t:time].",
+          "formula": "\\p{v}{v}^2 = \\p{u}{u}^2 + 2\\p{a}{a}\\p{s}{s} \\implies 0^2 = 20^2 + 2(-4)\\p{s}{s} \\implies 8\\p{s}{s} = 400 \\implies \\p{s}{s} = 50\\text{ m}",
+          "why": "We know [u:$u = 20$], [v:$v = 0$], and [a:$a = -4$], while [t:$t$] is unknown, so {suvat|$v^2 = u^2 + 2as$} solves directly for [s:$s$].",
+          "whyNot": "Do not plug $+4$ for [a:$a$]: that would give $s = -50\\text{ m}$ behind the car, because a car speeding forward cannot stop under positive acceleration.",
+          "uses": ["v", "u", "a", "s"]
+        },
+        {
+          "id": "s2",
+          "move": "Find the [t:stopping time] from the definition of {acceleration|acceleration}.",
+          "formula": "\\p{v}{v} = \\p{u}{u} + \\p{a}{a}\\p{t}{t} \\implies 0 = 20 + (-4)\\p{t}{t} \\implies 4\\p{t}{t} = 20 \\implies \\p{t}{t} = 5\\text{ s}",
+          "why": "Losing $4\\text{ m/s}$ every second from $20\\text{ m/s}$ takes exactly $20/4 = 5\\text{ s}$.",
+          "whyNot": "Do not swap [u:$u$] and [v:$v$]: setting $20 = 0 + (-4)t$ would give a negative time $t = -5\\text{ s}$.",
+          "uses": ["v", "u", "a", "t"]
+        },
+        {
+          "id": "s3",
+          "move": "Cross-check [s:$s$] with the quadratic formula $s = ut + \\frac{1}{2}at^2$.",
+          "formula": "\\p{s}{s} = \\p{u}{u}\\p{t}{t} + \\dfrac{1}{2}\\p{a}{a}\\p{t}{t}^2 = 20(5) + \\dfrac{1}{2}(-4)(5^2) = 100 - 50 = 50\\text{ m}",
+          "why": "Both equations come from the same [const_a:constant acceleration] model, so they must agree.",
+          "whyNot": "Do not drop the $\\frac{1}{2}$ factor: $20(5) - 4(25) = 0\\text{ m}$, which is impossible while moving forward.",
+          "uses": ["s", "u", "a", "t", "const_a"]
+        },
+        {
+          "id": "s4",
+          "move": "Cross-check with the {mean_speed|mean speed theorem}.",
+          "formula": "\\p{s}{s} = \\left(\\dfrac{\\p{u}{u} + \\p{v}{v}}{2}\\right)\\p{t}{t} = \\left(\\dfrac{20 + 0}{2}\\right)(5) = 10 \\times 5 = 50\\text{ m}",
+          "why": "Because acceleration is constant, the average velocity over the $5\\text{ s}$ is halfway between $20$ and $0$, which is $10\\text{ m/s}$.",
+          "whyNot": "This averaging shortcut works **only** for [const_a:constant acceleration], never when $a$ varies.",
+          "uses": ["s", "u", "v", "t", "const_a"]
+        }
+      ]
+    },
+    {
+      "id": "motion_plot",
+      "type": "visual",
+      "title": "See how acceleration bends displacement",
+      "note": "starts at the braking problem (u = 20, a = -4, t = 5); drag u, a, and t to explore",
+      "widget": {
+        "kind": "plot",
+        "x": {
+          "min": 0,
+          "max": 5,
+          "label": "time [t:$t$] (s)"
+        },
+        "y": {
+          "min": -50,
+          "max": 150,
+          "label": "displacement [s:$s$] (m)"
+        },
+        "params": [
+          {
+            "id": "u",
+            "label": "[u:$u$] (m/s)",
+            "min": 0,
+            "max": 20,
+            "step": 2,
+            "value": 20,
+            "part": "u"
+          },
+          {
+            "id": "a",
+            "label": "[a:$a$] (m/s²)",
+            "min": -4,
+            "max": 4,
+            "step": 0.5,
+            "value": -4,
+            "part": "a"
+          },
+          {
+            "id": "t",
+            "label": "[t:$t$] (s)",
+            "min": 1,
+            "max": 5,
+            "step": 0.5,
+            "value": 5,
+            "part": "t"
+          }
+        ],
+        "curves": [
+          {
+            "expr": "u * x + 0.5 * a * x^2",
+            "part": "s",
+            "label": "[s:$s(t) = ut + \\frac{1}{2}at^2$]"
+          },
+          {
+            "expr": "u * x",
+            "part": "u",
+            "label": "no acceleration ($ut$)"
+          }
+        ],
+        "points": [
+          {
+            "x": "t",
+            "y": "u * t + 0.5 * a * t^2",
+            "part": "t",
+            "label": "state at [t:$t$]"
+          }
+        ],
+        "readouts": [
+          {
+            "label": "[v:$v = u + at$]",
+            "expr": "u + a * t",
+            "unit": "m/s",
+            "part": "v"
+          },
+          {
+            "label": "[s:$s = ut + \\frac{1}{2}at^2$]",
+            "expr": "u * t + 0.5 * a * t^2",
+            "unit": "m",
+            "part": "s"
+          },
+          {
+            "label": "average velocity $\\bar v$",
+            "expr": "u + 0.5 * a * t",
+            "unit": "m/s",
+            "part": "u"
+          }
+        ]
+      }
+    },
+    {
+      "id": "check",
+      "type": "check",
+      "title": "Check yourself",
+      "items": [
+        "**Condition**: all five {suvat|SUVAT equations} require [const_a:constant acceleration]; never apply them across a sudden change in $a$.",
+        "**Signs**: slowing down does **not** always mean $a < 0$ — it means [a:$a$] and velocity have **opposite signs** ({sign_rule|sign rule}).",
+        "**Hidden zeros**: *starts from rest* means [u:$u = 0$]; *comes to a stop* means [v:$v = 0$].",
+        "**Units**: convert $\\text{km/h}$ to $\\text{m/s}$ (divide by $3.6$) before substituting into any formula.",
+        "**Size check**: for braking to rest, $s = \\frac{1}{2}ut$ is exactly half the distance the car would travel at constant [u:$u$], as the plot shows ($50\\text{ m}$ vs $100\\text{ m}$)."
+      ]
+    },
+    {
+      "id": "recall",
+      "type": "recall",
+      "title": "Recall",
+      "note": "work each answer in your head before revealing",
+      "questions": [
+        {
+          "id": "q1",
+          "q": "A scooter accelerates uniformly from $u = 4\\text{ m/s}$ at $a = 2\\text{ m/s}^2$ for $t = 3\\text{ s}$. What is its displacement $s$?",
+          "options": ["$12\\text{ m}$", "$21\\text{ m}$", "$30\\text{ m}$"],
+          "answer": 1,
+          "why": "$s = ut + \\frac{1}{2}at^2 = 4(3) + \\frac{1}{2}(2)(3^2) = 12 + 9 = 21\\text{ m}$. Dropping $\\frac{1}{2}$ gives $30\\text{ m}$, and ignoring $a$ gives $12\\text{ m}$."
+        },
+        {
+          "id": "q2",
+          "q": "A problem gives $u$, $v$, and $s$, and asks for constant acceleration $a$ (time $t$ is never mentioned). Which equation solves it in one step?",
+          "options": [
+            "$v^2 = u^2 + 2as$",
+            "$s = ut + \\frac{1}{2}at^2$",
+            "$s = \\left(\\frac{u+v}{2}\\right)t$"
+          ],
+          "answer": 0,
+          "why": "By {missing_var|the missing-variable rule}, since $t$ is neither given nor wanted, choose the timeless equation $v^2 = u^2 + 2as$."
+        },
+        {
+          "id": "q3",
+          "q": "A car slows uniformly from $12\\text{ m/s}$ to rest over $18\\text{ m}$. What is its acceleration $a$?",
+          "options": ["$+4\\text{ m/s}^2$", "$-8\\text{ m/s}^2$", "$-4\\text{ m/s}^2$"],
+          "answer": 2,
+          "why": "Using $v^2 = u^2 + 2as$: $0^2 = 12^2 + 2a(18) \\implies 36a = -144 \\implies a = -4\\text{ m/s}^2$. Forgetting the factor of $2$ gives $-8\\text{ m/s}^2$."
+        },
+        {
+          "id": "q4",
+          "q": "Why does $s = \\frac{1}{2}at^2$ give the wrong displacement when an object starts with $u = 10\\text{ m/s}$?",
+          "options": [
+            "Because $a$ must be zero whenever $u \\neq 0$",
+            "Because it omits the initial-velocity term $ut$",
+            "Because you must use $v^2 = 2as$ instead"
+          ],
+          "answer": 1,
+          "why": "The full formula is $s = ut + \\frac{1}{2}at^2$. Both $s = \\frac{1}{2}at^2$ and $v^2 = 2as$ are shortcuts that hold only when $u = 0$."
+        }
+      ]
+    }
+  ]
+}

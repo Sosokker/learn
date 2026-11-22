@@ -2,6 +2,7 @@ import type {
   CategoryId,
   CommentAnchor,
   CommentPage,
+  Concept,
   FeedCursor,
   FeedSort,
   Lesson,
@@ -11,10 +12,17 @@ import type {
   ProgressPage,
   ReportPage,
 } from "@app/api"
-import { decodeLesson, type LessonKind, type LessonLang, type LessonSpec } from "@app/domain"
+import {
+  decodeLesson,
+  type LessonKind,
+  type LessonLang,
+  type LessonSpec,
+  maxConceptPath,
+  walkConceptPath,
+} from "@app/domain"
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query"
 import { Effect, Result } from "effect"
-import { callApi } from "./api.ts"
+import { callApi, errorTag } from "./api.ts"
 
 // Query keys and functions, shared by route loaders (prefetch) and components.
 
@@ -246,3 +254,34 @@ export const adminReportsQuery = infiniteQueryOptions({
   getNextPageParam: (last: ReportPage) => last.next_cursor,
   retry: false,
 })
+
+// Concept search across both languages so a Thai or English query finds matching concepts.
+export const conceptSearchQuery = (q: string) =>
+  queryOptions({
+    queryKey: ["concept-search", q] as const,
+    queryFn: (context) =>
+      callApi((client) => client.concepts.search({ query: { q, limit: 20 } }), context.signal),
+    staleTime: 60_000,
+    retry: false,
+  })
+
+// Walks prerequisites via existing `GET /api/concepts/:slug` calls up to `maxConceptPath` (64).
+export const conceptPathQuery = (target: string) =>
+  queryOptions({
+    queryKey: ["concept-path", target] as const,
+    queryFn: (context) =>
+      walkConceptPath<Concept>(
+        target,
+        async (slug) => {
+          try {
+            return await callApi((client) => client.concepts.get({ params: { slug } }), context.signal)
+          } catch (error) {
+            if (errorTag(error) === "ConceptNotFound") return undefined
+            throw error
+          }
+        },
+        maxConceptPath,
+      ),
+    staleTime: 60_000,
+    retry: false,
+  })

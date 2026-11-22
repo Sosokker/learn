@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "slug": "physics.equilibrium",
+  "lang": "en",
+  "card": {
+    "kind": "def",
+    "title": "Translational equilibrium",
+    "kicker": "definition",
+    "body": "$\\sum \\vec{F} = \\vec{0}$, which in two dimensions means **both** $\\sum F_x = 0$ and $\\sum F_y = 0$ (so $\\vec{a} = \\vec{0}$).",
+    "says": "equilibrium covers **both** staying at rest (static equilibrium, $\\vec{v} = \\vec{0}$) and moving at constant velocity (dynamic equilibrium, $\\vec{v} = \\text{const} \\ne \\vec{0}$).",
+    "from": "Newton's first law resolved into perpendicular axes after drawing a free-body diagram.",
+    "useWhen": "an object hangs still, rests on a slope, or slides at constant velocity, and you need to solve for unknown tensions, normal forces, or friction.",
+    "example": "A $4.0\\text{ kg}$ lamp ($g = 9.8\\text{ m/s}^2$, $W = 39.2\\text{ N}$) hangs at rest from two symmetric ropes each at $30^\\circ$ above horizontal → $\\sum F_y = 2T\\sin 30^\\circ - 39.2 = 0$, so $T = 39.2\\text{ N}$ in each rope.",
+    "analogy": "A tug-of-war where the ribbon in the middle does not budge: huge forces are pulling both ways, yet they cancel to zero."
+  },
+  "needs": [
+    "physics.newton-first-law",
+    "physics.free-body-diagram"
+  ],
+  "aliases": [
+    "equilibrium",
+    "translational equilibrium",
+    "static equilibrium",
+    "dynamic equilibrium",
+    "sum F = 0",
+    "สมดุลต่อการเลื่อนที่",
+    "สมดุลกล",
+    "สมดุลสถิต",
+    "สมดุลจลน์"
+  ]
+}

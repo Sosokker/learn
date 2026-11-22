@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "slug": "physics.net-force",
+  "lang": "en",
+  "card": {
+    "kind": "def",
+    "title": "Net force",
+    "kicker": "definition",
+    "body": "The **net force** ($\\sum\\vec{F}$ or $\\vec{F}_{\\text{net}}$) is the single **vector sum** of all external forces acting on an object: $\\sum\\vec{F} = \\vec{F}_1 + \\vec{F}_2 + \\dots$. In two dimensions, sum components along each axis ($\\sum F_x$ and $\\sum F_y$), then $|\\sum\\vec{F}| = \\sqrt{(\\sum F_x)^2 + (\\sum F_y)^2}$.",
+    "says": "combine every force on the object into one equivalent force; if they cancel to zero, the forces are balanced.",
+    "from": "the principle of superposition of forces — multiple simultaneous forces produce the same effect as their single vector sum.",
+    "useWhen": "two or more forces act on the same object and you need to decide whether it is in equilibrium ($\\sum\\vec{F} = \\vec{0}$) or find its acceleration.",
+    "units": "N",
+    "example": "Pull a box with $15\\text{ N}$ east, $9\\text{ N}$ west, and $8\\text{ N}$ north: $\\sum F_x = 15 - 9 = 6\\text{ N}$ east and $\\sum F_y = 8\\text{ N}$ north, so $|\\sum\\vec{F}| = \\sqrt{6^2 + 8^2} = \\sqrt{36 + 64} = 10\\text{ N}$.",
+    "analogy": "In a game of tug-of-war, the rope responds only to the difference between the two teams' pulls — not to how hard each side strains individually."
+  },
+  "needs": [
+    "physics.force"
+  ],
+  "aliases": [
+    "net force",
+    "resultant force",
+    "sum of forces",
+    "sigma F",
+    "แรงลัพธ์",
+    "ผลรวมของแรง",
+    "แรงสุทธิ"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "slug": "physics.work",
+  "lang": "en",
+  "card": {
+    "kind": "formula",
+    "title": "Work",
+    "kicker": "formula",
+    "body": "$W = F \\Delta x \\cos\\theta$",
+    "says": "only the component of a constant force $F$ along the displacement $\\Delta x$ does work, where $\\theta$ is the angle between $\\vec{F}$ and $\\Delta\\vec{x}$. A force perpendicular to motion ($\\theta = 90^\\circ$) does **zero** work.",
+    "from": "the dot product $\\vec{F} \\cdot \\Delta\\vec{x}$: work measures how much mechanical energy a force transfers into or out of a body.",
+    "useWhen": "a constant force acts on a moving object and you want the energy transferred (for a varying force, take the area under the $F$–$x$ graph).",
+    "units": "J (joule, $1\\text{ J} = 1\\text{ N}\\cdot\\text{m} = 1\\text{ kg}\\cdot\\text{m}^2/\\text{s}^2$)",
+    "example": "Pulling a box with $F = 20\\text{ N}$ at $\\theta = 60^\\circ$ above the floor for $\\Delta x = 5\\text{ m}$ → $W = 20 \\times 5 \\times \\cos 60^\\circ = 20 \\times 5 \\times 0.5 = 50\\text{ J}$.",
+    "analogy": "Carrying a heavy backpack horizontally across a flat room feels tiring, yet your upward lift is perpendicular to your motion, so in physics it does zero work on the bag."
+  },
+  "needs": [
+    "physics.force",
+    "physics.distance-and-displacement"
+  ],
+  "aliases": [
+    "work",
+    "mechanical work",
+    "W = Fs cos θ",
+    "W = F Δx cos θ",
+    "งาน",
+    "งานของแรงคงตัว",
+    "งานทางกล"
+  ]
+}
